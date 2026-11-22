@@ -9,14 +9,24 @@
  *
  * The driver sees
  *   - one screen: a status line and three gauges with a blue (not yet), green (safe) and red (too hot)
- *     zone each, the minutes until each is ready, and a warning when revving past the limit while cold.
+ *     zone each, the minutes until each is ready, and a warning when revving past the limit before it is warm.
  *     Gauge style (setting): horizontal bars with the full Proven logo, the rev limit and the time to ready
  *     beside them, or round dials
  *   - an announcement over the screen when everything has come up to temperature
  *   - the same on the iDrive home screen as a widget, without opening the app
  *
  * It runs from the head unit's start (app.json "autostart"), so the warm-up is followed with the app closed.
- * Decision: warm.js. Readings: source.js. Gauge faces and logo: faces.js, logo.js. Colours: proven-theme.js.
+ * Decision: warm.js. Readings: source.js, gearbox.js. Gauge faces and logo: faces.js, logo.js. Colours:
+ * proven-theme.js.
+ *
+ * When the gearbox unit is asked (every request goes through the car's gateway and keeps the car awake):
+ *   - never while the car says it is locked and left (its own state, where the head unit has it)
+ *   - with the app closed and no widget: while the engine runs and the car is not yet up to temperature, or its
+ *     gearbox oil is read a little under its "safe from" (dipped)
+ *   - with the screen open: while the car is driven, or for USED_MS after the screen was opened (engine running
+ *     or not, as the kit's Warm-Up asks while its screen shows)
+ *   - with only the widget on the home screen: while the car is driven
+ * "driven" = the engine running or the car moving, now or in the last DRIVEN_MS (a stop at the lights).
  * Built on the idrive7-apps kit (MIT).
  */
 require('./proven-theme').register();
@@ -25,7 +35,7 @@ const { withAlpha, ScaledCanvas } = require('./kit/canvas');
 const G = require('./kit/gauges');
 const Faces = require('./faces');
 const Logo = require('./logo');
-const { WarmUp, limitsFrom, FLUIDS } = require('./warm');
+const { WarmUp, limitsFrom, FLUIDS, RUN_END_MS } = require('./warm');
 const { Source, mono } = require('./source');
 
 const W = 1600, H = 520;
@@ -39,6 +49,9 @@ const SIDE = { x: 1244, w: 332 };
 const ANNOUNCE_MS = 6000;
 const ANNOUNCE_FRESH_MS = 15000;   // the announcement is only shown this soon after the car came up to temperature
 const ANNOUNCE_AGAIN_MS = 600000;  // and not again within this time (a fluid that dips under its hold and comes back)
+const DRIVEN_MS = 180000;          // the car counts as driven this long after the engine last ran or the car last moved
+const USED_MS = 600000;            // the screen counts as in use this long after it was opened
+const OPENED_MS = 5000;            // a frame drawn after a pause this long: the screen was just opened
 // dial scales: deg C, and deg F
 const SCALE = { c: { min: 0, max: 150, major: 30, minor: 3 }, f: { min: 0, max: 300, major: 50, minor: 5 } };
 
@@ -54,59 +67,92 @@ async function background(bg) {
     const { settings, log } = bg;
     const src = new Source(bg);
     const warm = new WarmUp(() => limitsFrom((k) => settings.get(k)));
-    let wasDemo = null;
+    let wasDemo = null, drivenAt = -Infinity, wallAt = null, monoAt = 0;
     const tick = () => {
-        const d = src.data();
+        const d = src.data(), now = mono(), wall = Date.now();
         if (d.demo !== wasDemo) { if (wasDemo !== null) warm.reset(); wasDemo = d.demo; log.info(d.demo ? 'demo data' : 'car data'); }
-        return warm.feed(d, mono());
+        // time the steady clock did not count (it stands still while the head unit sleeps; the wall clock is also set
+        // forward once after start-up): taken as an engine stop of that length, so nothing is carried over a long stop
+        if (wallAt !== null && (wall - wallAt) - (now - monoAt) > RUN_END_MS) { log.info('the head unit\'s clock jumped ahead by ' + Math.round((wall - wallAt) / 60000) + ' min: taken as a long stop'); warm.endRun(); }
+        wallAt = wall; monoAt = now;
+        const st = warm.feed(d, now);
+        if (st.running || src.moving()) drivenAt = now;
+        return st;
     };
+    // revs past the limit are caught as the car sends them, not once a second (the demo's come with tick)
+    src.onRpm = (r) => warm.rev(r, mono());
     // (the kit does not guard a timer the app starts itself, and an uncaught error would stop the app;
     // an error that keeps coming is logged the first time and then once in 300, not every second)
     let tickErr = 0;
     setInterval(() => { try { tick(); } catch (e) { if (tickErr++ % 300 === 0) log.warn('tick (' + tickErr + 'x): ' + (e && e.stack || e)); } }, 1000);
-    // until the car is up to temperature the gearbox unit is asked with the engine running, app open or not
-    src.wantGearbox = () => { const st = warm.status(mono()); return st.running && st.overall !== 'ready'; };
+    // until the car is up to temperature the gearbox unit is asked with the engine running, app open or not; never
+    // while the car is locked and left. Also while the gearbox is read a little under its "safe from" on a car that
+    // is ready ('dip'): that reading is not counted on once it has aged out, so it is kept live
+    const warmingUp = () => { const st = warm.status(mono()); return st.running && (st.overall !== 'ready' || st.fluids.gearbox.state === 'dip'); };
+    src.wantGearbox = () => !src.left() && warmingUp();
     // fedDemo: the temperatures the decision holds now are demo data (true until the next tick after the demo ends)
-    return { src, warm, tick, fedDemo: () => wasDemo === true };
+    // driven: the engine ran or the car moved in the last DRIVEN_MS
+    return { src, warm, tick, fedDemo: () => wasDemo === true, warmingUp, driven: () => mono() - drivenAt < DRIVEN_MS };
 }
 
 mgu.run({
     background,
     async start(ctx) {
         const { ui, settings, log } = ctx;
-        const { src, warm, tick, fedDemo } = ctx.background || await background(ctx);
+        const { src, warm, tick, fedDemo, warmingUp, driven } = ctx.background || await background(ctx);
         const demoShown = () => src.usingDemo() || fedDemo();
         const visible = () => { try { return !!ui.isVisible('MAIN'); } catch (e) { return true; } };
         const widgetOn = () => !!(ctx.widget && ctx.widget.active && ctx.widget.active());
-        // ... and while someone is looking (the screen or the widget), also once it is warm
-        src.wantGearbox = () => { const st = warm.status(mono()); return st.running && (st.overall !== 'ready' || visible() || widgetOn()); };
+        // ... and while someone is looking, also once it is warm and with the engine stopped: at the screen while
+        // the car is driven or the screen was opened in the last USED_MS (not for good on a parked car with the screen
+        // left on), at the widget while the car is driven
+        let drawnAt = -Infinity, openedAt = -Infinity;
+        const used = () => mono() - openedAt < USED_MS;
+        src.wantGearbox = () => !src.left() && (warmingUp() || (visible() && (driven() || used())) || (widgetOn() && driven()));
 
         const isF = () => settings.get('tempUnit') === 'f';
         const T = (c) => (G.isNum(c) ? (isF() ? c * 9 / 5 + 32 : c) : null);
         const tU = () => (isF() ? '°F' : '°C');
         const deg = (c) => G.fmt(T(c), 0) + tU();
         const rpmText = (r) => String(Math.round(r)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        const stateColor = (t, s) => (s === 'hot' ? t.crit : s === 'ready' ? GO : s === 'warming' || s === 'stalled' || s === 'off' ? t.cold : t.tick);
+        const stateColor = (t, s) => (s === 'hot' ? t.crit : s === 'ready' ? GO : s === 'warming' || s === 'stalled' || s === 'off' || s === 'dip' ? t.cold : t.tick);
+        // the time to ready as the decision gives it: "about 7", or past its cap "over 60"
+        const mins = (m) => String(Math.max(1, Math.round(m)));
+        /**
+         * What "Up to temperature" rests on: the fluids in range, then what is not quite so: a fluid that has dipped a
+         * little under its limit (several: named without their numbers, so the line fits), a gearbox counted on its last
+         * reading, a gearbox that is left out.
+         */
+        const readyNote = (st) => {
+            const counted = FLUIDS.filter((k) => st.fluids[k].state === 'ready' && st.fluids[k].temp !== null);
+            const dips = FLUIDS.filter((k) => st.fluids[k].state === 'dip');
+            return cap((counted.length ? [list(counted) + (counted.length > 1 ? ' are in their safe range' : ' is in its safe range')] : [])
+                .concat(dips.length > 1 ? [list(dips) + ' have dipped a little'] : dips.length ? [list(dips) + ' has dipped below ' + deg(st.fluids[dips[0]].ready)] : [],
+                    st.held.length ? [list(st.held) + ' on its last reading'] : [], st.unwatched.length ? [list(st.unwatched) + ' not monitored'] : []).join('  ·  '));
+        };
 
         /** The status line: { title, note, color }. */
         function headline(st, d) {
-            const counted = FLUIDS.filter((k) => st.fluids[k].counted && st.fluids[k].temp !== null);
-            const left = st.unwatched.length ? '  ·  ' + list(st.unwatched) + ' not monitored' : '';
             // (an engine that runs while the car gives no temperature at all still gets the rev advice)
             if (st.overall === 'nodata') return { title: 'No temperature data', note: d.demo ? '' : (st.running && st.limit > 0 ? 'Keep below ' + rpmText(st.limit) + ' rpm  ·  ' : '') + 'waiting for the car', color: 'dim' };
             if (st.overall === 'hot') {
                 const hot = FLUIDS.filter((k) => st.fluids[k].state === 'hot');
                 return { title: 'Too hot', note: cap(list(hot)) + ' above ' + (hot.length > 1 ? 'their limits' : 'its limit') + '  ·  ease off and let it cool', color: 'crit' };
             }
-            if (st.overall === 'ready') return { title: 'Up to temperature', note: cap(list(counted)) + (counted.length > 1 ? ' are in their safe range' : ' is in its safe range') + left, color: GO };
-            if (st.over) return { title: 'Ease off', note: rpmText(d.rpm) + ' rpm on a cold engine  ·  keep below ' + rpmText(st.limit) + ' rpm until warm', color: 'crit' };
+            if (st.overall === 'ready') return { title: 'Up to temperature', note: readyNote(st), color: GO };
+            // the revs that raised it (the highest of the burst), not the live ones, which may be back under the limit;
+            // "a cold engine" only when engine oil or coolant is read below its limit, not for the gearbox alone
+            if (st.over) {
+                return { title: 'Ease off', color: 'crit', note: rpmText(st.overRpm) + (st.cold.some((k) => k !== 'gearbox') ? ' rpm on a cold engine' : ' rpm before the car is up to temperature')
+                    + '  ·  keep below ' + rpmText(st.limit) + ' rpm until warm' };
+            }
             const wait = 'Waiting for ' + list(st.waiting);
             if (st.overall === 'off') return { title: 'Engine off', note: wait, color: 'dim' };
             return {
                 title: 'Warming up', color: 'warn',
                 // the advice first: keep below the limit until warm
                 note: (st.limit > 0 ? 'Keep below ' + rpmText(st.limit) + ' rpm until warm  ·  ' + wait.charAt(0).toLowerCase() + wait.slice(1) : wait)
-                    + (G.isNum(st.min) ? '  ·  about ' + Math.max(1, Math.round(st.min)) + ' min' : ''),
+                    + (G.isNum(st.min) ? '  ·  ' + (st.capped ? 'over ' : 'about ') + mins(st.min) + ' min' : ''),
             };
         }
 
@@ -128,9 +174,12 @@ mgu.run({
         /** A fluid's state in words: { line, col, sub }. */
         function stateText(t, k, f) {
             let line, col = t.text, sub = '';
-            if (f.state === 'ready') { line = '✓  READY'; col = GO; }
+            // (ready without a reading: the gearbox, counted on its last one; the number is not drawn as live)
+            if (f.state === 'ready') { line = '✓  READY'; col = GO; if (f.temp === null) sub = 'on its last reading, ' + deg(f.last); }
             else if (f.state === 'hot') { line = 'TOO HOT'; col = t.crit; }
-            else if (f.state === 'warming') line = f.min > 60 ? 'READY IN OVER 60 MIN' : 'READY IN ABOUT ' + Math.max(1, Math.round(f.min)) + ' MIN';
+            else if (f.state === 'dip') { line = 'BELOW ' + deg(f.ready); sub = 'dipped after the warm-up'; }
+            // (no figure until enough has been measured)
+            else if (f.state === 'warming') line = f.min === null ? 'WARMING UP' : 'READY IN ' + (f.capped ? 'OVER ' : 'ABOUT ') + mins(f.min) + ' MIN';
             else if (f.state === 'stalled') { line = 'NOT WARMING'; col = t.warn; }
             else if (f.state === 'off') { line = 'ENGINE OFF'; col = t.dim; }
             else if (f.state === 'unused') { line = 'NOT MONITORED'; col = t.dim; sub = 'switched off in Workshop settings'; }
@@ -195,7 +244,7 @@ mgu.run({
                     cv.fillRect(ix, y + 188, iw, 2, withAlpha('#ffffff', 0.1));
                 }
                 const y2 = rev ? y + 188 : y + (room - 110) / 2;
-                if (G.isNum(st.min)) { mid('READY IN ABOUT', y2 + 34, 18, t.dim); pair(String(Math.max(1, Math.round(st.min))), 'min', y2 + 92, 56, 24, t.text); }
+                if (G.isNum(st.min)) { mid(st.capped ? 'READY IN OVER' : 'READY IN ABOUT', y2 + 34, 18, t.dim); pair(mins(st.min), 'min', y2 + 92, 56, 24, t.text); }
                 else mid('WARMING UP', y2 + 64, 24, t.warn);
             } else if (st.overall === 'ready') {
                 lamp(y + room / 2 - 30, GO, 'tick'); mid('UP TO TEMPERATURE', y + room / 2 + 72, 21, GO, { spacing: 1.5 });
@@ -218,10 +267,8 @@ mgu.run({
             cv.line(cx - 28, cy + dy + 2, cx - 8, cy + dy + 22, 10, withAlpha(GO, a));
             cv.line(cx - 8, cy + dy + 22, cx + 30, cy + dy - 22, 10, withAlpha(GO, a));
             cv.text('UP TO TEMPERATURE', cx, 286 + dy, 52, withAlpha('#ffffff', a), { align: 'center', font: 'bold', spacing: 5 });
-            const counted = FLUIDS.filter((k) => st.fluids[k].counted && st.fluids[k].temp !== null);
-            // a gearbox that is left out is named here too, as on the status line
-            cv.text(cap(list(counted)) + (counted.length > 1 ? ' are in their safe range' : ' is in its safe range')
-                + (st.unwatched.length ? '  ·  ' + list(st.unwatched) + ' not monitored' : ''), cx, 328 + dy, 24, withAlpha(t.dim, a), { align: 'center' });
+            // a gearbox that is left out, or counted on its last reading, is named here too, as on the status line
+            cv.text(readyNote(st), cx, 328 + dy, 24, withAlpha(t.dim, a), { align: 'center' });
             // the full logo (PROVEN / PERFORMANCE / SOLUTIONS)
             if (brand && a > 0.5) Logo.draw(cv, cx - 170, 364, 340, 'full');
         }
@@ -229,6 +276,9 @@ mgu.run({
         let announceAt = 0, lastAnnounce = -Infinity;
         async function render() {
             const t = ctx.theme(), now = mono(), d = src.data(), st = warm.status(now);
+            // (a frame after a pause: the screen was just opened)
+            if (now - drawnAt > OPENED_MS) openedAt = now;
+            drawnAt = now;
             // the announcement is taken every frame, and shown only while it is news: the car is ready now, became so
             // in the last ANNOUNCE_FRESH_MS (not minutes later, when the screen is next opened), and it was not
             // already shown in the last ANNOUNCE_AGAIN_MS
@@ -264,19 +314,37 @@ mgu.run({
         const word = (st) => ({ ready: 'UP TO TEMPERATURE', hot: 'TOO HOT', warming: st.over ? 'EASE OFF' : 'WARMING UP', off: 'ENGINE OFF', nodata: 'NO DATA' }[st.overall]);
         const wordColor = (t, st) => (st.overall === 'ready' ? GO : st.overall === 'hot' || st.over ? t.crit : st.overall === 'warming' ? t.warn : t.dim);
         const progress = (st) => { const p = FLUIDS.filter((k) => st.fluids[k].counted).map((k) => st.fluids[k].progress); return p.length ? Math.min.apply(null, p) : 0; };
-        function widgetCells(inst, st) {
-            const on = !inst.big, n = (k) => (st.fluids[k].temp === null ? '--' : String(Math.round(T(st.fluids[k].temp))));
-            const cells = {
+        /**
+         * The small widget's text lines. Each cell of the layout shows about 20 characters (the kit's eDrive), and a
+         * line cut short would read as another temperature: every line is 20 or fewer, also with three-digit and
+         * Fahrenheit values, so the unit is in the title and the three temperatures have no spaces to spare.
+         */
+        function widgetLines(st) {
+            const n = (k) => (st.fluids[k].temp === null ? '--' : String(Math.round(T(st.fluids[k].temp))));
+            const dip = FLUIDS.filter((k) => st.fluids[k].state === 'dip')[0];
+            return {
                 // demo data is marked, so invented temperatures are never taken for the car's
-                Title: [on ? (demoShown() ? 'Warm-Up DEMO' : 'Warm-Up') : '', 'Text'],
                 // (widget text cells take plain ASCII)
-                TextRecordings: [on ? word(st) : '', 'Text'],
-                TextCam: [on ? 'Oil ' + n('oil') + '  Gbx ' + n('gearbox') + '  Clt ' + n('coolant') + (isF() ? ' F' : ' C') : '', 'Text'],
+                Title: 'Warm-Up' + (demoShown() ? ' DEMO' : '') + (isF() ? ', deg F' : ', deg C'),
+                TextRecordings: word(st),
+                TextCam: 'Oil' + n('oil') + ' Gbx' + n('gearbox') + ' Clt' + n('coolant'),
+                // (once the car is called ready: a fluid that has dipped, a gearbox that is left out or counted on its
+                // last reading)
+                TimeElapsed: st.limit > 0 && st.overall === 'warming' ? 'below ' + st.limit + ' rpm'
+                    : st.overall !== 'ready' ? '' : dip ? NAMES[dip].toLowerCase() + ' dipped' : st.unwatched.length ? 'no gearbox temp' : st.held.length ? 'old gearbox temp' : '',
+                TimeRemaining: G.isNum(st.min) ? (st.capped ? '>' : '~') + mins(st.min) + ' min' : '',
+            };
+        }
+        function widgetCells(inst, st) {
+            const on = !inst.big, lines = on ? widgetLines(st) : {};
+            const cells = {
+                Title: [lines.Title || '', 'Text'],
+                TextRecordings: [lines.TextRecordings || '', 'Text'],
+                TextCam: [lines.TextCam || '', 'Text'],
                 ProgressbarVisible: [on, 'Bool'],
                 Progress: [on ? Math.round(progress(st) * 100) / 100 : 0, 'Float'],
-                // (a gearbox that is left out is named once the car is called ready)
-                TimeElapsed: [!on ? '' : st.limit > 0 && st.overall === 'warming' ? 'below ' + st.limit + ' rpm' : st.overall === 'ready' && st.unwatched.length ? 'no gearbox temp' : '', 'Text'],
-                TimeRemaining: [on && G.isNum(st.min) ? '~' + Math.max(1, Math.round(st.min)) + ' min' : '', 'Text'],
+                TimeElapsed: [lines.TimeElapsed || '', 'Text'],
+                TimeRemaining: [lines.TimeRemaining || '', 'Text'],
             };
             const prev = wtext[inst.spawnId] || (wtext[inst.spawnId] = {});
             Object.keys(cells).forEach((k) => {
@@ -294,7 +362,9 @@ mgu.run({
             // the HMI crops and fades the picture's edges: everything stays inside the safe box
             const sf = sw.safe || [0.09, 0.17], x0 = Math.round(w * sf[0]), y0 = Math.round(h * sf[1]), x1 = w - x0, y1 = h - y0, iw = x1 - x0;
             cv.text(word(st), x0, y0 + 18, 18, wordColor(t, st), { font: 'bold', spacing: 1.5 });
-            if (G.isNum(st.min)) cv.text('~' + Math.max(1, Math.round(st.min)) + ' min', x1, y0 + 18, 18, t.text, { font: 'bold', align: 'right' });
+            // the unit, once, at the end of the top line (the numbers below carry a bare degree sign)
+            const uw = cv.text(tU(), x1, y0 + 18, 16, t.dim, { font: 'bold', align: 'right', literal: true });
+            if (G.isNum(st.min)) cv.text((st.capped ? '>' : '~') + mins(st.min) + ' min', x1 - uw - 8, y0 + 18, 18, t.text, { font: 'bold', align: 'right' });
             const gap = 10, cw = (iw - gap * 2) / 3;
             FLUIDS.forEach((k, i) => {
                 const f = st.fluids[k], x = x0 + i * (cw + gap), c = stateColor(t, f.state);
@@ -303,12 +373,15 @@ mgu.run({
                 cv.text('°', x + vw + 2, y0 + 74, 18, t.dim, { literal: true });
                 cv.roundRect(x, y0 + 104, cw, 8, 4, withAlpha(t.track, 0.95));
                 if (f.progress > 0.02) cv.roundRect(x, y0 + 104, cw * f.progress, 8, 4, c);
-                cv.text(f.state === 'ready' ? 'READY' : f.state === 'hot' ? 'TOO HOT' : f.state === 'unused' ? 'OFF' : f.state === 'none' ? 'NO READING' : 'from ' + Math.round(T(f.ready)) + '°',
+                // (ready without a reading: the gearbox on its last one, which is named as that)
+                cv.text(f.state === 'ready' ? (f.temp === null ? 'LAST ' + Math.round(T(f.last)) + '°' : 'READY') : f.state === 'hot' ? 'TOO HOT' : f.state === 'unused' ? 'OFF' : f.state === 'none' ? 'NO READING'
+                    : (f.state === 'dip' ? 'BELOW ' : 'from ') + Math.round(T(f.ready)) + '°',
                     x, y0 + 130, 12, f.state === 'ready' ? GO : f.state === 'hot' ? t.crit : t.dim, { font: 'bold', spacing: 0.5, literal: true });
             });
             // demo data is marked where the logo otherwise is, so invented temperatures are never taken for the car's
+            // (no logo with the "Proven logo" setting off, as on the screen)
             if (demoShown()) cv.text('DEMO DATA', x0 + iw / 2, y1 - 2, 13, t.warn, { align: 'center', font: 'bold', spacing: 2 });
-            else Logo.paint(cv, x0 + (iw - 84) / 2, y1 - 14, 84, 'word');
+            else if (settings.get('branding')) Logo.paint(cv, x0 + (iw - 84) / 2, y1 - 14, 84, 'word');
             return cv.canvas;
         }
         if (ctx.widget) {

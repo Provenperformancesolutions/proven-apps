@@ -8,9 +8,10 @@
  *   Track    full-width shift lights, rev bar, speed + gear, oil and coolant with traces,
  *            friction circle with session peak g
  *   Boost    boost dial with target marker and peak tell-tale, 60 s boost trace against target,
- *            intake air, ignition timing, fuel rail and feed pressure
+ *            intake air, ignition timing, fuel rail and feed pressure; the ethanol read-out when
+ *            the workshop has switched it on (setting "Ethanol reading")
  *   Thermal  warm-up status, coolant / oil / gearbox / intake / outside temperature with 5 min traces
- *   Tyres    pressures against the car's targets, temperatures, and the pressure gained since the start
+ *   Tyres    pressures against the car's targets, temperatures, and the pressure gained since the app was opened
  *
  * Built on the idrive7-apps kit (MIT): kit/runtime draws at 60 fps through the GPU renderer and
  * builds the iDrive 7 and iDrive 8 screens from app.json. Data: vitals.js. Faces: faces.js.
@@ -66,11 +67,8 @@ mgu.run({
         };
         /** Shift point of the shift lights: the setting, or 300 rpm under the redline. */
         const shiftPoint = () => { const s = settings.get('shiftAt'); return s > 0 ? Math.min(s, engine.scaleMax()) : engine.redline() - 300; };
-        /** Power in kW: the sport display's % of the car's max power, or torque x rpm. */
-        const power = (d) => {
-            if (settings.get('powerSource') !== 'calc' && G.isNum(d.powerPct)) return { kw: d.powerPct / 100 * settings.get('maxPower'), calc: false };
-            return { kw: G.isNum(d.powerCalc) ? d.powerCalc : null, calc: true };
-        };
+        /** Power in kW: torque x rpm, or the sport display's % of the max power entered for this car (vitals.js). */
+        const power = (d) => vitals.power(d);
         /** An engine-unit value, only while it is fresh. */
         const val = (d, k) => (vitals.fresh(k === 'boostTarget' || k === 'boostActual' ? 'boostCtl' : k) ? d[k] : null);
         /** min / max of a history for a tile's last line. */
@@ -87,26 +85,31 @@ mgu.run({
 
         /**
          * { letter, num, est } for the gear readout, or null without gear information. P / R / N come
-         * from the selector position; stopped in D (no gear engaged yet) shows D.
+         * from the selector position; stopped in D (no gear engaged yet) shows D. A gear the car did not
+         * send but that was worked out from engine speed and road speed (est) has no D: nothing says the
+         * car is in D, or has an automatic gearbox at all. S / M are shown with it when the car says so.
          */
         function gearText(d) {
             const st = d.stage, m = d.gearMode || d.program;
             if (st === 'P' || st === 'R' || st === 'N') return { letter: st, num: '', est: false };
             let g = d.gear, est = false;
             if (!G.isNum(g)) { g = d.gearGuess; est = true; }
-            const letter = m === 'S' || m === 'M' ? m : 'D';
-            if (!G.isNum(g)) return st === 'D' ? { letter, num: '', est: false } : null;
+            const letter = m === 'S' || m === 'M' ? m : est ? '' : 'D';
+            if (!G.isNum(g)) return st === 'D' ? { letter: letter || 'D', num: '', est: false } : null;
             if (g < 0) return { letter: 'R', num: '', est };
             if (g === 0) return st === 'D' ? { letter, num: '', est } : { letter: m === 'P' ? 'P' : 'N', num: '', est };
             return { letter, num: String(g), est };
         }
-        /** Gear, right-aligned at xr on baseline y: D / S / M + number (R, N, P alone). */
-        function drawGear(cv, t, d, xr, y, size) {
+        /**
+         * Gear, right-aligned at xr on baseline y: D / S / M + number (R, N, P alone). est = [x, y]: where
+         * "EST." goes for a gear that is estimated, right-aligned (default: over the gear).
+         */
+        function drawGear(cv, t, d, xr, y, size, est) {
             const gr = gearText(d);
             if (!gr) { cv.text('-', xr, y, size, t.dim, { align: 'right', font: 'gear', literal: true }); return; }
             const nw = gr.num ? cv.text(gr.num, xr, y, size, t.text, { align: 'right', font: 'gear', literal: true }) : 0;
-            cv.text(gr.letter, xr - (nw ? nw + size * 0.04 : 0), y, size, gr.letter === 'M' ? t.crit : gr.letter === 'S' ? t.accent : nw ? t.dim : t.text, { align: 'right', font: 'gear', literal: true });
-            if (gr.est) cv.text('EST.', xr, y - size * 0.80, 16, t.dim, { align: 'right', font: 'bold', spacing: 1.5 });
+            if (gr.letter) cv.text(gr.letter, xr - (nw ? nw + size * 0.04 : 0), y, size, gr.letter === 'M' ? t.crit : gr.letter === 'S' ? t.accent : nw ? t.dim : t.text, { align: 'right', font: 'gear', literal: true });
+            if (gr.est) cv.text('EST.', est ? est[0] : xr, est ? est[1] : y - size * 0.80, est ? 18 : 16, t.dim, { align: 'right', font: 'bold', spacing: est ? 2 : 1.5 });
         }
         /** Speed, left-aligned at x on baseline y, with its unit. */
         function drawSpeed(cv, t, d, x, y, size) {
@@ -127,6 +130,18 @@ mgu.run({
             iat: () => [{ from: T(50), to: T(65), color: 'warn' }, { from: T(65), to: 9999, color: 'crit' }],
         };
 
+        /**
+         * The line under a boost dial: why there is no boost, or, on a car that never said which units it
+         * uses, how the sport display's number was read.
+         */
+        function boostNote(cv, t, d, x, y) {
+            if (vitals.usingDemo()) return;
+            const u = vitals.units();
+            const s = !G.isNum(d.boost) ? vitals.boostWhy()
+                : !u.known && settings.get('boostSource') !== 'dme' ? 'car\'s units unknown: sport display read as ' + (u.psi ? 'psi' : 'bar / kPa') : '';
+            if (s) cv.text(s, x, y, 18, t.dim, { align: 'center' });
+        }
+
         /* ---------- Street ---------- */
         function drawStreet(cv, t, d) {
             const red = engine.redline(), max = engine.scaleMax(), pk = vitals.pk(), showPk = settings.get('peaks'), brand = settings.get('branding');
@@ -140,16 +155,18 @@ mgu.run({
             // centre: shift lights, speed + gear, power and torque
             shiftLights(cv, t, d, 500, 58, 580, 24, 12);
             cv.text('SPEED', 500, 114, 18, t.dim, { font: 'bold', spacing: 2 });
-            cv.text('GEAR', 1080, 114, 18, t.dim, { font: 'bold', spacing: 2, align: 'right' });
+            const gw = cv.text('GEAR', 1080, 114, 18, t.dim, { font: 'bold', spacing: 2, align: 'right' });
             drawSpeed(cv, t, d, 500, 250, 150);
-            drawGear(cv, t, d, 1080, 250, 170);
+            // ("EST." beside the label, not on it)
+            drawGear(cv, t, d, 1080, 250, 170, [1080 - gw - 14, 114]);
+            // (both bars end at the number set, not at the next round one; power is an estimate either way, and says from what)
             const pw = power(d);
             G.bar(cv, t, 500, 284, 580, 92, {
-                label: pw.calc ? 'Power (torque x rpm)' : 'Power', value: PW(pw.kw), unit: pwU(), max: PW(settings.get('maxPower')), niceMax: true, ramp: 'hot',
+                label: pw.calc ? 'Power est. (torque x rpm)' : 'Power est. (sport display)', value: PW(pw.kw), unit: pwU(), max: PW(settings.get('maxPower')), ramp: 'hot',
                 peak: showPk && G.isNum(pk.power) ? PW(pk.power) : null, peakText: true,
             });
             G.bar(cv, t, 500, 400, 580, 92, {
-                label: 'Torque', value: TQ(d.torque), unit: tqU(), max: TQ(settings.get('maxTorque')), niceMax: true, ramp: 'hot',
+                label: 'Torque', value: TQ(d.torque), unit: tqU(), max: TQ(settings.get('maxTorque')), ramp: 'hot',
                 peak: showPk ? TQ(pk.torque) : null, peakText: true,
             });
             // right: boost dial, temperatures
@@ -159,14 +176,14 @@ mgu.run({
                 label: 'Boost', unit: B.unit, decimals: B.dec, warnFrom: B.max * 0.85, peak: showPk ? P(pk.boost) : null, brand,
             });
             resetBtn(cv, t, 1440, 48, 136);
-            if (!G.isNum(d.boost) && !vitals.usingDemo()) cv.text(vitals.boostWhy(), 1348, 404, 18, t.dim, { align: 'center' });
+            boostNote(cv, t, d, 1348, 404);
             const third = showIat ? { label: 'Intake', value: T(val(d, 'iat')), zones: tempZones.iat() } : { label: 'Outside', value: T(d.ambient) };
             [{ label: 'Oil', value: T(d.oil), zones: tempZones.oil() }, { label: 'Coolant', value: T(d.coolant), zones: tempZones.coolant() }, third]
                 .forEach((g, i) => G.readout(cv, t, 1128 + i * 156, 418, Object.assign({ unit: tU(), size: 54, decimals: 0 }, g)));
         }
 
         /* ---------- Track ---------- */
-        const trail = [];
+        const trail = vitals.trail;         // (emptied there when the demo drive and the car change places)
         function drawTrack(cv, t, d) {
             const red = engine.redline(), max = engine.scaleMax(), pk = vitals.pk(), showPk = settings.get('peaks');
             if (G.isNum(d.gLat) && G.isNum(d.gLong)) { trail.push([d.gLat, d.gLong]); if (trail.length > 60) trail.shift(); }
@@ -189,19 +206,28 @@ mgu.run({
             resetBtn(cv, t, 1406, 108, 150);
             [['Peak lateral', pk.gLat], ['Peak accel', pk.gAccel], ['Peak brake', pk.gBrake]]
                 .forEach(([label, v], i) => G.readout(cv, t, 1556, 168 + i * 104, { label, value: v, decimals: 2, unit: 'g', size: 48, align: 'right' }));
+            // why the three are still empty: they count from the first standstill at which the sensor was zeroed
+            // (how long that takes depends on how often the car sends the two accelerations there: no time is promised)
+            if (!vitals.usingDemo() && !vitals.gZeroed()) {
+                cv.text('Peaks count after a stop', 1556, 474, 18, t.dim, { align: 'right' });
+                cv.text('that zeroes the g sensor', 1556, 496, 18, t.dim, { align: 'right' });
+            }
         }
 
         /* ---------- Boost ---------- */
         function drawBoost(cv, t, d) {
-            vitals.want(['iat', 'hpfp', 'lpfp', 'timing', 'boostCtl'].concat(vitals.boostFromDme() ? ['boost'] : []));
+            const eth = vitals.ethanol();
+            vitals.want(['iat', 'hpfp', 'lpfp', 'timing', 'boostCtl'].concat(vitals.boostFromDme() ? ['boost'] : [], eth.on ? ['ethanol'] : []));
             const B = boostScale(), pk = vitals.pk(), showPk = settings.get('peaks'), pd = pressU();
-            const target = val(d, 'boostTarget');
+            // target and actual boost as the engine unit gave them in one round, and only while that round is fresh:
+            // the marker, the Target figure and "Against target" all come from that pair
+            const pair = vitals.boostPair(d), target = pair.target;
             F.dial(cv, t, 250, 282, 212, {
                 key: 'boost', value: P(d.boost), min: 0, max: B.max, major: B.major, minor: B.minor, labelDecimals: B.labelDec,
                 label: 'Boost', unit: B.unit, decimals: B.dec, warnFrom: B.max * 0.85, peak: showPk ? P(pk.boost) : null,
                 target: P(target), brand: settings.get('branding'),
             });
-            if (!G.isNum(d.boost) && !vitals.usingDemo()) cv.text(vitals.boostWhy(), 250, 508, 18, t.dim, { align: 'center' });
+            boostNote(cv, t, d, 250, 508);
             // the last 60 s: boost (filled) against the engine unit's target (thin white line)
             const p = G.panel(cv, t, 488, G.TOP, 640, 468, 'Boost in ' + B.unit + '  ·  last 60 s');
             resetBtn(cv, t, p.x + p.w - 166, p.y + 12, 150);
@@ -213,10 +239,13 @@ mgu.run({
                 series: [{ pts: pts(tr.boost), color: 'accent2', width: 3, fill: 0.22 }, { pts: pts(tr.target), color: 'text', width: 1.5 }],
                 empty: 'no boost data yet',
             });
-            const yb = p.y + p.h - 88, err = G.isNum(d.boost) && G.isNum(target) && target > 0.2 ? d.boost - target : null;
-            // (the peak of what the chart shows, so the two agree; the dial's tell-tale follows the Peak hold setting)
+            // (the engine unit's own actual boost against its target: not the sport display's number, which comes at
+            // another rate and from another source)
+            const yb = p.y + p.h - 88, err = G.isNum(pair.actual) && G.isNum(target) && target > 0.2 ? pair.actual - target : null;
+            // (the highest point of what the chart shows, so the two agree. Not a peak "Reset peaks" resets: that is the
+            // dial's tell-tale, which follows the Peak hold setting)
             const seen = tr.boost.filter(G.isNum), peak60 = seen.length ? Math.max.apply(null, seen) : null;
-            G.readout(cv, t, p.x + 24, yb, { label: 'Peak, 60 s', value: P(peak60), decimals: B.dec, unit: B.unit, size: 46 });
+            G.readout(cv, t, p.x + 24, yb, { label: 'Chart max', value: P(peak60), decimals: B.dec, unit: B.unit, size: 46 });
             G.readout(cv, t, p.x + 232, yb, { label: 'Target', value: P(target), decimals: B.dec, unit: B.unit, size: 46 });
             G.readout(cv, t, p.x + 440, yb, {
                 label: 'Against target', value: P(err), text: G.isNum(err) ? (err >= 0 ? '+' : '') + G.fmt(P(err), B.dec) : null, unit: B.unit, size: 46,
@@ -224,12 +253,22 @@ mgu.run({
             });
             // engine-unit values
             const running = G.isNum(d.rpm) && d.rpm > 500;
-            const tile = (i, g) => G.stat(cv, t, 1152 + (i % 2) * 220, G.TOP + (i > 1 ? 242 : 0), 204, 226, Object.assign({ size: 56 }, g));
+            // with the ethanol read-out on, it takes a strip at the top of the column and the four tiles are lower
+            const ey = eth.on ? 80 : 0, th = (468 - ey - 16) / 2;
+            if (eth.on) {
+                F.statusStrip(cv, t, 1152, G.TOP, 424, 64, G.isNum(eth.value)
+                    ? { title: 'Ethanol  E' + Math.round(eth.value), note: eth.source === 'MHD' ? 'MHD flex' + (G.isNum(eth.can) ? '  ·  sensor E' + Math.round(eth.can) : '')
+                        : 'engine unit, ' + (/52/.test(eth.source) ? 'OBD PID 52' : 'value 550D') + (eth.source === 'F452' ? ' (F452)' : ''), color: GO, under: true }
+                    : { title: 'Ethanol  no reading', note: eth.why, color: 'dim', under: true });
+            }
+            const tile = (i, g) => G.stat(cv, t, 1152 + (i % 2) * 220, G.TOP + ey + (i > 1 ? th + 16 : 0), 204, th, Object.assign({ size: 56 }, g));
             const sub = (k, h, f, dec) => (G.isNum(val(d, k)) ? range(h, f, dec) : vitals.usingDemo() ? 'no data' : vitals.dmeWhy(k));
+            // (a diesel's rail pressure has six digits in kPa: drawn smaller there, and its range without the word, so both stay in the tile)
+            const rail = P(val(d, 'hpfp')), railSub = sub('hpfp', hist.hpfp, P, 0);
             tile(0, { label: 'Intake air', value: T(val(d, 'iat')), unit: tU(), decimals: 0, zones: tempZones.iat(), history: hist.iat.map(T), sub: sub('iat', hist.iat, T, 0) });
             tile(1, { label: 'Timing', value: val(d, 'timing'), unit: '°', decimals: 1, history: hist.timing, sub: sub('timing', hist.timing, (x) => x, 0) });
-            tile(2, { label: 'Fuel rail', value: P(val(d, 'hpfp')), unit: pU(), decimals: 0, history: hist.hpfp.map(P),
-                zones: running ? [{ from: -999, to: P(20), color: 'crit' }] : [], sub: sub('hpfp', hist.hpfp, P, 0) });
+            tile(2, { label: 'Fuel rail', value: rail, unit: pU(), decimals: 0, history: hist.hpfp.map(P), size: G.isNum(rail) && rail >= 100000 ? 44 : 56,
+                zones: running ? [{ from: -999, to: P(20), color: 'crit' }] : [], sub: railSub.length > 17 ? railSub.replace('range ', '') : railSub });
             tile(3, { label: 'Fuel feed', value: P(val(d, 'lpfp')), unit: pU(), decimals: pd[3], history: hist.lpfp.map(P),
                 zones: running ? [{ from: -999, to: P(3), color: 'crit' }, { from: P(3), to: P(4), color: 'warn' }] : [], sub: sub('lpfp', hist.lpfp, P, pd[3]) });
         }
@@ -288,22 +327,26 @@ mgu.run({
                 // pressure: big, coloured against the car's target
                 let pc = G.isNum(pr) ? t.text : t.dim;
                 if (G.isNum(pr) && G.isNum(tgt) && tgt > 0) { const r = pr / tgt; pc = r < 0.85 ? t.crit : r < 0.93 || r > 1.15 ? t.warn : GO; }
-                // tyre colour: temperature, or the pressure state when the car sends no temperatures
+                // tyre colour: temperature, or the pressure state when the car sends no temperatures. Without a
+                // pressure the tyre is not coloured at all: a green tyre beside "--" would call a flat one healthy
                 const tc = !temps ? (G.isNum(pr) ? pc : t.tick) : !G.isNum(temp) ? t.tick : temp < 20 ? t.cold : temp > 105 ? t.crit : temp > 90 ? t.warn : GO;
                 const tx0 = side < 0 ? cx - bw / 2 - tyw - 8 : cx + bw / 2 + 8;
-                cv.roundRect(tx0, ty, tyw, tyh, 10, tc);
+                cv.roundRect(tx0, ty, tyw, tyh, 10, G.isNum(pr) ? tc : t.tick);
                 for (let i = 1; i < 4; i++) cv.fillRect(tx0 + 6, ty + i * tyh / 4, tyw - 12, 2, withAlpha(t.bg, 0.35));
                 const al = side < 0 ? 'right' : 'left', lx = side < 0 ? tx0 - 26 : tx0 + tyw + 26;
                 const size = 72 + (temps ? 0 : 16), py = ty + (temps ? 52 : 62);
                 const pw = cv.text(G.fmt(pr, dec), lx + (side < 0 ? -cv.textWidth(' ' + unitP, 24) : 0), py, size, pc, { align: al, font: 'num', literal: true });
                 cv.text(' ' + unitP, side < 0 ? lx : lx + pw, py, 24, t.dim, { align: al });
-                cv.text(G.isNum(tgt) ? 'target ' + G.fmt(tgt, dec) : 'no target', lx, py + 30, 22, t.dim, { align: al });
+                // (a pressure that is missing says why in the target's place. One outside 0.5 to 6 bar is "out of range",
+                // not "not a real value": it may be the car's marker for no data, and it may be a tyre that is flat)
+                const whyP = vitals.bad['p' + k] !== undefined ? 'out of range' : vitals.why('p' + k);
+                cv.text(!G.isNum(pr) && !vitals.usingDemo() ? whyP : G.isNum(tgt) ? 'target ' + G.fmt(tgt, dec) : 'no target', lx, py + 30, 22, t.dim, { align: al });
                 if (temps) cv.text(G.isNum(temp) ? G.fmt(T(temp), 0) + tU() : '--' + tU(), lx, ty + 118, 30, G.isNum(temp) ? tc : t.dim, { align: al, font: 'bold' });
             }
         }
         function drawTyres(cv, t, d) {
             tyreCard(cv, t, 24, G.TOP, 1000, 468, d);
-            const p = G.panel(cv, t, 1048, G.TOP, 528, 468, 'Since start, ' + pU());
+            const p = G.panel(cv, t, 1048, G.TOP, 528, 468, 'Since app start, ' + pU());
             resetBtn(cv, t, p.x + p.w - 166, p.y + 12, 150);
             const st = vitals.starts(), dec = pressU()[4], names = { FL: 'Front left', FR: 'Front right', RL: 'Rear left', RR: 'Rear right' };
             const rows = Vitals.TYRES.map((k) => {
@@ -315,9 +358,12 @@ mgu.run({
                 { label: 'Tyre', w: 170, size: 26 }, { label: 'Start', w: 100, align: 'right', font: 'num', size: 34, color: 'dim' },
                 { label: 'Now', w: 100, align: 'right', font: 'num', size: 34 }, { label: 'Change', w: 110, align: 'right', font: 'num', size: 34 },
             ], rows, { rowH: 66, middle: true });
-            const any = Vitals.TYRES.some((k) => G.isNum(d['p' + k]));
-            cv.text(any ? 'Start = the first reading of this drive, or since Reset peaks.' : 'No tyre pressures from the car yet.', p.x + 24, p.y + p.h - 52, 20, t.dim);
-            if (any) cv.text('Hot pressures rise as the tyres work: set them against this.', p.x + 24, p.y + p.h - 26, 20, t.dim);
+            const any = Vitals.TYRES.some((k) => G.isNum(d['p' + k])), u = vitals.units();
+            // (Start is not the start of the drive: the app is not running before it is first opened)
+            cv.text(any ? 'Start = the first reading after this app was opened' : u.known || u.late ? 'No tyre pressures from the car yet.' : 'Waiting for the car to say which units it uses.', p.x + 24, p.y + p.h - 52, 20, t.dim);
+            if (any) cv.text('or after Reset peaks, not the start of the drive.', p.x + 24, p.y + p.h - 26, 20, t.dim);
+            // a car that never said its units: the numbers are a reading of their size, and the driver is told
+            if (any && !u.known) cv.text('Car\'s units unknown: pressures read by their size.', p.x + 24, p.y + p.h - 80, 20, t.warn);
         }
 
         /* ---------- frame ---------- */
@@ -342,11 +388,14 @@ mgu.run({
                 await ui.image('MAIN_GFX', cv);
                 return;
             }
-            // peaks: raised every frame, so a held peak also drops back while the car sends nothing new
+            // peaks: the car's values raise them as they arrive (vitals.js), whatever is on the screen. Raised here
+            // as well every frame, so a held peak also drops back while the car sends nothing new, and for the demo drive
             ['rpm', 'boost', 'torque'].forEach((k) => vitals.raise(k, d[k]));
             vitals.raise('power', power(d).kw);
-            if (G.isNum(d.gLat)) vitals.max('gLat', Math.abs(d.gLat));
-            if (G.isNum(d.gLong)) { vitals.max('gAccel', Math.max(0, d.gLong)); vitals.max('gBrake', Math.max(0, -d.gLong)); }
+            if (vitals.usingDemo()) {
+                if (G.isNum(d.gLat)) vitals.max('gLat', Math.abs(d.gLat));
+                if (G.isNum(d.gLong)) { vitals.max('gAccel', Math.max(0, d.gLong)); vitals.max('gBrake', Math.max(0, -d.gLong)); }
+            }
             const cv = ctx.canvas(W, H).clear(t.bg);
             DRAW[page](cv, t, d);
             if (age < SPLASH_MS + FADE_MS) cv.fillRect(0, G.BAR_H, W, H - G.BAR_H, withAlpha('#000000', 1 - (age - SPLASH_MS) / FADE_MS));
@@ -363,7 +412,7 @@ mgu.run({
         // every screen refresh (60 fps) with the GPU renderer; 10 fps in software (PNG frames)
         ctx.loop('MAIN', 10, () => { if (!shownAt) shownAt = mono() || 1; return render(); });
         settings.onChange((k) => {
-            if (k === 'maxPower' || k === 'powerSource') { delete vitals.peak.power; delete vitals.demoPeak.power; }
+            if (k === 'sportMaxPower' || k === 'powerSource') { delete vitals.peak.power; delete vitals.demoPeak.power; }
             if (k === 'boostSource') { delete vitals.peak.boost; vitals.updBoost(); }
             if (k === 'page') page = Math.max(0, PAGES.indexOf(settings.get('page')));
         });

@@ -2,7 +2,7 @@
  "id": "pps_gauges",
  "title": "Proven Gauges",
  "description": "BETA, not yet tested on a car. Proven Performance Solutions gauge sets: Street, Track, Boost, Thermal and Tyres. A guide only: check against a gauge you trust",
- "version": "1.0.3",
+ "version": "1.1.0",
  "vendor": "Proven Performance Solutions",
  "loggingId": "PPG1",
  "iconGlyph": "gauge",
@@ -34,7 +34,8 @@
   "de.bmw.infotainment.drivingexcitement.FES": {
    "statusSwitchDriveDynamicSport2": "rs",
    "statusVehicleDynamicEngine": "rs",
-   "statusActualValueTorque2": "rs"
+   "statusActualValueTorque2": "rs",
+   "statusVehicleDynamicEngineMaxValue": "rs"
   },
   "de.bmw.infrastructure.analytics.BasicDataSet": {
    "_optional": "gearbox oil temperature; the xDrive split then comes from the transfer case or the drive mode",
@@ -256,10 +257,10 @@
   },
   {
    "key": "maxPower",
-   "label": "Max power (100% on sport display)",
+   "label": "Power gauge max",
    "type": "number",
    "unit": "kW",
-   "default": 285,
+   "default": 300,
    "steps": [
     100,
     120,
@@ -292,7 +293,9 @@
     500,
     530,
     550,
-    600
+    600,
+    700,
+    800
    ]
   },
   {
@@ -316,17 +319,66 @@
    "key": "powerSource",
    "label": "Power from",
    "type": "choice",
-   "default": "sport",
+   "default": "calc",
+   "reset": 1,
    "options": [
-    [
-     "sport",
-     "Sport display"
-    ],
     [
      "calc",
      "Torque x rpm"
+    ],
+    [
+     "sport",
+     "Sport display % x max power"
     ]
    ]
+  },
+  {
+   "key": "sportMaxPower",
+   "label": "Max power (100% on sport display)",
+   "type": "number",
+   "unit": "kW",
+   "default": 0,
+   "labels": {
+    "0": "Not set"
+   },
+   "steps": [
+    0,
+    100,
+    120,
+    135,
+    140,
+    150,
+    160,
+    170,
+    185,
+    190,
+    200,
+    215,
+    230,
+    240,
+    250,
+    260,
+    275,
+    285,
+    300,
+    320,
+    340,
+    353,
+    375,
+    390,
+    405,
+    420,
+    450,
+    460,
+    480,
+    500,
+    530,
+    550,
+    600
+   ],
+   "when": {
+    "powerSource": "sport"
+   }
   },
   {
    "key": "engine",
@@ -489,7 +541,7 @@
   },
   {
    "key": "engineData",
-   "label": "Engine unit data (read only)",
+   "label": "Engine unit data",
    "type": "choice",
    "default": "auto",
    "options": [
@@ -500,6 +552,39 @@
     [
      "off",
      "Off"
+    ]
+   ]
+  },
+  {
+   "key": "workshop",
+   "label": "Workshop settings",
+   "type": "bool",
+   "default": false
+  },
+  {
+   "key": "ethanol",
+   "label": "Ethanol reading",
+   "type": "choice",
+   "default": "off",
+   "when": {
+    "workshop": true
+   },
+   "options": [
+    [
+     "off",
+     "Off"
+    ],
+    [
+     "550d",
+     "Engine unit value (550D)"
+    ],
+    [
+     "obd52",
+     "OBD value (PID 52)"
+    ],
+    [
+     "mhd",
+     "MHD flex (not read only)"
     ]
    ]
   },
@@ -631,7 +716,7 @@
   }
  ],
  "config": {
-  "comment": "raw -> value * factor + offset. Scaling and engine-unit definitions as in idrive7-apps M Vitals (car-tested there).",
+  "comment": "raw -> value * factor + offset. Scaling and engine-unit definitions as in idrive7-apps M Vitals (car-tested there), except what the dme comment and the boost note name, which is Proven's and not car-tested.",
   "scaling": {
    "rpm": {
     "factor": 0.25,
@@ -668,7 +753,8 @@
     "factor": 0.01,
     "offset": 0,
     "invalid": 255,
-    "note": "sport display boost; raw values go to the log ('raw FES boost')"
+    "note": "sport display boost; raw values go to the log ('raw FES boost'); 'ceiling': the largest number the field holds - a value on it is shown as no reading, so the engine unit is tried",
+    "ceiling": 254
    },
    "torque": {
     "factor": 0.5,
@@ -702,7 +788,7 @@
    }
   },
   "dme": {
-   "comment": "Engine unit (DME, ecu 18 = 0x12) values, read only: UDS 0x22 / OBD service 01. Candidates are tried in order; the first plausible one wins. value = raw * factor + offset (bar / deg C / kPa absolute for boost). Definitions as in idrive7-apps M Vitals.",
+   "comment": "Engine unit (DME, ecu 18 = 0x12) values. Everything listed here is read only: UDS 0x22 / OBD service 01 (the ethanol choice \"MHD flex\" is not in this list and not read only: mhdflex.js). Candidates are tried in order; the first plausible one wins. value = raw * factor + offset (bar / deg C / kPa absolute for boost). Definitions as in idrive7-apps M Vitals, except: hpfp \"maxDiesel\" (the ceiling used with a diesel engine), the \"max\" of boost F40B / OBD 0B and of boostTarget 4AB0 / boostActual 580B (one step under the largest number the field can hold: a value sitting on that ceiling is no reading, and the next candidate is tried), \"timeoutMs\" on egs, and ethanol. None of these changes has been on a car.",
    "ecu": 18,
    "iat": [
     {
@@ -744,7 +830,8 @@
      "offset": 0,
      "min": 0,
      "max": 500,
-     "note": "fuel rail gauge pressure (direct injection), 10 kPa per bit"
+     "note": "fuel rail gauge pressure (direct injection), 10 kPa per bit",
+     "maxDiesel": 2700
     },
     {
      "did": "F459",
@@ -754,7 +841,8 @@
      "offset": -1,
      "min": 0,
      "max": 500,
-     "note": "fuel rail absolute pressure, 10 kPa per bit"
+     "note": "fuel rail absolute pressure, 10 kPa per bit",
+     "maxDiesel": 2700
     },
     {
      "obd": "23",
@@ -764,7 +852,8 @@
      "offset": 0,
      "min": 0,
      "max": 500,
-     "note": "OBD service 01 PID 0x23 (same as F423)"
+     "note": "OBD service 01 PID 0x23 (same as F423)",
+     "maxDiesel": 2700
     }
    ],
    "lpfp": [
@@ -858,8 +947,8 @@
      "factor": 1,
      "offset": 0,
      "min": 20,
-     "max": 255,
-     "note": "OBD PID 0x0B intake manifold absolute pressure, kPa (max 255 = 1.5 bar boost)"
+     "max": 254,
+     "note": "OBD PID 0x0B intake manifold absolute pressure, kPa (max 255 = 1.5 bar boost); 255 is the top of the byte, not a reading"
     },
     {
      "obd": "0B",
@@ -868,8 +957,8 @@
      "factor": 1,
      "offset": 0,
      "min": 20,
-     "max": 255,
-     "note": "OBD service 01 PID 0x0B (same as F40B)"
+     "max": 254,
+     "note": "OBD service 01 PID 0x0B (same as F40B); 255 is the top of the byte, not a reading"
     }
    ],
    "baro": [
@@ -902,8 +991,8 @@
      "factor": 0.00390625,
      "offset": 0,
      "min": 20,
-     "max": 400,
-     "note": "BMW boost pressure setpoint (absolute), hPa = raw * 10 / 256"
+     "max": 255.995,
+     "note": "BMW boost pressure setpoint (absolute), hPa = raw * 10 / 256; raw 65535 (2560 hPa) is the top of the field, not a reading"
     },
     {
      "did": "F470",
@@ -934,8 +1023,8 @@
      "factor": 0.00390625,
      "offset": 0,
      "min": 20,
-     "max": 400,
-     "note": "BMW boost pressure actual (absolute), hPa = raw * 10 / 256"
+     "max": 255.995,
+     "note": "BMW boost pressure actual (absolute), hPa = raw * 10 / 256; raw 65535 (2560 hPa) is the top of the field, not a reading"
     },
     {
      "did": "F470",
@@ -990,7 +1079,8 @@
      "offset": -40,
      "min": -40,
      "max": 160,
-     "note": "ZF 8HP (GSZFBCE) _GETRIEBEOELTEMPERATUR, deg C + 40 (idrive7-apps PR #29, read on a G22)"
+     "note": "ZF 8HP (GSZFBCE) _GETRIEBEOELTEMPERATUR, deg C + 40 (idrive7-apps PR #29, read on a G22)",
+     "timeoutMs": 1500
     },
     {
      "ecu": 24,
@@ -1001,9 +1091,50 @@
      "offset": -48,
      "min": -40,
      "max": 160,
-     "note": "gearbox unit (EGS, 0x18) transmission oil temperature, deg C + 48 (from a forum report, not confirmed on a car: only shown once it changes; the replies go to the log, \"raw EGS\")"
+     "note": "gearbox unit (EGS, 0x18) transmission oil temperature, deg C + 48 (from a forum report, not confirmed on a car: only shown once it changes; the replies go to the log, \"raw EGS\")",
+     "timeoutMs": 1500
     }
-   ]
+   ],
+   "ethanol": {
+    "comment": "Ethanol content of the fuel, setting \"Ethanol reading\" (off as shipped). One source per car, chosen by the workshop: \"550d\" = BMW's own value PROZENT_ALK_KRST (kit Live Data catalogue DME8FF_R), \"obd52\" = OBD service 01 PID 52, else the same PID over UDS (22 F452). One byte, value = raw * 100 / 255 %. Raw 255 and anything above \"max\" count as no reading. NOT car-tested: nobody has recorded what an engine unit with an MHD or Motiv ReFlex flex-fuel set-up answers here, and a stock engine unit may answer a constant such as 0. The first raw replies go to the log (\"raw ethanol ...\"). The third choice of the setting, \"MHD flex\", is not in this list: it reads what an MHD flex-fuel tune keeps in the engine unit, with requests that are fixed in mhdflex.js and that are not all reads (see that file). Also not car-tested by Proven.",
+    "550d": [
+     {
+      "bytes": 1,
+      "at": 0,
+      "factor": 0.39215686274509803,
+      "offset": 0,
+      "min": 0,
+      "max": 90,
+      "timeoutMs": 2500,
+      "did": "550D",
+      "note": "BMW engine unit: Prozent Alkohol im Kraftstoff (alcohol in the fuel)"
+     }
+    ],
+    "obd52": [
+     {
+      "bytes": 1,
+      "at": 0,
+      "factor": 0.39215686274509803,
+      "offset": 0,
+      "min": 0,
+      "max": 90,
+      "timeoutMs": 2500,
+      "obd": "52",
+      "note": "OBD service 01 PID 0x52, ethanol fuel %"
+     },
+     {
+      "bytes": 1,
+      "at": 0,
+      "factor": 0.39215686274509803,
+      "offset": 0,
+      "min": 0,
+      "max": 90,
+      "timeoutMs": 2500,
+      "did": "F452",
+      "note": "the same PID over UDS 0x22"
+     }
+    ]
+   }
   }
  }
 }

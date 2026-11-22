@@ -2,7 +2,7 @@
  "id": "pps_warmup",
  "title": "Proven Warm-Up",
  "description": "BETA, not yet tested on a car. Shows when engine oil, gearbox oil and coolant reach the warm-up temperatures set by Proven Performance Solutions. A guide only: it does not replace the car's own warnings",
- "version": "1.2.1",
+ "version": "1.3.0",
  "vendor": "Proven Performance Solutions",
  "loggingId": "PPW1",
  "iconGlyph": "temp",
@@ -34,6 +34,11 @@
    "_broadcasts": [
     "sendTasuResponse"
    ]
+  },
+  "de.bmw.infrastructure.VehicleCondition": {
+   "_optional": "the car locked and left: the gearbox unit is not asked, so the car can sleep",
+   "VehicleCondition": "s",
+   "vehicleConditionNoCrc": "s"
   }
  },
  "screens": [

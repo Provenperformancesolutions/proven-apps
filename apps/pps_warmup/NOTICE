@@ -13,9 +13,10 @@ licence below allows for the parts that come from the idrive7-apps kit.
 
 This app runs on, and parts of it come from, the idrive7-apps kit
 (https://github.com/cauliflowermossgrape/idrive7-apps): the app runtime in kit/; gearbox.js,
-the gearbox oil temperature reader of its Warm-Up app, unchanged; the "ready in" estimate in
-warm.js and the home-screen widget set-up, which follow its Warm-Up and eDrive apps. That work
-is under the MIT License:
+the gearbox oil temperature reader of its Warm-Up app, with changes by Proven Performance
+Solutions that are listed at the top of that file; the "ready in" estimate in warm.js, the
+home-screen widget set-up and the reading of the car's locked-and-left state in source.js,
+which follow its Warm-Up, eDrive and Ambient config apps. That work is under the MIT License:
 
 MIT License
 

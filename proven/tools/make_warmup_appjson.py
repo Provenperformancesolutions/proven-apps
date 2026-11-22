@@ -44,7 +44,7 @@ spec = {
     'id': 'pps_warmup',
     'title': 'Proven Warm-Up',
     'description': 'BETA, not yet tested on a car. Shows when engine oil, gearbox oil and coolant reach the warm-up temperatures set by Proven Performance Solutions. A guide only: it does not replace the car\'s own warnings',
-    'version': '1.2.1',
+    'version': '1.3.0',
     'vendor': 'Proven Performance Solutions',
     'loggingId': 'PPW1',
     'iconGlyph': 'temp',
@@ -56,6 +56,12 @@ spec = {
         'de.bmw.infotainment.vehicle.Vehicle2': {'statusCarSpeed2': 'rs'},
         'de.bmw.infrastructure.analytics.BasicDataSet': warmup['signals']['de.bmw.infrastructure.analytics.BasicDataSet'],
         'com.harman.infotainment.systemfunctions.tasu.tasu.InternalTasu': warmup['signals']['com.harman.infotainment.systemfunctions.tasu.tasu.InternalTasu'],
+        # the car's own state (parked or standby with nobody in it), as the kit's Ambient config and eDrive read it;
+        # optional: a head unit without the interface still installs the app, and the app then goes by the engine alone
+        'de.bmw.infrastructure.VehicleCondition': {
+            '_optional': 'the car locked and left: the gearbox unit is not asked, so the car can sleep',
+            'VehicleCondition': 's', 'vehicleConditionNoCrc': 's',
+        },
     },
     'screens': [{'name': 'MAIN', 'kind': 'canvas', 'title': 'Proven Warm-Up', 'buttons': [['BTN_SETTINGS', 'Settings']]}],
     'startWidget': widget,

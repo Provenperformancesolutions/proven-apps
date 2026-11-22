@@ -3,7 +3,7 @@
  * faces.js - Proven's own gauge faces, drawn on the kit's frame surface (kit/runtime/record.js).
  *
  *   dial(cv, t, cx, cy, r, g)        the Proven dial: a 270-degree analogue face with a needle
- *   statusStrip(cv, t, x, y, w, h, g) a status line with a coloured lamp
+ *   statusStrip(cv, t, x, y, w, h, g) a status line with a coloured lamp (g.under: the note on a second line)
  *
  * dial g = {
  *   key            a name that is unique on the page (smoothing, layer cache)
@@ -133,12 +133,21 @@ function dial(cv, t, cx, cy, r, g) {
     if (g.unit) cv.text(' ' + g.unit, left + tw, by, us, t.dim);
 }
 
-/** A status line: a lamp in g.color, a bold headline and a dimmer note. */
+/**
+ * A status line: a lamp in g.color, a bold headline and a dimmer note after it (g.under: under it, for a
+ * narrow strip of two lines). The headline is in the bold font, which has every letter at every size
+ * (the big number font has digits and a few letters only: "E27" would lose its E there).
+ */
 function statusStrip(cv, t, x, y, w, h, g) {
     const c = t[g.color] || g.color || t.accent;
     cv.roundRect(x, y, w, h, 8, withAlpha('#b4bccc', 0.07));
     cv.fillRect(x, y, 6, h, c);
     cv.circle(x + 34, y + h / 2, 9, withAlpha(c, 0.28)); cv.circle(x + 34, y + h / 2, 6, c);
+    if (g.under) {
+        cv.text(String(g.title).toUpperCase(), x + 56, y + h / 2 - 3, 26, c, { font: 'bold', spacing: 2 });
+        if (g.note) cv.text(g.note, x + 56, y + h / 2 + 21, 20, t.dim);
+        return;
+    }
     const hw = cv.text(String(g.title).toUpperCase(), x + 56, y + h / 2 + 9, 26, c, { font: 'bold', spacing: 2 });
     if (g.note) cv.text(g.note, x + 56 + hw + 22, y + h / 2 + 8, 22, t.dim);
 }

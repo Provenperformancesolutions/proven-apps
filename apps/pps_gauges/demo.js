@@ -23,7 +23,8 @@ class Demo {
         const spool = Math.min(1, Math.max(0, (rpm - 1800) / 1500));
         const target = Math.max(0, pull > 0.5 ? 1.52 * spool : 0.12 * pull);
         const boost = Math.max(0, target - 0.07 + 0.045 * Math.sin(t * 5) - (cyc < 1 ? 0.5 * (1 - cyc) : 0));
-        const torque = Math.round(60 + pull * spool * 560);
+        // (flat torque, then no more than 285 kW: power is shown as torque x rpm, and the demo stays on a 300 kW bar)
+        const torque = Math.round(Math.min(60 + pull * spool * 560, 285 * 9549 / rpm));
         return {
             rpm, speed, gear, gearMode: pull > 0.9 ? 'S' : 'D', stage: 'D',
             boost, boostTarget: target, boostActual: boost,
