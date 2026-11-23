@@ -202,8 +202,8 @@ temperature" and shows the coolant, and it never reads "Up to temperature" on co
 Off as shipped. A workshop switches it on per car: Settings, Workshop settings, Ethanol reading. It then
 shows as a strip on the Boost set, "ETHANOL  E27" with its source under it, or "ETHANOL  NO READING" with
 the reason. Nothing is shown in demo mode, nothing is remembered and nothing is entered by hand: only a
-fresh answer from the engine unit is a value. **It is still unproven on every car: nothing about it is
-recorded from the first car, not even whether it was switched on.** Compare it with the tuner's own app at
+fresh answer from the engine unit is a value. **It is still unproven on every car: the first car has no
+flex-fuel sensor, so it was not switched on there.** Compare it with the tuner's own app at
 two different blends before trusting it on a car, and leave it off otherwise.
 
 A flex-fuel sensor reports to the engine unit, not to the head unit, so the head unit cannot pick the
@@ -240,8 +240,8 @@ car, and the app never falls back from one to another:
   is not, until its two memory places are known. According to the Flex Fuel app's notes the engine unit
   forgets the temporary identifier at the next ignition cycle, and the app then defines it again. The
   strip shows the tune's own figure and what its sensor says ("MHD flex  ·  sensor E26").
-  **Proven has no result for this from a car, and it is not recorded whether it was ever switched on
-  there: treat it as never run on a car.** The requests and the two memory places come
+  **Proven has not run this on a car: the first car has no flex-fuel sensor.** The requests and the two
+  memory places come
   from the Flex Fuel app's notes for one B58 gen2 on MHD 5.41; whether another MHD version keeps the same places is not
   known, and a wrong place would show a wrong number that looks measured. Switch the read-out off, or
   close the app, before logging or flashing with the tuner's app or connecting a tester: they share the
@@ -424,7 +424,8 @@ Store builds and installs the apps from this source, and they run on a car. The 
 1.1.0 and Warm-Up 1.3.0 since that morning; which version numbers the Store showed on the car is not
 recorded.
 What else that use covered is not recorded here either: which car and head unit, which screens and
-states, and whether any reading was compared with another tool. So every point under "Still open" below
+states, and whether any reading was compared with another tool. That car has no flex-fuel sensor, so the
+ethanol read-out stayed off. So every point under "Still open" below
 stays open. Versions 1.1.1 and 1.3.1 are the same code as 1.1.0 and 1.3.0, with BETA taken off the
 description.
 
@@ -470,7 +471,8 @@ Still open:
   seen on the first car is not recorded, so each of them counts as checked on a PC only.
 - **the readings against a second tool.** No comparison from a car is recorded here. Compare every
   reading with a tool you trust (the dealer tool, a logger) before relying on it.
-- **the ethanol read-out.** No result from a car is recorded for any of its three choices. For the MHD
+- **the ethanol read-out.** None of its three choices has been switched on in a car: the first car has
+  no flex-fuel sensor. For the MHD
   flex choice in particular: whether the head unit reaches the engine unit on the car, whether another MHD or program
   version keeps the same memory places, and what an engine unit without the tune answers to the probe.
   The S58 is not supported yet.
