@@ -1,6 +1,11 @@
-"""make_icon.py <logo.png> <out icon.png> [gauge|temp] - an app's 140 x 140 tile icon: a gauge (Proven Gauges) or a
-thermometer (Proven Warm-Up) in the logo's colours over the PROVEN line of the logo, on a transparent background
-(the HMI draws the tile behind it)."""
+"""make_icon.py <logo.png> <out icon.png> [gauge|temp|drag] - an app's 140 x 140 tile icon: a gauge (Proven Gauges),
+a thermometer (Proven Warm-Up) or a chequered flag (Proven Drag) in the logo's colours over the PROVEN line of the
+logo, on a transparent background (the HMI draws the tile behind it).
+
+The "drag" figure was written without being run: the machine Proven Drag was built on had neither Pillow nor the
+logo's artwork file. The icon in apps/pps_drag was made by make_drag_icon.js, which draws the same flag from the
+same coordinates and takes the PROVEN line from an icon this script made. Run this once with "drag" where Pillow
+and the artwork are, and compare the two pictures, before relying on it."""
 import math, sys
 from PIL import Image, ImageDraw
 
@@ -25,6 +30,18 @@ def main(src, out, glyph='gauge'):
         d.line([92 * S, 58 * S, 104 * S, 72 * S, 126 * S, 40 * S], fill=GREEN, width=9 * S, joint='curve')
         for px_, py_ in ((92, 58), (126, 40)):
             d.ellipse([px_ * S - 4.5 * S, py_ * S - 4.5 * S, px_ * S + 4.5 * S, py_ * S + 4.5 * S], fill=GREEN)
+    elif glyph == 'drag':
+        # chequered flag: a white pole with a red knob, 4 x 3 fields in white and the logo's dark blue, the top edge
+        # sagging by OFF at the five column lines (the same figures as in make_drag_icon.js)
+        FX, FY, CW, CH, OFF = 37, 14, 22, 20, (0, 5, 8, 6, 2)
+        d.rounded_rectangle([26 * S, 12 * S, 33 * S, 104 * S], radius=3.5 * S, fill=WHITE)
+        d.ellipse([(29.5 - 6.5) * S, (10 - 6.5) * S, (29.5 + 6.5) * S, (10 + 6.5) * S], fill=RED)
+        for i in range(4):
+            for j in range(3):
+                x0, x1 = FX + i * CW, FX + (i + 1) * CW
+                yl, yr = FY + j * CH + OFF[i], FY + j * CH + OFF[i + 1]
+                d.polygon([(x0 * S, yl * S), (x1 * S, yr * S), (x1 * S, (yr + CH) * S), (x0 * S, (yl + CH) * S)],
+                          fill=WHITE if (i + j) % 2 == 0 else BLUE)
     else:
         cx, cy, r, th = 70 * S, 60 * S, 46 * S, 9 * S
         box = [cx - r, cy - r, cx + r, cy + r]
