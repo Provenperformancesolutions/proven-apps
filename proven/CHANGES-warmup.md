@@ -4,6 +4,13 @@
 > written before the public notes (README.md) were brought up to date for this version.
 > Labels such as `warmup-B9` are the numbers the faults had in the pre-car review, and "the sceptic" is that
 > review's second reader. The summary for users is in [README.md](README.md).
+>
+> **Update, 23 Nov 2026:** since this record was written, Proven has installed both apps through the MGU
+> Store and run them on a car, and the BETA label came off with Warm-Up 1.3.1 and Gauges 1.1.1 (no change
+> to the apps' code). The record below is left as it was written: where it says BETA, or that nothing
+> has run on a car, read that as of the day it was written. The list in section 4, "What to look at on
+> the first real car", is still to do: nothing is recorded of that car run beyond the apps installing
+> and running.
 
 Still BETA: nothing here has run on a car or a head unit. Everything below was checked on a PC only.
 

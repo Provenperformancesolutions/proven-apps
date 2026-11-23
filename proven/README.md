@@ -3,12 +3,15 @@
 Two apps for BMW MGU head units (iDrive 7 and iDrive 8) by Proven Performance Solutions, built on the
 open-source idrive7-apps kit:
 
-- **Proven Gauges** 1.1.0 (`apps/pps_gauges`): five gauge sets
-- **Proven Warm-Up** 1.3.0 (`apps/pps_warmup`): tells the driver to keep below 4,000 rpm until engine oil,
+- **Proven Gauges** 1.1.1 (`apps/pps_gauges`): five gauge sets
+- **Proven Warm-Up** 1.3.1 (`apps/pps_warmup`): tells the driver to keep below 4,000 rpm until engine oil,
   gearbox oil and coolant are up to temperature, with Proven's temperatures built in
 
-> **BETA. Neither app has run on a car yet.** Everything below was checked on a PC only: see
-> "What has and has not been tested". As shipped, the apps only read values the car already has.
+> **No longer BETA (23 Nov 2026).** Proven installed both apps on a car from this source through the MGU
+> Store and reports that both work. Nothing more is recorded of that use: not which car or head unit
+> (iDrive 7 or iDrive 8), not which screens were seen, not whether any reading was compared with another
+> tool. See "What has and has not been tested" for what was checked on a PC only and what is still open.
+> As shipped, the apps only read values the car already has.
 > There is one exception, and it is switched off until a workshop chooses it: the "MHD flex" ethanol
 > reading in Gauges sends three requests to the engine unit that are not reads (see "The ethanol
 > read-out"). The apps are a guide for a quick glance and do not replace the car's own instruments and
@@ -29,7 +32,14 @@ The GPU renderer and the controller gate the apps need come from the Store's bui
 
 ## What changed
 
-**Warm-Up 1.3.0 and Gauges 1.1.0 (18 Nov 2026)**
+**Warm-Up 1.3.1 and Gauges 1.1.1 (23 Nov 2026)**
+
+- **The Store descriptions no longer say BETA.** Both apps have been installed through the Store and
+  run on a car: see "What has and has not been tested".
+- Nothing else changed. Apart from the description and the version number in `app.json`, every file of
+  both apps is the same as in 1.3.0 and 1.1.0.
+
+**Warm-Up 1.3.0 and Gauges 1.1.0 (published 23 Nov 2026)**
 
 A second review traced every screen of both apps from the car's signal to the pixel, before the first
 car. What it found is fixed here. The full account, fault by fault, with what was left and a list of
@@ -158,8 +168,9 @@ workshop settings (ethanol reading), logo on the dials, start-up logo, theme, de
   nothing but read requests (UDS 0x22, OBD 0x01 / 0x09) leave the head unit. They are only read while the
   app is on screen or the engine is running, and "Engine unit data: Off" stops them altogether. The one
   exception to "read only" is the MHD flex ethanol choice, which is off as shipped: see below.
-- Signal names, scaling and the engine-unit identifiers are the kit's M Vitals definitions, with these
-  changes of Proven's, none of them tested on a car: a diesel's rail pressure is accepted up to 2700 bar;
+- Signal names, scaling and the engine-unit identifiers are the kit's M Vitals definitions, with four
+  changes of Proven's. No result from a car is recorded for any of them: a diesel's rail pressure is
+  accepted up to 2700 bar;
   a boost value sitting exactly on the largest number its field can hold counts as no reading; the
   gearbox unit is waited for 1.5 seconds instead of 4; and the ethanol identifiers are added.
 - A value the car marks as "no value" is kept for 10 seconds and then dropped. A value that simply stops
@@ -191,8 +202,9 @@ temperature" and shows the coolant, and it never reads "Up to temperature" on co
 Off as shipped. A workshop switches it on per car: Settings, Workshop settings, Ethanol reading. It then
 shows as a strip on the Boost set, "ETHANOL  E27" with its source under it, or "ETHANOL  NO READING" with
 the reason. Nothing is shown in demo mode, nothing is remembered and nothing is entered by hand: only a
-fresh answer from the engine unit is a value. **It is unproven on every car.** Compare it with the
-tuner's own app at two different blends before trusting it on a car, and leave it off otherwise.
+fresh answer from the engine unit is a value. **It is still unproven on every car: nothing about it is
+recorded from the first car, not even whether it was switched on.** Compare it with the tuner's own app at
+two different blends before trusting it on a car, and leave it off otherwise.
 
 A flex-fuel sensor reports to the engine unit, not to the head unit, so the head unit cannot pick the
 reading off the car's network itself. It can only ask the engine unit. There are three choices, one per
@@ -228,8 +240,9 @@ car, and the app never falls back from one to another:
   is not, until its two memory places are known. According to the Flex Fuel app's notes the engine unit
   forgets the temporary identifier at the next ignition cycle, and the app then defines it again. The
   strip shows the tune's own figure and what its sensor says ("MHD flex  ·  sensor E26").
-  **Proven has not run this on a car.** The requests and the two memory places come from the Flex Fuel
-  app's notes for one B58 gen2 on MHD 5.41; whether another MHD version keeps the same places is not
+  **Proven has no result for this from a car, and it is not recorded whether it was ever switched on
+  there: treat it as never run on a car.** The requests and the two memory places come
+  from the Flex Fuel app's notes for one B58 gen2 on MHD 5.41; whether another MHD version keeps the same places is not
   known, and a wrong place would show a wrong number that looks measured. Switch the read-out off, or
   close the app, before logging or flashing with the tuner's app or connecting a tester: they share the
   engine unit and its temporary identifiers.
@@ -265,7 +278,7 @@ percentage when it is linked to a tune that takes it. On MHD that is the MHD fle
   look with three dials, and can be chosen per car.
 - **A home-screen widget, on iDrive 7 only.** The same three temperatures and the status on the iDrive home
   screen. Whether it fills after a head-unit restart before the app has been opened is not tested yet:
-  see "Not tested". The kit builds home-screen widgets for iDrive 7 only, so an iDrive 8 car
+  see "Still open". The kit builds home-screen widgets for iDrive 7 only, so an iDrive 8 car
   (the curved display) does not get one.
 
 Where the logo is: the full logo on the horizontal screen and the announcement. The round dials, the widget
@@ -325,7 +338,8 @@ They can be changed on a car in the app's Settings, under Workshop settings.
   of warming has been measured with the engine running, and never as more than "over 60 min". An engine
   that has been off for 30 seconds starts the measuring afresh.
 - The numbers in these rules that are judgement, not measurement: 15 °C for a dip, two minutes of running,
-  30 seconds, twelve answers. Each is on the first-car list in [CHANGES-warmup.md](CHANGES-warmup.md).
+  30 seconds, twelve answers. Each is on the list of things to look at on a car in
+  [CHANGES-warmup.md](CHANGES-warmup.md) (section 4). No result from a car is recorded for any of them yet.
 
 ## Where the readings come from
 
@@ -404,9 +418,20 @@ build, which needs BMW's app SDK from your own head unit (kit README section 3.1
 
 # What has and has not been tested
 
-Tested on a PC, on these versions (18 Nov 2026, Node.js 24, all checks passed):
+On a car (reported 23 Nov 2026): Proven installed Gauges and Warm-Up on a car from this source through the
+MGU Store and used both. The workshop's report is that both work, so two things are no longer open: the
+Store builds and installs the apps from this source, and they run on a car. The source had offered Gauges
+1.1.0 and Warm-Up 1.3.0 since that morning; which version numbers the Store showed on the car is not
+recorded.
+What else that use covered is not recorded here either: which car and head unit, which screens and
+states, and whether any reading was compared with another tool. So every point under "Still open" below
+stays open. Versions 1.1.1 and 1.3.1 are the same code as 1.1.0 and 1.3.0, with BETA taken off the
+description.
 
-- **Gauges 1.1.0, 487 checks in five files.** `test_vitals.js` (133): the data layer with raw values as
+Tested on a PC (Node.js 24, all checks passed). The two sets of checks were run on 1.1.1 and 1.3.1 on
+23 Nov 2026; the other points below are from 1.1.0 and 1.3.0, which are the same code:
+
+- **Gauges 1.1.1, 487 checks in five files.** `test_vitals.js` (133): the data layer with raw values as
   the car sends them, "no value" markers, units, peaks, power. `test_engine_unit.js` (121): simulated
   engine and gearbox units that answer, refuse, keep quiet, sleep and wake. `test_ethanol.js` (55) and
   `test_mhdflex.js` (128): the ethanol read-out against simulated engine units, including which requests
@@ -415,7 +440,7 @@ Tested on a PC, on these versions (18 Nov 2026, Node.js 24, all checks passed):
   (48,522 calls to the car's diagnostic link compared over nineteen simulated scenarios). `test_screens.js` (50): all five sets drawn with the app's
   own main.js in states the demo never shows, checking that every letter has a glyph at the PC, iDrive 7
   and iDrive 8 text sizes and that no two texts overlap or leave the screen.
-- **Warm-Up 1.3.0, 350 checks in two files.** `test_warmup.js`: the decision (cold start to ready, the
+- **Warm-Up 1.3.1, 350 checks in two files.** `test_warmup.js`: the decision (cold start to ready, the
   holds, dips, the gearbox left out or on its last reading, too hot, no readings, the time to ready, the
   presets as shipped). `test_warmup_car.js` (161 of the 350): the built app on a stand-in car, reading
   the status line, the rows, the widget's lines and every request sent to the gearbox unit, through
@@ -439,12 +464,14 @@ Checked on earlier versions only (1.2.x and 1.0.x), not repeated on these:
   placed with the kit's iDrive 8 screen figures (app area 2880 x 764 above the climate bar) without
   errors. The kit itself marks those figures "not measured on a car yet"
 
-Not tested:
+Still open:
 
-- **on a car, or on a head unit of any kind.** Compare every reading with a tool you trust (the dealer
-  tool, a logger) before relying on it.
-- **the ethanol read-out on any car**, in any of its three choices. For the MHD flex choice in
-  particular: whether the head unit reaches the engine unit on the car, whether another MHD or program
+- **anything not named above as done on the car.** Which gauge sets, settings, states and warnings were
+  seen on the first car is not recorded, so each of them counts as checked on a PC only.
+- **the readings against a second tool.** No comparison from a car is recorded here. Compare every
+  reading with a tool you trust (the dealer tool, a logger) before relying on it.
+- **the ethanol read-out.** No result from a car is recorded for any of its three choices. For the MHD
+  flex choice in particular: whether the head unit reaches the engine unit on the car, whether another MHD or program
   version keeps the same memory places, and what an engine unit without the tune answers to the probe.
   The S58 is not supported yet.
 - what the car's engine-speed signal does when the engine is switched off (0, a run-down value, "no
@@ -460,9 +487,10 @@ Not tested:
 - whether the car names its display units on every head unit, whether the sport display's boost really
   stops at 25.4 psi, and how often the car sends the two accelerations at a standstill.
 - the power figure on a tuned car: the engine unit's torque figure is not verified there.
-- **the new screen texts on a head unit.** They were drawn on a PC with the kit's software drawing code
-  and fitted their places. They have not been through the GPU renderer or a car. The small widget's text
-  lines are drawn by the head unit itself and have not been seen at all.
+- **the screen texts on a head unit.** All of them were drawn on a PC with the kit's software drawing
+  code and fitted their places. The apps have now been used on a car, but which texts and states were
+  seen there is not recorded. Count these as not yet seen on a head unit: the warnings, "not
+  answering", and the small widget's text lines, which the head unit draws itself.
 - the timing of Warm-Up's full-screen announcement (15 seconds, once in 10 minutes), the guarded timers,
   and Gauges' Thermal line and start-up logo timing are not covered by a test that ships here.
 - **the home-screen widget after a head-unit restart, without opening the app.** If the widget stays
@@ -470,8 +498,9 @@ Not tested:
   promised "without opening the app".
 - whether each car gives an engine oil temperature on the signal Warm-Up reads. Where it gives none,
   Warm-Up stays on "Warming up".
-- iDrive 8 beyond the build step and the placement figures above.
-- the MGU Store building the apps from this source.
+- **which head unit the apps have run on.** Whether the first car has iDrive 7 or iDrive 8 is not
+  recorded here, so neither is confirmed on a car. For iDrive 8 the PC evidence is only the build step
+  and the placement figures above.
 
 # Licence and credits
 

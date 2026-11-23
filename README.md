@@ -1,8 +1,9 @@
 > **This repository is Proven Performance Solutions' copy of the open-source idrive7-apps kit**
 > ([cauliflowermossgrape/idrive7-apps](https://github.com/cauliflowermossgrape/idrive7-apps), MIT, as of
 > commit 422957a) with two apps added: Proven Gauges and Proven Warm-Up. As an MGU Store source it
-> offers only those two: see [proven/README.md](proven/README.md). Both are beta and have not run on a
-> car yet.
+> offers only those two: see [proven/README.md](proven/README.md). Proven has installed both through the
+> Store and run them on a car (reported 23 Nov 2026). How little is recorded of that, and what is still
+> open, is in proven/README.md: no comparison of a reading with another tool is recorded yet.
 >
 > The two Proven apps (`apps/pps_gauges`, `apps/pps_warmup`), `proven/` and the Proven name and logo are
 > Proven Performance Solutions' own work and are not under the kit's MIT licence: see the `NOTICE` file
