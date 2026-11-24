@@ -2,7 +2,7 @@
  "id": "pps_gauges",
  "title": "Proven Gauges",
  "description": "Proven Performance Solutions gauge sets: Street, Track, Boost, Thermal and Tyres. A guide only: check against a gauge you trust",
- "version": "1.1.1",
+ "version": "1.1.2",
  "vendor": "Proven Performance Solutions",
  "loggingId": "PPG1",
  "iconGlyph": "gauge",

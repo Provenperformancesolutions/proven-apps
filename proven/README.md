@@ -3,10 +3,10 @@
 Three apps for BMW MGU head units (iDrive 7 and iDrive 8) by Proven Performance Solutions, built on the
 open-source idrive7-apps kit:
 
-- **Proven Gauges** 1.1.1 (`apps/pps_gauges`): five gauge sets
-- **Proven Warm-Up** 1.3.1 (`apps/pps_warmup`): tells the driver to keep below 4,000 rpm until engine oil,
+- **Proven Gauges** 1.1.2 (`apps/pps_gauges`): five gauge sets
+- **Proven Warm-Up** 1.3.2 (`apps/pps_warmup`): tells the driver to keep below 4,000 rpm until engine oil,
   gearbox oil and coolant are up to temperature, with Proven's temperatures built in
-- **Proven Drag** 1.0.0 (`apps/pps_drag`): times standing-start runs from the car's own speed signal:
+- **Proven Drag** 1.0.1 (`apps/pps_drag`): times standing-start runs from the car's own speed signal:
   0-100 km/h, 60 ft, 1/8 mile and 1/4 mile, with trap speeds. **BETA, not yet on a car**
 
 > **Proven Gauges and Proven Warm-Up: no longer BETA (23 Nov 2026).** Proven installed these two apps on
@@ -14,6 +14,8 @@ open-source idrive7-apps kit:
 > that use: not which car or head unit (iDrive 7 or iDrive 8), not which screens were seen, not whether
 > any reading was compared with another tool. See "What has and has not been tested" for what was
 > checked on a PC only and what is still open.
+> That was with the font the apps had before. Since 1.1.2 and 1.3.2 they draw their text in a new
+> font, Rajdhani. The new font has been checked on a PC only: nothing has run on a car with it yet.
 > As shipped, the apps only read values the car already has.
 > There is one exception, and it is switched off until a workshop chooses it: the "MHD flex" ethanol
 > reading in Gauges sends three requests to the engine unit that are not reads (see "The ethanol
@@ -45,6 +47,42 @@ The GPU renderer and the controller gate the apps need come from the Store's bui
 
 ## What changed
 
+**New font, November 2026: Gauges 1.1.2, Warm-Up 1.3.2, Drag 1.0.1**
+
+- **All three apps now draw their text in Rajdhani**, a free font (Copyright (c) 2014 Indian Type
+  Foundry, SIL Open Font Licence 1.1). Before, they used the kit's Ubuntu font.
+- **The new look has been checked on a PC only. It has not been on a car.** Proven Gauges and Proven
+  Warm-Up have run on a car with the font before. Proven Drag has not been on a car at all, and is
+  still BETA.
+- **What stays in the car's own font**: everything the head unit draws itself. That is the Store's own
+  screens, such as its settings list, the app's name in the head unit's menu, the head unit's own
+  button bar and its own settings screen, and the text lines of Warm-Up's small home-screen widget.
+  Where the kit draws the whole screen itself (GPU renderer, full-screen layout), the header with the
+  tabs and the list of settings are the kit's, and they are in Rajdhani too.
+- **Digits take the same room each.** Rajdhani gives every digit its own width. Left like that, a
+  running clock would shake and a unit would move as the digits change. So every digit has the room of
+  the widest one, as in the font before. A 1 and a 7 have more space around them for it.
+- **The degree sign is drawn larger.** Rajdhani's own ring is small and thin. Beside a temperature it
+  was a faint speck. It is drawn 1.4 times as large, in the same place and in the same room, so no
+  text moved. It is still Rajdhani's ring.
+- **Nothing else changed, with one exception.** On the Track set of Gauges the Speed panel is wider
+  (372 px, was 330) and the two tiles beside it are narrower. From 100 km/h on, the speed's unit ran
+  into the gear's letter there: in M with the font before, in D, S and M with the new one.
+- What the apps read from the car, what they work out and what they save is the same code as before.
+  Of the apps' files, only `apps/pps_gauges/main.js` (that panel) and the version number in each
+  `app.json` changed. In `kit/`, the five text atlases changed, the font's licence was added, and one
+  paragraph was added to the header of the Ubuntu licence file (`UFL-Ubuntu.txt`, two copies: see
+  "Licence and credits"). Nothing else in `kit/` changed. This lists exactly those files (bad68cb is
+  where this source stood before the new font):
+
+  ```
+  git diff --stat bad68cb HEAD -- apps kit
+  ```
+- The three version numbers went up because the Store offers an update only when the version is
+  higher. Proven Drag's Store description is the same.
+- The sizes, what was checked and how, and what only a car can show are in
+  [CHANGES-font.md](CHANGES-font.md).
+
 **Proven Drag 1.0.0, BETA (November 2026)**
 
 - **A third app: Proven Drag**, a timer for standing-start runs. It times 0-100 km/h (or 0-60 mph),
@@ -55,12 +93,13 @@ The GPU renderer and the controller gate the apps need come from the Store's bui
   "BETA, not yet tested on a car", and every tab of the app carries a BETA badge.
 - It only reads values from the car, and it is for closed roads and track days only.
 - The source now lists three components. Installing Proven Drag is optional.
-- **Nothing changed in Proven Gauges and Proven Warm-Up.** They are still 1.1.1 and 1.3.1, and no file
-  in `apps/pps_gauges`, `apps/pps_warmup` or `kit/` was touched. To see it for yourself (376bb5e is
-  where this source stood before Proven Drag was added), this prints nothing:
+- **Nothing changed in Proven Gauges and Proven Warm-Up with it.** They stayed 1.1.1 and 1.3.1, and
+  no file in `apps/pps_gauges`, `apps/pps_warmup` or `kit/` was touched. To see it for yourself
+  (376bb5e is where this source stood before Proven Drag was added, bad68cb where it stood with it),
+  this prints nothing:
 
   ```
-  git diff 376bb5e HEAD -- apps/pps_gauges apps/pps_warmup kit
+  git diff 376bb5e bad68cb -- apps/pps_gauges apps/pps_warmup kit
   ```
 - How the app was built, what two reviews and the checks after them found, every figure in it that is
   a guess and what to look at on a first car are in [CHANGES-drag.md](CHANGES-drag.md).
@@ -609,8 +648,9 @@ that costs.
 
 The apps are written for the open-source **idrive7-apps kit**
 (https://github.com/cauliflowermossgrape/idrive7-apps, MIT), as of 16 Nov 2026 (commit 422957a). This
-repository is a copy of that kit with the three Proven apps added. The kit's own README, at the top level
-of this repository, is the reference for building apps.
+repository is a copy of that kit with the three Proven apps added, and with the kit's five text
+atlases made again from another font (see "The font"). The kit's own README, at the top level of this
+repository, is the reference for building apps.
 
 - `mgu-repo.json` lists the three apps by name under `"components"`, so the Store offers only those
   three. The kit's other apps are here as source and are not offered from this source.
@@ -623,11 +663,40 @@ of this repository, is the reference for building apps.
 - `proven/tools/` holds the generators of the three `app.json` files (they are not edited by hand) and
   the tests. `fakecar.js` and `warmup_bench.js` are the stand-in cars the tests run Gauges and Warm-Up
   on. For Proven Drag, `dragsim.js` is a run with known answers and `fakedrag.js` is the stand-in car
-  and head unit.
+  and head unit. `bake_proven_fonts.py` makes the text atlases. `textfit.js` holds the rules for where
+  a text may stand, for `test_fonts.js` and `test_drag_car.js`.
+
+## The font
+
+The head unit cannot draw a font for an app. The kit draws text from five prepared files, the atlases
+in `kit/runtime/fonts` (`label`, `bold`, `num`, `light`, `gear`). In this copy they are baked from
+Rajdhani by `proven/tools/bake_proven_fonts.py`, and all three apps, like every app built from this
+copy, draw with them. The kit's other apps are not offered from this source, and their screens were
+not checked with this font. `kit/tools/bake_fonts.py`, which the kit's README names, would put the
+Ubuntu atlases back. The kit's separate atlases for Chinese, Korean and Cyrillic text did not change.
+
+To bake the font again you need Python 3 with Pillow (11.3.0 was used) and the Rajdhani files
+`Rajdhani-Regular.ttf`, `-Medium.ttf`, `-SemiBold.ttf` and `-Bold.ttf` from
+https://github.com/google/fonts/tree/main/ofl/rajdhani. They are not in this repository. The tool also
+reads the kit's original Ubuntu atlases, for the eleven characters of the kit's set that Rajdhani
+does not have (see "Licence and credits"). It must not be given the files it is about to write, so
+take the originals out of commit bad68cb first:
+
+```
+mkdir ubuntu-atlases
+for f in label bold num light gear; do git show bad68cb:kit/runtime/fonts/$f.json > ubuntu-atlases/$f.json; done
+python3 proven/tools/bake_proven_fonts.py <folder with the .ttf files> ubuntu-atlases kit/runtime/fonts
+```
+
+How large each family is drawn is set by five factors at the top of the tool. Two more settings are
+there: every digit in the same room, and the degree sign drawn 1.4 times as large. Run twice, the tool
+writes the same files. After a bake, build the three apps and run every test below.
+[CHANGES-font.md](CHANGES-font.md) has the factors and what they do.
 
 ## Look at them on a PC (no car, no SDK)
 
-Needs Python 3 and Node.js 14 or newer. The Proven Drag commands were run on Node.js 24 only.
+Needs Python 3 and Node.js 14 or newer. The Proven Drag commands and `test_fonts.js` were run on
+Node.js 24 only.
 
 ```
 python3 kit/tools/build.py --preview-only pps_gauges
@@ -637,19 +706,22 @@ node proven/tools/test_engine_unit.js dist/pps_gauges
 node proven/tools/test_ethanol.js dist/pps_gauges
 node proven/tools/test_mhdflex.js dist/pps_gauges
 node proven/tools/test_screens.js dist/pps_gauges pictures-gauges
+node proven/tools/test_fonts.js dist/pps_gauges pictures-gauges-sizes
 
 python3 kit/tools/build.py --preview-only pps_warmup
 node kit/tools/preview.js dist/pps_warmup preview-warmup wait=8 render wait=45 render
 node proven/tools/test_warmup.js dist/pps_warmup
+node proven/tools/test_fonts.js dist/pps_warmup pictures-warmup-sizes
 
 python3 kit/tools/build.py --preview-only pps_drag
 node kit/tools/preview.js dist/pps_drag preview-drag render wait=2 render wait=4 render wait=12 render BTN_PAGE BTN_PAGE BTN_PAGE
 node proven/tools/test_drag.js dist/pps_drag
 node proven/tools/test_drag_car.js dist/pps_drag pictures-drag
+node proven/tools/test_fonts.js dist/pps_drag
 ```
 
-The checks as they stand: Gauges 133, 121, 55, 128 and 50 in the order above (487), Warm-Up 350,
-Proven Drag 408 and 312 (720). Each file ends with its count and "ALL OK".
+The checks as they stand: Gauges 133, 121, 55, 128, 50 and 44 in the order above (531), Warm-Up 350
+and 94 (444), Proven Drag 408, 312 and 14 (734). Each file ends with its count and "ALL OK".
 
 `preview.js` writes PNGs of what the app draws from its demo drive (it switches demo data on). Gauges
 shows its start-up logo first, so the early pictures are the logo and the last one is the gauge set;
@@ -657,7 +729,10 @@ shows its start-up logo first, so the early pictures are the logo and the last o
 about 50 seconds; it shows no time figure, because that needs a minute of measuring. `test_screens.js`
 with a folder as its second argument saves a picture of every state it draws, including ones the demo
 drive never shows (a car that sends nothing, a unit that does not answer, the ethanol strip).
-`test_warmup.js` runs `test_warmup_car.js` as its last part. The kit's live emulator
+`test_warmup.js` runs `test_warmup_car.js` as its last part. `test_fonts.js` checks the font and where
+every text stands, one app per run. With a folder it saves each state at the PC's size and as it is
+drawn for iDrive 7 and iDrive 8 (`-id7.png`, `-id8.png`). `test_drag_car.js` saves those two sizes
+too with `sizes` as its third argument. The kit's live emulator
 (`node kit/tools/emu.js pps_gauges`, kit README section 6.4) shows an app moving, but it runs the full
 build, which needs BMW's app SDK from your own head unit (kit README section 3.1).
 
@@ -688,12 +763,14 @@ What else that use covered is not recorded here either: which car and head unit,
 states, and whether any reading was compared with another tool. That car has no flex-fuel sensor, so the
 ethanol read-out stayed off. So every point under "Still open" below
 stays open. Versions 1.1.1 and 1.3.1 are the same code as 1.1.0 and 1.3.0, with BETA taken off the
-description.
+description. Versions 1.1.2 and 1.3.2 have the new font and, in Gauges, the wider Speed panel on the
+Track set. They have not been on a car.
 
-Tested on a PC (Node.js 24, all checks passed). The two sets of checks were run on 1.1.1 and 1.3.1 on
-23 Nov 2026; the other points below are from 1.1.0 and 1.3.0, which are the same code:
+Tested on a PC (Node.js 24, all checks passed). The checks were run on 1.1.2 and 1.3.2 on
+24 Nov 2026, with the new font. The other points below are from 1.1.0 and 1.3.0, whose code is the
+same but for the font and that one panel:
 
-- **Gauges 1.1.1, 487 checks in five files.** `test_vitals.js` (133): the data layer with raw values as
+- **Gauges 1.1.2, 531 checks in six files.** `test_vitals.js` (133): the data layer with raw values as
   the car sends them, "no value" markers, units, peaks, power. `test_engine_unit.js` (121): simulated
   engine and gearbox units that answer, refuse, keep quiet, sleep and wake. `test_ethanol.js` (55) and
   `test_mhdflex.js` (128): the ethanol read-out against simulated engine units, including which requests
@@ -701,12 +778,20 @@ Tested on a PC (Node.js 24, all checks passed). The two sets of checks were run 
   flex, the app sends the same requests at the same moments as it did before that choice was added
   (48,522 calls to the car's diagnostic link compared over nineteen simulated scenarios). `test_screens.js` (50): all five sets drawn with the app's
   own main.js in states the demo never shows, checking that every letter has a glyph at the PC, iDrive 7
-  and iDrive 8 text sizes and that no two texts overlap or leave the screen.
-- **Warm-Up 1.3.1, 350 checks in two files.** `test_warmup.js`: the decision (cold start to ready, the
+  and iDrive 8 text sizes and that no two texts overlap or leave the screen. `test_fonts.js` (44): the
+  new font. The five atlases in the built app, with every digit in the same room, every text as
+  wide from each atlas, a degree sign large enough to show, and each atlas saying what it was made
+  from. The five sets in 15
+  states of the car, with every figure at its widest among them, each drawn at the PC, iDrive 7 and
+  iDrive 8 text sizes: no text lies on another, leaves the page or crosses the edge of its panel. The
+  header and the list of settings as the kit draws them.
+- **Warm-Up 1.3.2, 444 checks in three files.** `test_warmup.js`: the decision (cold start to ready, the
   holds, dips, the gearbox left out or on its last reading, too hot, no readings, the time to ready, the
   presets as shipped). `test_warmup_car.js` (161 of the 350): the built app on a stand-in car, reading
   the status line, the rows, the widget's lines and every request sent to the gearbox unit, through
-  switch-off, start-stop, a locked car, a manual car, refusals and a clock set back.
+  switch-off, start-stop, a locked car, a manual car, refusals and a clock set back. `test_fonts.js`
+  (94): the new font. The screen in 20 states, as bars and as dials, in deg C and deg F, at the same
+  text sizes and by the same rules as for Gauges, with the picture of the widget each time.
 - Each fix was shown to fail on the version before it: the same tests run against the published 1.2.1 and
   1.0.3 fail at least one check for every fault listed in the two CHANGES files.
 - The Warm-Up decision was also put through about 16 million random sequences of readings with its rules
@@ -718,7 +803,7 @@ Every engine unit, gearbox unit and car in those tests is a stand-in written fro
 the Flex Fuel app's notes. The tests show what the apps do with such answers and what they send; they do
 not show what a real car answers.
 
-Checked on earlier versions only (1.2.x and 1.0.x), not repeated on these:
+Checked on earlier versions only (1.2.x and 1.0.x, with the font before), not repeated on these:
 
 - every gauge set and the Warm-Up screen and Settings in the kit's live emulator, which runs the car's
   own draw engine (the full-screen layout at 1920 x 720, tabs, Settings, Reset peaks on the page)
@@ -728,6 +813,10 @@ Checked on earlier versions only (1.2.x and 1.0.x), not repeated on these:
 
 Still open:
 
+- **the new font on a car.** Nothing has run on a car with it. The car's GPU renderer has never been
+  handed its atlases, and how the text reads at arm's length on the real screen is not known. The
+  digits of the big figures are about a fifth lower than in the font before.
+  [CHANGES-font.md](CHANGES-font.md), part 6, has the list.
 - **anything not named above as done on the car.** Which gauge sets, settings, states and warnings were
   seen on the first car is not recorded, so each of them counts as checked on a PC only.
 - **the readings against a second tool.** No comparison from a car is recorded here. Compare every
@@ -751,9 +840,10 @@ Still open:
   stops at 25.4 psi, and how often the car sends the two accelerations at a standstill.
 - the power figure on a tuned car: the engine unit's torque figure is not verified there.
 - **the screen texts on a head unit.** All of them were drawn on a PC with the kit's software drawing
-  code and fitted their places. The apps have now been used on a car, but which texts and states were
-  seen there is not recorded. Count these as not yet seen on a head unit: the warnings, "not
-  answering", and the small widget's text lines, which the head unit draws itself.
+  code and fitted their places. The apps have been used on a car, with the font before, but which
+  texts and states were seen there is not recorded. In the new font no text has been seen on a head
+  unit. Count these as not yet seen there in either font: the warnings, "not answering", and the
+  small widget's text lines, which the head unit draws itself.
 - the timing of Warm-Up's full-screen announcement (15 seconds, once in 10 minutes), the guarded timers,
   and Gauges' Thermal line and start-up logo timing are not covered by a test that ships here.
 - **the home-screen widget after a head-unit restart, without opening the app.** If the widget stays
@@ -774,7 +864,7 @@ sends, and they are not a statement of how exact the app is on a car.
 
 Tested on a PC (November 2026, all checks passed):
 
-- **720 checks in two files.** `test_drag.js` (408): the timing logic alone against runs with known
+- **734 checks in three files.** `test_drag.js` (408): the timing logic alone against runs with known
   answers (`dragsim.js`). It covers the launch instant, every split and trap speed, the three clock
   starts and mph, the ± figure, holes, lone wrong samples, samples stamped late, readings that are too
   high for a moment, clean launches of quick cars, the choice between the two ways the speed arrives,
@@ -785,6 +875,8 @@ Tested on a PC (November 2026, all checks passed):
   and one that does both; every optional group of signals missing in turn and all together; values
   that are nonsense; a downhill start; the saved file read back, damaged, from a newer version and not
   writable; demo runs never saved; and the head unit's clock set back in the middle of a run.
+  `test_fonts.js` (14): the new font's atlases in the built app, and the header and the list of
+  settings as the kit draws them for this app.
 - **The made-up cars.** The error tables of `test_drag.js` use 240 cars that do 0-100 km/h in 3.8 to
   9.6 s, with the acceleration building up over 0 to 0.3 s and 2 to 4 gear changes each. Each is
   launched at a random moment between two samples. Their speed signal reads every speed from 0 up, is
@@ -855,15 +947,16 @@ Tested on a PC (November 2026, all checks passed):
   or raw. The same search does find a position that is put there on purpose. One drive is also
   searched for the car's course and heading, and neither is found.
 - **The screens.** 507 frames in 52 states were drawn with the kit's software drawing code at the PC,
-  iDrive 7 and iDrive 8 text sizes, checking that every letter has a glyph and that no text lies on
-  another or leaves the page. Some of the pictures were looked at by eye, the rest by those rules only.
+  iDrive 7 and iDrive 8 text sizes, in the new font, checking that every letter has a glyph and that
+  no text lies on another, leaves the page or crosses the edge of the panel it stands in. Some of the
+  pictures were looked at by eye, the rest by those rules only.
 - **The level of JavaScript.** All 16 files of the app parse at the level the head unit runs
   (Node.js 8). They were not run on Node.js 8.
 - **The signals asked for.** The built app was held against the signal list of one iDrive 7 head unit,
   which is not in this repository. That unit has all seven groups and every signal the app asks for.
   It is one car.
 - The app was built with the kit's offline preview build, which is not installable. The checks of
-  Gauges and Warm-Up were run again in the same copy and pass as before (487 and 350).
+  Gauges and Warm-Up were run again in the same copy and pass (531 and 444).
 
 Two independent reviews and four rounds of checks after them, all on a PC:
 
@@ -999,9 +1092,12 @@ Not tested, and not known until a car has shown it:
   Whether the raw GPS height is read correctly: its scaling is reported from one car.
 - **The acceleration sensor**: whether it keeps sending while the car stands, whether plus really is
   nose up, and how high the wheelspin estimate reads on a clean launch.
-- **The settings screen.** The head unit draws it itself, and no build that has one was made.
-- **The screens on a head unit.** All were drawn on a PC with the kit's software drawing code. There
-  is no picture from the GPU renderer, none from the kit's live emulator and none from a car.
+- **The settings screen.** No build that has one was made. Where the kit runs the screen itself it
+  draws the list of settings, and that list was drawn on a PC in the new font. Elsewhere the head unit
+  draws its own settings screen, and none was built.
+- **The screens on a head unit.** All were drawn on a PC with the kit's software drawing code, now in
+  the new font. There is no picture from the GPU renderer, none from the kit's live emulator and none
+  from a car.
 - **Both iDrive generations.** Neither iDrive 7 nor iDrive 8 has run the app. For both, the only PC
   evidence is the screens drawn at the kit's own text sizes for them. Proven has measured neither on a
   car, and the kit marks its iDrive 8 screen figures "Not measured on a car yet".
@@ -1020,6 +1116,23 @@ times are an indication only.** What to look at on a first car, and in which ord
   level), except the GPU renderer in `kit/renderd` and the emulator's draw engine in `kit/emu`
   (GPL-3.0-or-later) and the Doom app with `third_party/doomgeneric` (GPL-2.0): see "Doom and renderer
   licences" in the kit's README. Fonts keep their own licences in their folders.
+- The font of the three apps is Rajdhani, Copyright (c) 2014 Indian Type Foundry, under the SIL Open
+  Font Licence 1.1: `kit/runtime/fonts/OFL-Rajdhani.txt`. Five characters it does not have are still
+  the Ubuntu font's (Ubuntu Font Licence 1.0, `kit/runtime/fonts/UFL-Ubuntu.txt`): superscript 2 and
+  3, the micro sign, the Greek mu and the tick. They are copied from the kit's Ubuntu atlases. Both
+  licence files go into every app the kit builds. The font files themselves are not in this repository.
+- Six more characters of the kit's set are in neither font: the four arrows, the box line and the
+  cross. In each of the kit's own atlases all six had one and the same picture, the Ubuntu font's
+  empty box for a missing character. That box is copied unchanged. So these six showed as an empty
+  box before the new font, and they still do. The three apps draw none of the six. Of the five above
+  they draw only the tick.
+- The header of `UFL-Ubuntu.txt` (in `kit/runtime/fonts` and in `kit/localization/fonts`) is the kit
+  authors' text. It says that the five atlases `bold.json`, `gear.json`, `label.json`, `light.json`
+  and `num.json` were made from the Ubuntu font. In this copy that holds only for the characters named
+  in the two points above. Everything else in the five atlases is Rajdhani, and `gear.json` holds
+  nothing of the Ubuntu font. So this copy adds one paragraph to that header which says exactly that.
+  The licence text below the header is unchanged. The file goes into every built app. Each atlas also
+  says in its own `"source"` line what it was made from.
 - The MHD flex ethanol reading (`apps/pps_gauges/mhdflex.js`) is adapted from the Flex Fuel app by Alex
   Perea (https://github.com/alexpereap/pereaperformance-idrive7-apps, MIT): its method, its requests and
   the two memory places for the B58 gen2. Its licence notice is in `apps/pps_gauges/NOTICE`.

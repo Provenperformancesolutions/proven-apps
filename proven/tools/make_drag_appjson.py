@@ -32,7 +32,7 @@ spec = {
     'title': 'Proven Drag',
     'description': ('BETA, not yet tested on a car. Times 0-100 km/h, 60 ft, 1/8 mile and 1/4 mile from the car\'s own speed, '
                     'wheel and GPS data. For closed roads and track days only'),
-    'version': '1.0.0',
+    'version': '1.0.1',
     'vendor': 'Proven Performance Solutions',
     'loggingId': 'PPD1',
     'iconGlyph': 'flag',

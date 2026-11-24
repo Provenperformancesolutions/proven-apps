@@ -44,7 +44,7 @@ spec = {
     'id': 'pps_warmup',
     'title': 'Proven Warm-Up',
     'description': 'Shows when engine oil, gearbox oil and coolant reach the warm-up temperatures set by Proven Performance Solutions. A guide only: it does not replace the car\'s own warnings',
-    'version': '1.3.1',
+    'version': '1.3.2',
     'vendor': 'Proven Performance Solutions',
     'loggingId': 'PPW1',
     'iconGlyph': 'temp',

@@ -7,7 +7,9 @@
  * file, the log, the flags, the words on the screens.
  *
  * The runs are dragsim.js's truth model, so every time has a known answer. With a folder as second argument
- * a picture of each screen state drawn is saved there (the kit's software renderer, PC size).
+ * a picture of each screen state drawn is saved there (the kit's software renderer, PC size). With "sizes" as
+ * third argument each state is also saved as it is drawn for iDrive 7 and iDrive 8 (<state>-<tab>-id7.png,
+ * -id8.png: 1.165 and 1.419 times the pixels, each glyph from the atlas that screen takes; the page alone).
  *
  * The parts whose names begin with "review" hold one check or more for every finding of the first review
  * that concerned the app around the logic: each failed on the app as it was reviewed, and its sentence says
@@ -22,9 +24,10 @@
 const fs = require('fs'), path = require('path');
 const sim = require('./dragsim');
 const { checker } = require('./fakecar');
+const fit = require('./textfit');
 
-if (!process.argv[2]) { console.error('usage: node proven/tools/test_drag_car.js dist/pps_drag [folder for pictures]'); process.exit(2); }
-const APP = path.resolve(process.argv[2]), OUT = process.argv[3] ? path.resolve(process.argv[3]) : null;
+if (!process.argv[2]) { console.error('usage: node proven/tools/test_drag_car.js dist/pps_drag [folder for pictures [sizes]]'); process.exit(2); }
+const APP = path.resolve(process.argv[2]), OUT = process.argv[3] ? path.resolve(process.argv[3]) : null, SIZED = process.argv[4] === 'sizes';
 const ok = checker();
 const bench = require('./fakedrag')(APP);
 const { boot, advance, clock } = bench;
@@ -108,13 +111,16 @@ async function screens(car, name, only) {
             frames++;
             // (the page ends at 512; on iDrive 7 its lowest panels reach 49 px further down, their texts do not move)
             faults(texts, 514).forEach((f) => bad.push(mode + ' ' + PAGES[p] + ': ' + f));
+            // (and no text crosses the edge of the panel, button or banner it stands in: textfit.js)
+            fit.crossings(texts, car.boxes).forEach((f) => bad.push(mode + ' ' + PAGES[p] + ': ' + f));
             if (mode === 'pc') { all[PAGES[p]] = texts; if (OUT) await car.save(OUT, name + '-' + PAGES[p]); }
+            else if (OUT && SIZED) car.saveSized(OUT, name + '-' + PAGES[p] + '-' + mode);
         }
     }
     car.mode = 'pc';
     await car.page(0);
     const errors = car.logged(/^ERROR |^WARN first render|\(\d+x\): /);
-    ok(bad.length === 0 && errors.length === 0, name + ': ' + (only === undefined ? 'the four tabs draw' : 'the ' + PAGES[only] + ' tab draws') + ' at PC, iDrive 7 and iDrive 8 size: every letter has its glyph, no text on another, none off the page' +
+    ok(bad.length === 0 && errors.length === 0, name + ': ' + (only === undefined ? 'the four tabs draw' : 'the ' + PAGES[only] + ' tab draws') + ' at PC, iDrive 7 and iDrive 8 size: every letter has its glyph, no text on another, none off the page or over the edge of its box' +
         (bad.concat(errors).length ? ':\n        ' + bad.concat(errors).slice(0, 14).join('\n        ') : ''));
     drawn[name] = all;
     return all;

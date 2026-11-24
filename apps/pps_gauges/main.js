@@ -193,13 +193,14 @@ mgu.run({
                 scale: { every: 1000, div: 1000 }, ramp: 'hot', limit: red, marks: [{ value: red, color: 'crit' }, { value: shiftPoint(), color: 'warn' }],
                 peak: showPk ? pk.rpm : null,
             });
-            // speed + gear
-            const p = G.panel(cv, t, 24, 320, 330, 192, 'Speed');
+            // speed + gear (wide enough for a three-digit speed, its unit and "M8" beside each other. At 330 px "km/h" ran
+            // into the gear's letter from 100 km/h on: into the M in the font before, into D, S and M in this one)
+            const p = G.panel(cv, t, 24, 320, 372, 192, 'Speed');
             drawSpeed(cv, t, d, 46, p.y + p.h - 30, 84);
-            drawGear(cv, t, d, 24 + 330 - 22, p.y + p.h - 30, 124);
-            // oil and coolant with their last 5 minutes
-            G.stat(cv, t, 370, 320, 323, 192, { label: 'Engine oil', value: T(d.oil), unit: tU(), size: 64, color: 'oil', zones: tempZones.oil(), history: hist.oil.map(T) });
-            G.stat(cv, t, 717, 320, 323, 192, { label: 'Coolant', value: T(d.coolant), unit: tU(), size: 64, zones: tempZones.coolant(), history: hist.coolant.map(T) });
+            drawGear(cv, t, d, 24 + 372 - 22, p.y + p.h - 30, 124);
+            // oil and coolant with their last 5 minutes (the two tiles share what the speed panel leaves)
+            G.stat(cv, t, 412, 320, 302, 192, { label: 'Engine oil', value: T(d.oil), unit: tU(), size: 64, color: 'oil', zones: tempZones.oil(), history: hist.oil.map(T) });
+            G.stat(cv, t, 738, 320, 302, 192, { label: 'Coolant', value: T(d.coolant), unit: tU(), size: 64, zones: tempZones.coolant(), history: hist.coolant.map(T) });
             // friction circle and the session's peak g
             G.panel(cv, t, 1064, 98, 512, 414, 'G-force');
             G.gmeter(cv, t, 1234, 296, 128, { lat: d.gLat, long: d.gLong, trail, max: 1.5, flipLong: settings.get('flipLong') });

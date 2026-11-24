@@ -1,7 +1,9 @@
 > **Note (Proven Performance Solutions' copy):** this page is the idrive7-apps kit's own text, unchanged.
 > This copy offers only Proven Gauges, Proven Warm-Up and Proven Drag (see [proven/README.md](proven/README.md)).
 > Proven Drag is BETA and has not been on a car. This copy does not include the kit's screenshots, its
-> fault-text database or the translation files made from it.
+> fault-text database or the translation files made from it. Since November 2026 the five text atlases
+> in `kit/runtime/fonts` are baked from the Rajdhani font in this copy, a few characters aside, and no
+> longer from the kit's Ubuntu font (see "The font" in proven/README.md).
 
 [English](README.md) | **简体中文（完整译文）**
 

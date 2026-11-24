@@ -125,6 +125,9 @@ module.exports = function (stageArg) {
         return blit0.apply(this, arguments);
     };
     rec.makeLayer = function (w, h, draw, ts) { let texts = []; const L = make0(w, h, (r) => { draw(r); texts = r._texts || []; }, ts); L._texts = texts; return L; };
+    // (and every box a text can stand in: a panel, a button, the state banner. textfit.js, for the rule that no text
+    // crosses the edge of its box)
+    require('./textfit').watch(rec, { texts: false });
 
     /* ---------- the stand-in car ---------- */
     function makeCar(o) {
@@ -389,8 +392,8 @@ module.exports = function (stageArg) {
         car.page = (i) => hu.display.onTab(i);
         /** Press a button of the HMI's bar. */
         car.press = (id) => hu.handlers[id]({});
-        /** Draw one frame of the page shown: the texts on it ({ s, x0, y, size, w, font }). */
-        car.draw = async () => { await hu.loopFn(); car.targets = (frame && frame.targets) || []; return ((frame && frame._texts) || []).slice(); };
+        /** Draw one frame of the page shown: the texts on it ({ s, x0, y, size, w, font }); car.boxes: the boxes on it. */
+        car.draw = async () => { await hu.loopFn(); car.targets = (frame && frame.targets) || []; car.boxes = ((frame && frame._boxes) || []).slice(); return ((frame && frame._texts) || []).slice(); };
         /** Press a button drawn on the page (where the kit runs the screen: modes id7, id8), by its key. */
         car.tap = (key) => { const t = car.targets.filter((x) => x.key === key)[0]; if (!t) throw new Error('no button "' + key + '" on the page'); return t.run(); };
         /** Save a picture of the page shown (the kit's software renderer, PC size). */
@@ -400,6 +403,15 @@ module.exports = function (stageArg) {
             await hu.loopFn();
             wantPng = false; car.mode = mode;
             if (car.picture) { fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, name + '.png'), Buffer.isBuffer(car.picture) ? car.picture : car.picture.png()); }
+        };
+        /**
+         * Save a picture of the page as last drawn for iDrive 7 or iDrive 8 (car.mode), at that screen's own pixel
+         * size: 1.165 or 1.419 times the PC's, each glyph from the atlas that screen takes (textfit.js picture).
+         */
+        car.saveSized = (dir, name) => {
+            if (car.mode === 'pc' || !frame) return;
+            const png = require('./textfit').picture(rec, require(path.join(JS, 'kit', 'canvas')), frame, car.mode === 'id7' ? 1.165 : 1.419).png();
+            fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, name + '.png'), png);
         };
         car.view = () => car.session.view(clock.mono);
         /** The lines of the log that match re (a line the app held back says so at its end: that note is taken off here). */

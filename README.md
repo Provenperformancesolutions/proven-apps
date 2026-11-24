@@ -12,6 +12,15 @@
 > the `NOTICE` file in each app folder. Where the kit's README below says "The repository is
 > MIT-licensed", it means the kit.
 >
+> Since November 2026 the three Proven apps draw their text in another font, Rajdhani. For that, the
+> kit's five text atlases in `kit/runtime/fonts` (label, bold, num, light, gear) are baked from
+> Rajdhani in this copy, by `proven/tools/bake_proven_fonts.py`. The new font has been checked on a PC
+> only: the car that ran Gauges and Warm-Up ran them with the font before. Where the kit's README
+> below says its fonts are the Ubuntu family and are baked with `kit/tools/bake_fonts.py`, it means
+> the kit as its authors publish it. In this copy only a few characters in those five atlases are
+> still the Ubuntu font's, and the header of the Ubuntu licence file (`UFL-Ubuntu.txt`) has a
+> paragraph that says so. See "The font" and "Licence and credits" in proven/README.md.
+>
 > Everything below this note is the kit's own README, unchanged. Its other apps are the kit authors'
 > work and are not offered from this source. Not in this copy: the kit's screenshots and animations
 > (`docs/media`, `docs/screens`), so the pictures below do not load here (see them in the kit's own

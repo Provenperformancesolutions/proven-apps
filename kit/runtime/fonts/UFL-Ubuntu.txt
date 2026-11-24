@@ -3,6 +3,13 @@ The glyph atlases bold.json, gear.json, label.json, light.json and num.json in k
 and cyrillic-ru.json in kit/localization/fonts were made from it (kit/tools/bake_fonts.py,
 kit/tools/bake_cyrillic.py).
 
+Added by Proven Performance Solutions for this copy, its Store source. The sentence above is the kit
+authors' and holds for the kit as they publish it. In this copy the five atlases in kit/runtime/fonts
+are made from the Rajdhani font instead (kit/runtime/fonts/OFL-Rajdhani.txt). bold.json, label.json,
+light.json and num.json keep these characters of the Ubuntu font: superscript 2 and 3, the Greek mu, the
+tick and the font's empty box for a missing character. light.json and num.json also keep its micro sign.
+gear.json keeps nothing of the Ubuntu font. cyrillic-ru.json is as the kit's authors made it.
+
 Copyright 2010 Canonical Ltd. Licensed under the Ubuntu Font Licence 1.0.
 Ubuntu and Canonical are registered trademarks of Canonical Ltd.
 Source: https://github.com/canonical/Ubuntu-Sans-fonts
