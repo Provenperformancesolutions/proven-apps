@@ -1,18 +1,20 @@
 > **This repository is Proven Performance Solutions' copy of the open-source idrive7-apps kit**
 > ([cauliflowermossgrape/idrive7-apps](https://github.com/cauliflowermossgrape/idrive7-apps), MIT, as of
-> commit 422957a) with three apps added: Proven Gauges, Proven Warm-Up and Proven Drag. As an MGU Store
-> source it offers only those three: see [proven/README.md](proven/README.md). Proven has installed
-> Proven Gauges and Proven Warm-Up through the Store and run them on a car (reported 23 Nov 2026). How
-> little is recorded of that, and what is still open, is in proven/README.md: no comparison of a reading
-> with another tool is recorded yet. **Proven Drag is BETA and has not been on a car.** It was checked on
-> a PC only, and no time from it has been compared with a timeslip or a GPS timer.
+> commit 422957a) with four apps added: Proven Gauges, Proven Warm-Up, Proven Drag and Proven Drift. As
+> an MGU Store source it offers only those four: see [proven/README.md](proven/README.md). Proven has
+> installed Proven Gauges and Proven Warm-Up through the Store and run them on a car (reported 23 Nov
+> 2026). How little is recorded of that, and what is still open, is in proven/README.md: no comparison
+> of a reading with another tool is recorded yet. **Proven Drag and Proven Drift are BETA and have not
+> been on a car.** They were checked on a PC only: no time from Proven Drag has been compared with a
+> timeslip or a GPS timer, and no drift angle from Proven Drift with anything. Proven Drift is for
+> closed circuits and skid pans only.
 >
-> The three Proven apps (`apps/pps_gauges`, `apps/pps_warmup`, `apps/pps_drag`), `proven/` and the Proven
-> name and logo are Proven Performance Solutions' own work and are not under the kit's MIT licence: see
-> the `NOTICE` file in each app folder. Where the kit's README below says "The repository is
-> MIT-licensed", it means the kit.
+> The four Proven apps (`apps/pps_gauges`, `apps/pps_warmup`, `apps/pps_drag`, `apps/pps_drift`),
+> `proven/` and the Proven name and logo are Proven Performance Solutions' own work and are not under
+> the kit's MIT licence: see the `NOTICE` file in each app folder. Where the kit's README below says
+> "The repository is MIT-licensed", it means the kit.
 >
-> Since November 2026 the three Proven apps draw their text in another font, Rajdhani. For that, the
+> Since November 2026 the Proven apps draw their text in another font, Rajdhani. For that, the
 > kit's five text atlases in `kit/runtime/fonts` (label, bold, num, light, gear) are baked from
 > Rajdhani in this copy, by `proven/tools/bake_proven_fonts.py`. The new font has been checked on a PC
 > only: the car that ran Gauges and Warm-Up ran them with the font before. Where the kit's README

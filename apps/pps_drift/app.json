@@ -1,0 +1,499 @@
+{
+ "id": "pps_drift",
+ "title": "Proven Drift",
+ "description": "BETA, not yet tested on a car. Scores drifts by angle, speed and length and keeps the data of each drift, from the car's own motion sensors. For closed circuits and skid pans only",
+ "version": "1.0.0",
+ "vendor": "Proven Performance Solutions",
+ "loggingId": "PPF1",
+ "iconGlyph": "gforce",
+ "mguHmi": [
+  "ID7",
+  "ID8"
+ ],
+ "requires": {
+  "idrive7-renderd": "2.1.18",
+  "mgu-inputgate": "1.1.0"
+ },
+ "signals": {
+  "de.bmw.infotainment.vehicle.Vehicle2": {
+   "statusCarSpeed2": "rs"
+  },
+  "de.bmw.infotainment.vehicle.CDS2": {
+   "statusLateralAccelerationMassCenter": "rs",
+   "statusLongitudinalAccelerationMassCenter": "rs",
+   "statusYawVelocityVehicle": "rs"
+  },
+  "de.bmw.chassis.SpeedAcceleration": {
+   "_optional": "no second source of the yaw rate",
+   "YawSpeedVehicle": "s"
+  },
+  "de.bmw.chassis.SteeringAngle": {
+   "_optional": "the steering check and the opposite lock then need the steering from XView",
+   "SteeringAngleFrontAxleEffective": "s",
+   "ActualSteeringAngleDriver": "s"
+  },
+  "de.bmw.infotainment.drivingexcitement.XView": {
+   "_optional": "no second source of the steering",
+   "statusFrontAxleSteeringAngle": "rs",
+   "statusSteeringAngleDriver": "rs"
+  },
+  "de.bmw.powertrain.AcceleratorPedal": {
+   "_optional": "no accelerator pedal bar and no average pedal",
+   "AngleAcceleratorPedal": "s"
+  },
+  "de.bmw.powertrain.Powertrain": {
+   "_optional": "no rear wheelspin, and learning cannot check that the rear wheels grip",
+   "ActualValueRPMWheel": "s"
+  },
+  "de.bmw.infotainment.vehicle.CDS": {
+   "_optional": "the handbrake is not known",
+   "statusHandBrake": "rs"
+  },
+  "de.bmw.infotainment.drivingexcitement.FES": {
+   "_optional": "the DSC button state is not shown",
+   "statusDSCSwitchHMI": "rs"
+  },
+  "de.bmw.chassis.DrivingVector": {
+   "_optional": "the car's own motion estimate is not shown (study only)",
+   "ActualVectorVehicleMove": "s",
+   "VehicleDynamicDataEstimatedVerified": "s"
+  },
+  "de.bmw.infotainment.misc.MDrive": {
+   "_optional": "BMW's own drift analyser is not shown (study only)",
+   "statusDriftLast": "rs",
+   "statusDriftBest": "rs"
+  },
+  "de.bmw.infotainment.SatellitePositioning": {
+   "_optional": "no GPS speed to check the car's speed against",
+   "_broadcasts": [
+    "updatePosition"
+   ]
+  }
+ },
+ "screens": [
+  {
+   "name": "MAIN",
+   "kind": "canvas",
+   "title": "Proven Drift",
+   "buttons": [
+    [
+     "BTN_PAGE",
+     "Next page"
+    ],
+    [
+     "BTN_PREV",
+     "Previous page"
+    ],
+    [
+     "BTN_SETTINGS",
+     "Settings"
+    ]
+   ]
+  }
+ ],
+ "settings": [
+  {
+   "key": "speedUnit",
+   "label": "Speed unit",
+   "type": "choice",
+   "default": "kmh",
+   "options": [
+    [
+     "kmh",
+     "km/h"
+    ],
+    [
+     "mph",
+     "mph"
+    ]
+   ]
+  },
+  {
+   "key": "startAngle",
+   "label": "A drift starts at",
+   "type": "choice",
+   "default": "10",
+   "options": [
+    [
+     "8",
+     "8 degrees"
+    ],
+    [
+     "10",
+     "10 degrees"
+    ],
+    [
+     "12",
+     "12 degrees"
+    ],
+    [
+     "15",
+     "15 degrees"
+    ],
+    [
+     "20",
+     "20 degrees"
+    ]
+   ]
+  },
+  {
+   "key": "minSpeed",
+   "label": "Slowest speed that counts",
+   "type": "choice",
+   "default": "20",
+   "options": [
+    [
+     "15",
+     "15 km/h (9 mph)"
+    ],
+    [
+     "20",
+     "20 km/h (12 mph)"
+    ],
+    [
+     "30",
+     "30 km/h (19 mph)"
+    ],
+    [
+     "40",
+     "40 km/h (25 mph)"
+    ]
+   ]
+  },
+  {
+   "key": "chassis",
+   "label": "Chassis",
+   "type": "choice",
+   "default": "g20",
+   "options": [
+    [
+     "g20",
+     "3 / 4 Series, M3, M4 (G2x, G8x): 2.85 m"
+    ],
+    [
+     "g42",
+     "2 Series Coupe, M2 (G42, G87): 2.74 m"
+    ],
+    [
+     "g30",
+     "5 Series, M5 (G30, F90): 2.98 m"
+    ],
+    [
+     "g14",
+     "8 Series, M8, two doors: 2.82 m"
+    ],
+    [
+     "g29",
+     "Z4 (G29): 2.47 m"
+    ],
+    [
+     "other",
+     "Other: set the wheelbase"
+    ]
+   ]
+  },
+  {
+   "key": "wheelbase",
+   "label": "Wheelbase",
+   "type": "number",
+   "default": 285,
+   "steps": [
+    230,
+    235,
+    240,
+    245,
+    250,
+    255,
+    260,
+    265,
+    270,
+    275,
+    280,
+    285,
+    290,
+    295,
+    300,
+    305,
+    310,
+    315,
+    320,
+    325,
+    330
+   ],
+   "labels": {
+    "230": "2.30 m",
+    "235": "2.35 m",
+    "240": "2.40 m",
+    "245": "2.45 m",
+    "250": "2.50 m",
+    "255": "2.55 m",
+    "260": "2.60 m",
+    "265": "2.65 m",
+    "270": "2.70 m",
+    "275": "2.75 m",
+    "280": "2.80 m",
+    "285": "2.85 m",
+    "290": "2.90 m",
+    "295": "2.95 m",
+    "300": "3.00 m",
+    "305": "3.05 m",
+    "310": "3.10 m",
+    "315": "3.15 m",
+    "320": "3.20 m",
+    "325": "3.25 m",
+    "330": "3.30 m"
+   },
+   "when": {
+    "chassis": "other"
+   }
+  },
+  {
+   "key": "workshop",
+   "label": "Workshop settings",
+   "type": "bool",
+   "default": false
+  },
+  {
+   "key": "yawSource",
+   "label": "Yaw rate from",
+   "type": "choice",
+   "default": "auto",
+   "when": {
+    "workshop": true
+   },
+   "options": [
+    [
+     "auto",
+     "Auto"
+    ],
+    [
+     "cds2",
+     "CDS2"
+    ],
+    [
+     "chassis",
+     "Chassis (SpeedAcceleration)"
+    ]
+   ]
+  },
+  {
+   "key": "steerSource",
+   "label": "Steering from",
+   "type": "choice",
+   "default": "auto",
+   "when": {
+    "workshop": true
+   },
+   "options": [
+    [
+     "auto",
+     "Auto"
+    ],
+    [
+     "front",
+     "Front wheels, chassis"
+    ],
+    [
+     "xfront",
+     "Front wheels, XView"
+    ],
+    [
+     "driver",
+     "Steering wheel, chassis"
+    ],
+    [
+     "xdriver",
+     "Steering wheel, XView"
+    ]
+   ]
+  },
+  {
+   "key": "useSteer",
+   "label": "Steering check",
+   "type": "bool",
+   "default": true,
+   "when": {
+    "workshop": true
+   }
+  },
+  {
+   "key": "useLong",
+   "label": "Forward acceleration",
+   "type": "choice",
+   "default": "use",
+   "when": {
+    "workshop": true
+   },
+   "options": [
+    [
+     "use",
+     "Use"
+    ],
+    [
+     "off",
+     "Leave out"
+    ]
+   ]
+  },
+  {
+   "key": "resetLearned",
+   "label": "Reset what was learned",
+   "type": "choice",
+   "default": "no",
+   "when": {
+    "workshop": true
+   },
+   "options": [
+    [
+     "no",
+     "No"
+    ],
+    [
+     "arm",
+     "Confirm: choose Reset now"
+    ],
+    [
+     "go",
+     "Reset now"
+    ]
+   ]
+  },
+  {
+   "key": "resetBest",
+   "label": "Reset bests",
+   "type": "choice",
+   "default": "no",
+   "when": {
+    "workshop": true
+   },
+   "options": [
+    [
+     "no",
+     "No"
+    ],
+    [
+     "arm",
+     "Confirm: choose Reset now"
+    ],
+    [
+     "go",
+     "Reset now"
+    ]
+   ]
+  },
+  {
+   "key": "theme",
+   "label": "Colour theme",
+   "type": "choice",
+   "default": "proven",
+   "options": [
+    [
+     "proven",
+     "Proven"
+    ],
+    [
+     "proven_red",
+     "Proven Red"
+    ],
+    [
+     "proven_blue",
+     "Proven Blue"
+    ],
+    [
+     "m_tricolour",
+     "M Tricolour"
+    ],
+    [
+     "m_red",
+     "M Red"
+    ],
+    [
+     "ice",
+     "Ice White"
+    ],
+    [
+     "amber",
+     "Night Amber"
+    ]
+   ]
+  },
+  {
+   "key": "layout",
+   "label": "Screen layout",
+   "type": "choice",
+   "default": "full",
+   "options": [
+    [
+     "full",
+     "Full screen"
+    ],
+    [
+     "standard",
+     "Standard"
+    ]
+   ]
+  },
+  {
+   "key": "renderer",
+   "label": "Renderer",
+   "type": "choice",
+   "default": "auto",
+   "options": [
+    [
+     "auto",
+     "GPU 60 fps (default)"
+    ],
+    [
+     "software",
+     "Software"
+    ]
+   ]
+  },
+  {
+   "key": "demo",
+   "label": "Demo data",
+   "type": "choice",
+   "default": "off",
+   "options": [
+    [
+     "auto",
+     "Auto"
+    ],
+    [
+     "on",
+     "Always"
+    ],
+    [
+     "off",
+     "Never"
+    ]
+   ]
+  }
+ ],
+ "config": {
+  "comment": "raw -> value * factor + offset; \"invalid\" = the car's \"no value\". Speed and acceleration scaling as in the idrive7-apps kit. The yaw rate, the steering, the pedal and the wheels have no scaling here: the app learns them (apps/pps_drift/learn.js). None of it has been measured by Proven.",
+  "scaling": {
+   "speed": {
+    "factor": 0.015625,
+    "offset": 0,
+    "invalid": 65535,
+    "unit": "km/h",
+    "member": "speedVehicleCentreOfGravity"
+   },
+   "lat": {
+    "factor": 0.002,
+    "offset": -65,
+    "invalid": 65535,
+    "unit": "m/s2",
+    "member": "lateralAccelerationCentreOfGravity"
+   },
+   "long": {
+    "factor": 0.002,
+    "offset": -65,
+    "invalid": 65535,
+    "unit": "m/s2",
+    "member": "longitudinalAccelerationCentreOfGravity"
+   }
+  }
+ }
+}

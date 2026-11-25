@@ -1,6 +1,7 @@
 > **Note (Proven Performance Solutions' copy):** this page is the idrive7-apps kit's own text, unchanged.
-> This copy offers only Proven Gauges, Proven Warm-Up and Proven Drag (see [proven/README.md](../proven/README.md)).
-> Proven Drag is BETA and has not been on a car. This copy does not include the kit's screenshots, its
+> This copy offers only Proven Gauges, Proven Warm-Up, Proven Drag and Proven Drift (see
+> [proven/README.md](../proven/README.md)). Proven Drag and Proven Drift are BETA and have not been on a car.
+> This copy does not include the kit's screenshots, its
 > fault-text database or the translation files made from it.
 
 # Simplified Chinese diagnostic descriptions
