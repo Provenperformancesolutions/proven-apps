@@ -176,6 +176,7 @@ class PollScheduler {
  *   next(ok)               -> the field to read next, in the order yaw, lat, yaw, lat, long (those that are
  *                             wanted, and that ok(key) allows), or null
  *   wanted()               -> the fields being read, for the log
+ *   off()                  nothing is to be read (1.0.1: the app reads getters only with "Ask the car for values" on)
  */
 class TopUp {
     constructor() {
@@ -211,6 +212,9 @@ class TopUp {
     }
 
     wanted() { return Object.keys(this.want).filter((k) => this.want[k]); }
+
+    /** Nothing is to be read (the app's own getter reads are switched off, or may not run right now). */
+    off() { Object.keys(this.want).forEach((k) => { this.want[k] = false; }); }
 }
 
 /* ---------- per-source counts and rates ---------- */

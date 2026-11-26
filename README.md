@@ -4,10 +4,18 @@
 > an MGU Store source it offers only those four: see [proven/README.md](proven/README.md). Proven has
 > installed Proven Gauges and Proven Warm-Up through the Store and run them on a car (reported 23 Nov
 > 2026). How little is recorded of that, and what is still open, is in proven/README.md: no comparison
-> of a reading with another tool is recorded yet. **Proven Drag and Proven Drift are BETA and have not
-> been on a car.** They were checked on a PC only: no time from Proven Drag has been compared with a
-> timeslip or a GPS timer, and no drift angle from Proven Drift with anything. Proven Drift is for
-> closed circuits and skid pans only.
+> of a reading with another tool is recorded yet.
+>
+> **Proven Drag (1.0.2) and Proven Drift (1.0.1) are BETA and still being tested on cars.** On the
+> first car (25 Nov 2026) the Store built and installed the versions before them, 1.0.1 and 1.0.0,
+> and both ran. But each closed by itself, and after the second time the platform removed the app.
+> Proven Gauges and Proven Warm-Up kept working on the same car. The cause is not known. As shipped,
+> versions 1.0.2 and 1.0.1 ask of the car only what apps that run on cars also ask, keep every extra
+> behind a setting that is switched off, and keep a record of how the app last stopped, shown on the
+> Signals tab. They are not a proven fix, and nothing of them has been on a car: see
+> proven/README.md. Proven Drag's times and Proven Drift's angles are an indication only. Proven
+> Drag is for closed roads and track days only. Proven Drift is for closed circuits and skid pans
+> only.
 >
 > The four Proven apps (`apps/pps_gauges`, `apps/pps_warmup`, `apps/pps_drag`, `apps/pps_drift`),
 > `proven/` and the Proven name and logo are Proven Performance Solutions' own work and are not under
@@ -16,8 +24,10 @@
 >
 > Since November 2026 the Proven apps draw their text in another font, Rajdhani. For that, the
 > kit's five text atlases in `kit/runtime/fonts` (label, bold, num, light, gear) are baked from
-> Rajdhani in this copy, by `proven/tools/bake_proven_fonts.py`. The new font has been checked on a PC
-> only: the car that ran Gauges and Warm-Up ran them with the font before. Where the kit's README
+> Rajdhani in this copy, by `proven/tools/bake_proven_fonts.py`. The new font was checked on a PC.
+> The reported use of Gauges and Warm-Up on a car was with the font before. Proven Drag 1.0.1 and
+> Proven Drift 1.0.0 draw with the new font and ran on one car, and nothing is recorded of how the
+> text read there. Where the kit's README
 > below says its fonts are the Ubuntu family and are baked with `kit/tools/bake_fonts.py`, it means
 > the kit as its authors publish it. In this copy only a few characters in those five atlases are
 > still the Ubuntu font's, and the header of the Ubuntu licence file (`UFL-Ubuntu.txt`) has a

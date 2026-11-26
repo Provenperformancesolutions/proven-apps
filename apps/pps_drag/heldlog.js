@@ -18,6 +18,8 @@
  *   log.set('write' | 'armed' | 'run')         session.js, every 50 ms
  *   log.safe(now)                              a moment at which writing is least in the way (see above)
  *   log.flush()
+ *   log.release()                              the app is being stopped (main.js): everything held is written now, and
+ *                                              nothing is held back from here on
  *
  * FIGURES THAT ARE GUESSES: at most 600 lines are kept (a run lasts 60 s at most and logs a few dozen;
  * if more come, the rest are counted and the count is logged); one write a second while armed.
@@ -40,8 +42,11 @@ class HeldLog {
         });
     }
 
+    /** The app is being stopped: write what is held, hold nothing back any more. */
+    release() { this.released = true; this.mode = 'write'; this.flush(); }
+
     set(mode) {
-        if (mode === this.mode) return;
+        if (this.released || mode === this.mode) return;
         this.mode = mode;
         if (mode === 'write') this.flush();
     }

@@ -1,8 +1,8 @@
 {
  "id": "pps_drag",
  "title": "Proven Drag",
- "description": "BETA, not yet tested on a car. Times 0-100 km/h, 60 ft, 1/8 mile and 1/4 mile from the car's own speed, wheel and GPS data. For closed roads and track days only",
- "version": "1.0.1",
+ "description": "BETA, still being tested on cars. Times 0-100 km/h, 60 ft, 1/8 mile and 1/4 mile from the car's own speed. For closed roads and track days only",
+ "version": "1.0.2",
  "vendor": "Proven Performance Solutions",
  "loggingId": "PPD1",
  "iconGlyph": "flag",
@@ -17,8 +17,8 @@
  "signals": {
   "de.bmw.infotainment.vehicle.Vehicle2": {
    "statusCarSpeed2": "rs",
-   "statusWheeltravel": "rs",
-   "statusWheeltravelRear": "rs"
+   "statusWheeltravel": "s",
+   "statusWheeltravelRear": "s"
   },
   "de.bmw.infotainment.vehicle.CDS2": {
    "statusLongitudinalAccelerationMassCenter": "rs"
@@ -35,13 +35,13 @@
   },
   "de.bmw.infotainment.GPSData": {
    "_optional": "the raw GPS position and height: position legs then use the navigation's position, and there is no second source of height",
-   "GPSPositionCAN": "rs",
-   "GPSPositionExtendedCAN": "rs"
+   "GPSPositionCAN": "s",
+   "GPSPositionExtendedCAN": "s"
   },
   "de.bmw.infotainment.navigation.positioning.Positioning": {
    "_optional": "the navigation's position: position legs then need the raw GPS position",
    "_instances": "Main_Instance",
-   "currentLocation": "rs"
+   "currentLocation": "s"
   },
   "de.bmw.chassis.VehicleModel": {
    "_optional": "the car's own road gradient on the Signals page (shown for study only, never used in a result)",
@@ -131,6 +131,12 @@
    ]
   },
   {
+   "key": "gps",
+   "label": "GPS speed scale (off takes full effect after a restart)",
+   "type": "bool",
+   "default": false
+  },
+  {
    "key": "workshop",
    "label": "Workshop settings",
    "type": "bool",
@@ -147,7 +153,7 @@
    "options": [
     [
      "gps",
-     "GPS (calibrates while driving)"
+     "GPS factor (if one is learned)"
     ],
     [
      "off",
@@ -237,6 +243,51 @@
    "when": {
     "workshop": true,
     "scale": "manual"
+   }
+  },
+  {
+   "key": "askCar",
+   "label": "Ask the car for values (study)",
+   "type": "bool",
+   "default": false,
+   "when": {
+    "workshop": true
+   }
+  },
+  {
+   "key": "xWheels",
+   "label": "Wheel speeds, study (off takes full effect after a restart)",
+   "type": "bool",
+   "default": false,
+   "when": {
+    "workshop": true
+   }
+  },
+  {
+   "key": "xPos",
+   "label": "Positions, study (off takes full effect after a restart)",
+   "type": "bool",
+   "default": false,
+   "when": {
+    "workshop": true
+   }
+  },
+  {
+   "key": "xStudy",
+   "label": "Wheel travel, gradient, study (off takes full effect after a restart)",
+   "type": "bool",
+   "default": false,
+   "when": {
+    "workshop": true
+   }
+  },
+  {
+   "key": "xSignals",
+   "label": "Note stop signals, study (while on, an app that hangs is not ended by one)",
+   "type": "bool",
+   "default": false,
+   "when": {
+    "workshop": true
    }
   },
   {

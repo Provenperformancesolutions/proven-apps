@@ -1,8 +1,21 @@
-# Proven Drag 1.0.0: what was built, what is assumed, what to check on a car
+# Proven Drag: what was built, what is assumed, what to check on a car
 
-BETA. Nothing here has run on a car or on a head unit. Everything below was checked on a PC only
-(a Mac, Node.js 24). The head unit runs Node.js 8: the app's files were parsed as ES2017 and scanned for
-newer library calls, they were not run on Node 8.
+BETA, still being tested on cars. Version 1.0.2 is the first one made after the app had been on a car:
+**part 11, "After the first car", says what that car showed, what was changed for it and what is not
+known. Part 12, "After the two checks of 1.0.2", says what two independent checks of that build found
+and what was repaired; where part 12 and part 11 disagree, part 12 holds. Part 13, "After the last read
+of 1.0.2", says what one more read found in that repair and what was changed before the release went
+out: DATA GAP is flagged by the hole's length again, and the app listens for no signal as shipped.
+Where part 13 and part 12 disagree, part 13 holds. Part 14 is one more check of that, with two small
+repairs. Where parts 11 to 14 say that `proven/README.md` and the note at the top of `README.md` still
+describe 1.0.1, that was true when they were written: the shared pages were brought up to date with
+this release.** Where
+part 11 and an earlier part disagree, part 11 holds: parts 1 to 10 are the record of
+1.0.0 and 1.0.1 and were written before the app had been on any car (what they say was "not run on a
+car" was true when it was written). In them only this top, the list of commands below and the lines
+that said the app had not been on a car were brought up to date. Everything in every part was checked
+on a PC only (a Mac, Node.js 24), unless it says "the first car". The head unit runs Node.js 8: the
+app's files were parsed as ES2017 and scanned for newer library calls, they were not run on Node 8.
 
 This is the working record of the build. The public notes (`proven/README.md` and the note at the top
 of `README.md`) were written after it, from it. Where it says "assumed" or "a guess", read that
@@ -24,16 +37,24 @@ From the top of the repository:
 ```
 python3 proven/tools/make_drag_appjson.py .               # writes apps/pps_drag/app.json
 python3 kit/tools/build.py --preview-only pps_drag
-node proven/tools/test_drag.js dist/pps_drag              # 408 checks, ALL OK: the timing logic alone
-node proven/tools/test_drag_car.js dist/pps_drag          # 312 checks, ALL OK: the whole app on a stand-in car
+node proven/tools/test_drag.js dist/pps_drag              # 473 checks, ALL OK: the timing logic alone, and the record of starts and stops alone
+node proven/tools/test_drag_car.js dist/pps_drag          # 457 checks, ALL OK: the whole app on a stand-in car
 node proven/tools/test_drag_car.js dist/pps_drag <folder> # the same, and a picture of every state drawn
-node kit/tools/preview.js dist/pps_drag <folder> render wait=2 render wait=4 render wait=12 render BTN_PAGE BTN_PAGE BTN_PAGE
+node proven/tools/test_drag_native.js dist/pps_drag       # 27 checks, ALL OK: what the app and the kit ask of the native binding (new in 1.0.2)
+node proven/tools/test_drag_life.js dist/pps_drag         # 38 checks, ALL OK: starts and stops on the kit's real runtime, about three minutes (new in 1.0.2)
+node proven/tools/test_fonts.js dist/pps_drag             # 14 checks, ALL OK: the header and the settings as the kit draws them
+node kit/tools/preview.js dist/pps_drag <folder> render wait=2 render wait=4 render wait=12 render BTN_PAGE BTN_PAGE BTN_PAGE BTN_PAGE
 ```
 
+(The counts are those of 1.0.2 as it goes out, after part 13. 1.0.1 had 408 and 312; parts 11, 12 and 13 list every check that was changed.
+While `preview.js` runs, set `PPS_BOX_TMP=<some folder>` in the environment, or the app's record of
+starts and stops goes to this computer's `/tmp` as it would on the head unit.)
+
 `preview.js` switches demo data on. Its pictures are, in order: the first frame (before the demo
-starts), the start-up logo, Run READY, Run TIMING, Run RUN FINISHED, Timeslip, Best, Signals. In the
-preview no car answers, so its Signals page says "not answering" eleven times; the Signals page with data
-is among the pictures `test_drag_car.js` saves.
+starts), the start-up logo, Run READY, Run TIMING, Run RUN FINISHED, Timeslip, Best, Signals, and the
+Signals tab's second page. In the preview no car answers, so its Signals page says "not answering" for
+the two sources that are on and "switched off" for the other nine; the Signals pages with data are
+among the pictures `test_drag_car.js` saves.
 
 The two existing apps were built and their suites run in the same copy: `test_warmup.js` 350,
 `test_vitals.js` 133, `test_engine_unit.js` 121, `test_ethanol.js` 55, `test_screens.js` 50,
@@ -515,10 +536,10 @@ In this order. The log is `pps_drag.log` in the app's data folder.
 - A start slope on a car whose acceleration reading does not move through a stop is "not known" (part
   3). Not solved.
 - `proven/README.md` and the note at the top of `README.md` were not edited while the app was built
-  and reviewed. They were written afterwards. They now name three apps and say that Proven Drag is
-  BETA and has not been on a car. `mgu-repo.json` lists three components: if this branch is published,
-  the Store source offers an app that has never been on a car (its description begins "BETA, not yet
-  tested on a car").
+  and reviewed. They were written afterwards. They named three apps and said that Proven Drag was
+  BETA and had not been on a car, and so did its Store description. (Since 1.0.2 the app says "BETA,
+  still being tested on cars": it has been on one car, see part 11. The two README files are shared
+  with the other apps and are brought up to date with the release, not in this record.)
 - No home-screen widget and no autostart: the app only runs once it has been opened after a start of
   the head unit, and times from then on, screen showing or not.
 - On the stand-in car the legs method ran on a straight road along a parallel, and the GPS speed method
@@ -627,7 +648,8 @@ below is from those runs unless it says otherwise. All of it is on a PC, on made
   record says what drew the screen. Not solved: the software renderer still draws each frame in the
   app while samples wait; while armed the log is still written, at the quietest moment there is.
 - **CW-08, nothing on a screen said BETA (should fix).** A BETA badge beside the tabs on every tab, and
-  the Timeslip says "BETA: not yet checked against a car or a GPS timer".
+  the Timeslip says "BETA: not yet checked against a car or a GPS timer" (since 1.0.2: "BETA: still
+  being tested on cars").
 - **CW-09, a run that could not be saved looked saved (should fix).** The Timeslip and the Best tab now
   say NOT SAVED until a write works again.
 - **CW-10, a file from a newer version was read as version 1 and written over (should fix).** It is now
@@ -1370,3 +1392,925 @@ the long answers.
 
 Not done after it: the long sentences it counted in the README were not all split, and nothing else
 was changed. All figures: a PC, made-up cars. Nothing has run on a car.
+
+## 11. After the first car (1.0.2)
+
+### What the first car showed (25 Nov 2026)
+
+Proven Drag 1.0.1 was installed from the Store on one car (curved display) by its
+owner. What is known of it comes from his words and ten phone photos of the screens. No log was read:
+the log is in the app's data folder, and that folder was emptied (below).
+
+- **The app closed by itself**, "generally within 30 seconds, randomly", and after the second time it
+  could not be opened again. That is what the kit's README, section 4.3, says the platform does with an
+  app that ends unexpectedly: the first time it empties the app's data folder (saved runs, settings and
+  the log), the second time it removes the app. So these were unexpected ends of the process, not stops
+  the platform asked for. One life of the app was at least 191 s old when it was photographed, so the
+  ends do not come at a fixed time after the start. Proven Drift did the same on that car. Proven Gauges
+  and Proven Warm-Up ran on it without trouble.
+- **The speed is notified 47 to 50 times a second while it changes**, and not while it is constant
+  (6343 samples in about 191 s). Every run in the photos was taken from the notified series. The app's
+  own getter reads (20 a second) answered, and added nothing on this car.
+- The acceleration arrives 10 times a second. The GPS receiver's event arrives once a second with about
+  38 sentences, 12 satellites. The speed scale was learned in about five minutes: x0.988 (this car's
+  speed signal reads 1.2 % above the GPS speed).
+- **The wheel speeds arrive in a form nobody expected.** All four read 65407 standing still, and the
+  factors never settled (the ratios spread by 98 to 274 %). The WHEELSPIN figure on those screens was
+  the estimate from the acceleration, not from the wheels.
+- Four of six gentle pull-aways carried DATA GAP (below).
+- One run was compared by the owner with a GPS drag timer: the 60 ft was the same on both (1.71 s),
+  the 330 ft 0.05 s shorter on the app (4.63 against 4.68 s). That run was almost certainly timed
+  UNCALIBRATED (the scale was learned later). One run says little, and nothing in this release changes
+  how a time is worked out.
+
+### What is not known
+
+**Why the app stops is not known.** Seven separate looks at it on a PC (the app's own code with every
+kind of bad value, the saved file broken in every way, hours of made-up driving, the kit's real runtime
+with stand-ins for BMW's software) found nothing in Proven Drag's own JavaScript that throws out of the
+app, hangs it or grows without bound. What is left cannot be seen on a PC: the head unit's native
+binding, the platform's limits, the HMI. Nobody can attach a tool to the car, and each try costs the
+owner an install. So 1.0.2 does two things and promises nothing about the stops:
+
+- **A. As shipped it asks nothing of the car that the apps that run there do not also ask.** Everything
+  only Proven Drag and Proven Drift did is behind a setting that is off. An unexpected end empties the
+  settings, so the defaults are the safe set and the app goes back to them by itself.
+- **B. It says on the screen, for the next photo, how it last stopped and what it was doing.**
+
+If 1.0.2 as shipped still stops, the cause is in what is left: the two subscriptions (which the kit's
+own Drag Timer, Proven Gauges and Proven Warm-Up have too), the drawing, or the platform. And four
+things that Proven Drag still has as shipped and the two apps that run there do not (added after the
+check, part 12):
+
+1. **The built manifest still names five interfaces that no running Proven app asks for**
+   (`Powertrain`, `SatellitePositioning` with its one event and nothing else, `GPSData`, `Positioning`,
+   `VehicleModel`), and the two wheel-travel fields of `Vehicle2`. They have to be there or the switches
+   could not work, and as shipped no proxy is built for any of them. What the installer and the platform
+   do with a manifest entry that is never used is not known.
+2. **The app's own 50 ms timer**, which runs whether the app's screen is shown or hidden (a few tenths
+   of a percent of one processor core on a PC).
+3. **The record's own file writes**, new in 1.0.2: a small file to `/tmp` every 2 s and a few times in
+   the first second, and to the data folder at the start, at an end and at most once a minute.
+4. **Listeners on the process**, new in 1.0.2: for its exit and for an uncaught error (put in front of
+   the kit's own). Not for a signal: the repair of part 12 listened for SIGTERM, SIGHUP and SIGINT as
+   shipped, and part 13 put that behind a Workshop setting that is off.
+
+If it does not stop, the extras can be switched on one at a time, and the record says which were on
+when it next stops.
+
+### What is asked of the car now
+
+As shipped: two subscriptions, `Vehicle2.statusCarSpeed2` and
+`CDS2.statusLongitudinalAccelerationMassCenter`, both with "rs". These are the two fields the kit's own
+Drag Timer (`apps/draggy/app.json`) asks for in the same way; Proven Gauges asks for both and Proven
+Warm-Up for the speed, on the car where they run. "rs" means the kit reads the field once itself when
+the car's service comes up: every app that asks with "rs" has that read, and it is how the app learns
+that a standing car stands (a standing car notifies nothing). Counted at a stand-in for the native
+binding under the kit's real `signals.js` (`test_drag_native.js`), a drive of 521 s with a launch, town
+and motorway speeds, the screen hidden twice and six minutes parked:
+
+| | 1.0.1 | 1.0.2 as shipped |
+|---|---|---|
+| proxies built | 7 | 2 |
+| fields and events subscribed | 10 | 2 |
+| getter reads | 7007 | 2, or 4 where the head unit says available twice: the kit's own, none of the app's |
+
+Everything else is an extra. Each has a switch in the settings, off as shipped:
+
+| Setting | What it switches on | What is lost while it is off |
+|---|---|---|
+| **GPS speed scale** (shown to everybody) | the GPS receiver's event (`SatellitePositioning.updatePosition`) | no new speed scale is learned: runs are UNCALIBRATED unless a factor is in the saved file (a saved factor keeps being used). No height from the receiver |
+| Workshop settings, **Ask the car for values (study)** | the app's own reads of the speed getter on a schedule, and of the acceleration getter as a fallback, as 1.0.1 made them | nothing on a car that notifies its speed as the first one does. A car that never notifies its speed is not timed |
+| Workshop settings, **Wheel speeds, study** | `Powertrain.ActualValueRPMWheel` | wheelspin is the estimate from the acceleration; no cross-check of the speed at the launch; no raw wheel table |
+| Workshop settings, **Positions, study** | `GPSData` (raw GPS position and height) and the navigation's position | no speed scale from position legs, no second source of height |
+| Workshop settings, **Wheel travel, gradient, study** | the two wheel-travel fields of `Vehicle2`, `VehicleModel.LaneSlope` | two study rows on the Signals tab. Nothing in any result |
+
+How they behave:
+
+- An extra that is off is not subscribed at all. No proxy is built for an interface whose every field
+  is off. The manifest still names all seven interfaces, or the switches could not work.
+- Switched on, it is subscribed at once. Switched off, its values are dropped at once and the Signals
+  tab says "switched off"; the subscription itself stays until the app is next started. Ending a
+  subscription would be a call to the car (`shutdown` on the proxy) that neither this app nor the kit
+  has ever made on a car, so it is not made. Each switch says so in its own text: "(off takes full
+  effect after a restart)".
+- "Ask the car for values", even when on: no read while the app's screen is hidden, none before every
+  subscription asked for is set up or has failed for good, none while one is being tried again
+  (1.0.1 read 20 times a second for five minutes with the screen hidden, and could read next to a
+  set-up call during a retry). Off: the two poll schedulers are never started.
+- Every extra field is asked for with "s" alone. 1.0.1 asked for seven fields with "r", so the kit read
+  seven getters at every start; five of them (`statusWheeltravel`, `statusWheeltravelRear`,
+  `GPSPositionCAN`, `GPSPositionExtendedCAN`, `currentLocation`) are read by no other app of this
+  source, in a place of the kit where a read that throws is not caught. The cost: with their extra on,
+  those five show their first value when the car next notifies it, not at once.
+
+### Timing from the notified speed alone
+
+With no reads of its own, all the app has of the speed is what the car notifies and the kit's one read.
+Three things follow, and each is a choice (`session.js` says them at its top):
+
+- **A speed the car has not notified anew is the speed it still has**, for as long as the kit says the
+  car's speed service is up and a value has arrived since it came up. The Run tab then shows that speed,
+  says READY on a standing car, and the data rate cell says SPEED WHEN IT CHANGES. 1.0.1 without its
+  getter said ARMED, NO NEW SPEED and showed no speed there; that text is still what a car shows whose
+  speed service is down. The kit's own `parked.js` treats a quiet speed the same way. What the app
+  cannot tell apart: a constant speed from a notifier that has died while the service stayed up.
+- The helpers that only learn at a steady speed (the GPS speed scale, the wheel factors) are told the
+  held speed twice a second, or they would never see a steady car. The timing engines never are: they
+  only see samples the car sent.
+- **A run is not carried on over a silence.** If nothing at all is notified for 3 s while a run is
+  timed, the run ends there with DATA GAP, as before.
+
+On a made-up car like the first one (a send slot every 21 ms, each notification 12 to 18 ms on its way,
+nothing while the speed is constant), as shipped: six full-throttle runs to the 1/4 mile of three made-up
+cars were all taken from the notified series, carried no flag, and every split was within 0.004 s of the
+model's own time. That is arithmetic on made-up samples. It says nothing about how exact the app is on
+a car.
+
+### The record of starts and stops (`box.js`, new)
+
+The app keeps the last 5 lives of its process (a life is one start). Per life: its number; when it
+started by the head unit's clock, and the head unit's uptime then (the clock can jump, the uptime
+cannot); how long it lived; how it ended; and its last note, refreshed every 2 s: memory now and
+highest, processor share over the last 2 s and highest, the longest hold-up of the app's own 50 ms tick
+in this life and in the last 10 s, frames drawn a second and what drew them (GPU renderer or software),
+values a second from the car, the app's own getter reads asked and answered, the page showing, the
+state (idle, armed, timing), how far the set-up of the subscriptions had got, and which extras were on.
+No position, no course and no heading is in it, and nothing else of the car's data.
+
+How a life can end, and what the next start says of it:
+
+| The end | How it is noted | The line |
+|---|---|---|
+| the car asked the app to stop (the SDK's `shutdown` event) | by the app, at that moment | "asked to stop by the car" |
+| an error of the app's own that nothing caught | by a listener put in front of the kit's own, which still runs, logs and exits | "THE APP'S OWN ERROR at (file and line) (exit code 1): (its first line)" |
+| the process ended with an exit code and nothing before it | from the process's exit | "ended with exit code N and no word before it" |
+| a signal that ends the process: SIGTERM, SIGHUP or SIGINT, ONLY with the Workshop setting "Note stop signals" switched on (parts 12 and 13) | by a listener, which then lets the signal end the process as it would have | "ENDED BY THE SIGNAL SIGTERM (sent to the app from outside)" |
+| none of these was written: killed outright, ended by a signal (as shipped the app listens for none: part 13), crashed in native code, power lost | nothing is | "NO WORD (killed or crashed)" |
+
+Two copies of one small text (about 3 KB). One in `/tmp/pps-box-pps_drag-<user id>/box.json`: `/tmp`
+is a RAM disk on the head unit (the kit keeps its drawn frames there), so this copy outlives the process
+and an emptied data folder; it is written at the start, every 2 s and at every end the app hears of. One
+in the data folder: written at the start, at every such end, and at most once a minute while no run is
+being timed; it outlives a restart of the head unit. At a start both are read and the newer counts. If
+the copy in RAM says the data folder had a copy and the data folder has none, the Signals tab says "The
+saved data was emptied after #N". If no copy is in RAM and the last record says it was kept there, the
+head unit has restarted since, and the line reads "no word, and the head unit has restarted since
+(power off also ends the app without a word)": switching the car off is not a crash. Where the app
+has no record of its own at all, the record of another user id in `/tmp` is read (an app installed
+again may run as another user); it is never written.
+
+`/tmp` is everybody's. The folder is made with mode 0755 and the file with 0644. If the path is there
+and is not a real folder of this process's user (a symbolic link is not one), nothing is written to it.
+A write goes to a temporary name and is renamed. A file is read through a handle that follows no link
+and does not wait on a pipe, 64 KB at most, parsed inside try and catch, and every field goes through a
+clean-up: a number inside its bounds or nothing, a text cut short and stripped to printable ASCII, 5
+lives at most. Every file operation of the module is inside try and catch. If `/tmp` cannot be used,
+the app runs on with the data folder's copy alone and the Signals tab says so. Whether an app's user may
+write to `/tmp` on this car is only known from the kit doing it for its frames.
+
+On the screen: the Signals tab's first page begins with **Starts and stops**, always (not behind
+Workshop settings). This life first, then the life before it in two lines (how it ended, and its last
+note), then the older ones, seven lines at most, and a line that says where the record is kept. The
+same lines go to the log at every start. On the Run tab, for the first minute after a start that
+follows an end without a word or by a signal alone (the head unit not restarted in between; not where
+the car also asked the app to stop: part 13), the app's own
+error, or an exit code other than 0 that nothing announced: "The app stopped by itself last time.
+Please photograph the Signals tab."
+
+### Other changes
+
+- **The saved file at a clean stop.** When the car asks the app to stop, the kit exits about 200 ms
+  later. In that time the app now writes what the log was holding back, writes the saved file once, and
+  notes the stop in the record. On the kit's real runtime on a PC the process was gone about 210 ms
+  after the event with the file written. How long that write takes on the head unit's flash is not known; a write
+  that is cut off leaves the old file whole (temporary file, then rename).
+- **No picture that changes for its own sake.** The READY banner pulsed with the clock, so a standing
+  car at READY was a new picture for every frame. It is a steady green now. On the kit's real runtime,
+  software path, READY for 6 s with nothing changing: the app drew 60 frames and the kit handed 1 of
+  them to the HMI as a PNG (1.0.1: 60 of 60). The app still draws every frame the kit's loop asks for,
+  as Proven Gauges and Proven Warm-Up do; it is the kit that does not send on a frame that is the same
+  as the last one. The Signals pages take their figures four times a second, not for every frame.
+- **The Signals tab has two pages.** Page 1: Starts and stops, and the eleven sources in two halves.
+  Page 2 (touch the Signals tab again, or Next page): the raw wheel table, the GPS speed scale and the
+  slopes. The tab bar still has four tabs.
+- **Wheel speeds, for one photo.** With "Wheel speeds" on, page 2 shows per wheel the raw value now,
+  the lowest and the highest since the app started, and the raw value at the last moment the car held a
+  steady speed above 30 km/h with that speed ("at 58 km/h: 32654 (7F8E)"), in decimal and hexadecimal.
+  Nothing is decoded and no decoding is guessed in this release.
+- **A wheel factor now has to be learned across speeds.** The brief asked to check that nothing from
+  the wheels can enter a figure while the factors are not learned. It could. A factor counted after 20
+  steady moments, which one second at one speed gives, and ratios taken at one speed agree with each
+  other whatever form the raw value has. On a made-up car whose wheel values are no plain multiple of
+  the speed (an offset count with its bytes swapped, which reads 65407 standing: one form that fits the
+  one photo, not a decoding), 14 s at a steady 50 km/h made all four factors "usable"; the launch after
+  it got "wheelspin 44 %, front" and the flag SPEED READ HIGH AT LAUNCH, both made of nothing, and the
+  factors went into the saved file, from where the next start would have used them at once. Now a
+  factor counts only once its ratios come from steady speeds at least 20 km/h apart; the ratios are
+  kept per stretch of 10 km/h (a long drive at one speed does not push out what another showed) and
+  every such stretch must agree with the whole; a saved factor is read only if it says it was learned
+  that way. On the same made-up car: nothing is called learned, nothing is saved, the wheelspin stays
+  the estimate. A car whose wheel values ARE plain multiples needs two steady speeds 20 km/h apart
+  before its wheels are used, where one was enough. Wheel factors in a file written by 1.0.0 or 1.0.1
+  are not read and are learned again.
+- **Words.** The Store description and the Timeslip say "BETA, still being tested on cars". BETA stays
+  on every screen.
+
+### DATA GAP on the gentle runs
+
+Four of six gentle pull-aways on the car carried DATA GAP, and the Run tab said they were taken from
+the notified series. From reading `run.js`, `feed.js` and `session.js`, what most likely set it:
+
+- In a gentle run the car holds one speed to the last count for a moment, and the notifier is silent.
+  When the speed moves again, `run.js` takes the silence for "nothing changed" only if the first new
+  sample differs from the last by at most 1.5 times the step per sample before the silence, plus
+  1/32 km/h. After a steady stretch that step was about nothing, so a pick-up of more than about
+  0.05 km/h in one sample is booked as a HOLE as long as the whole silence. `session.js` flags DATA
+  GAP from 0.3 s.
+- The getter's series did not help in 1.0.1. At a held speed it repeats one value, which `feed.js`
+  counts as its own gap after a second, so the notified series was still the one chosen (it is sampled
+  more closely), with its hole.
+- Not excluded: the app itself held up for 0.3 s or more during those runs (a frame drawn in software,
+  a file write). That sets the same flag. The Timeslip's DATA line tells the two apart ("hole N ms" or
+  "app held up N ms"), and from 1.0.2 the Signals tab shows the longest hold-up of the app.
+
+That reading was then tried on the made-up car like the first one, with the app's own reads on as in
+1.0.1 (not on a car). A pull-away that eases off to 50 km/h, creeps up by 0.2 km/h over 3 s, stands
+still to the last count for 1.5 s and then pulls at once: the notified series books a hole of 1575 ms,
+the getter's series "one value repeated for 1550 ms", the run is taken from the notified series and
+flagged DATA GAP, which is what the photo of the car shows. With the hold cut to 0.5 s the getter's
+series has no gap of its own and takes the run, with no flag. Pull-aways that hold a speed after
+gaining it briskly were not flagged: the step after the silence then fits the steps before it. So the
+flag hangs on how the speed moved just before it stood still, which fits "four of six".
+
+With the app's own reads off:
+
+- A full-throttle run of a car like the first one is not flagged (the six runs above; the silence of a
+  gear change is taken as no change when the next sample fits that).
+- A true gap is: notifications lost for 0.4 s two seconds into a run gave a hole of 415 ms and DATA GAP.
+- **As it was built, and as it is again (part 12 took the flag off the first of the two cases below;
+  part 13 put it back, because the same change let a real loss of notifications pass as clean). On
+  gentle runs DATA GAP comes up MORE often in 1.0.2 than in 1.0.1, not less.** Two cases, both
+  seen on the made-up car: (1) a hold of 0.3 s to 1 s followed by
+  a brisk pick-up is flagged now, where 1.0.1's getter series took such a run without a flag (the 0.5 s
+  case above: flagged as shipped); (2) a run in which nothing is notified for 3 s (a speed held to the
+  last count for 3 s, or the signal lost) now ends there with DATA GAP, where 1.0.1's getter kept such
+  a run alive. Without reads of its own the rule cannot tell a constant speed from lost samples in
+  these cases. The Timeslip says what the app knows: "hole N ms", or "nothing notified for 3 s (steady
+  speed or signal lost)". A flagged run keeps its times and sets no best. With "Ask the car for values"
+  switched on the app behaves as 1.0.1 did here.
+  A proposal, not built at first: decide a silence by the samples that FOLLOW it (if the first step
+  after it is no bigger than the steps right after that, nothing was missing). It was built in the
+  repair, narrowly: part 12 says how, and what it does not do. Part 13 says what the last read found in
+  it, and why it now only chooses the words on the Timeslip and takes no flag away.
+
+### What the brief left open, and what was taken
+
+- The hold-up of the app is measured on the app's own 50 ms tick, not on a second timer of 100 ms: one
+  timer fewer, and the same figure.
+- "A frame only when something changed" is met by making the frames equal and leaving the sending to
+  the kit, as the two apps that run on the car do. The app does not skip drawing by itself.
+- The GPS switch is a new setting ("GPS speed scale"), not a new default of the old one ("Speed scale":
+  which factor a run uses). A settings file kept from 1.0.1 can hold the old setting's value; it cannot
+  hold a new key, so the new switch is off on every car.
+- The line on the Run tab is not shown after an end without a word when the head unit has restarted
+  since: that is what switching the car off looks like.
+- The life before this one has two lines on the Signals tab, so that its last note is never cut off by
+  a long error text.
+
+### The tests
+
+| File | 1.0.1 | 1.0.2 |
+|---|---|---|
+| `test_drag.js` | 408 | 435 |
+| `test_drag_car.js` | 312 | 418 |
+| `test_fonts.js` on this app (shared, not changed) | 14 | 14 |
+| `test_drag_native.js` (new) | | 22 |
+| `test_drag_life.js` with `test_drag_life_host.js` (new) | | 19 |
+
+(These are the counts of the build as it was checked. After the repair: 460, 437, 14, 27 and 27. Part 12.
+After the last read: 473, 451, 14, 27 and 38. Part 13. After its check: 473, 457, 14, 27 and 38. Part 14.)
+
+`test_drag_native.js` and `test_drag_life.js` were also run on the published 1.0.1, to see that they
+can fail: there 16 of 22 fail, and 9 of the 10 the second file gets to (its parts stop at the record
+that 1.0.1 does not write).
+
+Checks changed on purpose:
+
+- `test_drag_car.js`: every part written for 1.0.0 and 1.0.1 starts the app with all five new settings
+  switched ON (`boot()`), because what it tests is behind them now; the seven new parts start it as
+  shipped (`shipped()`).
+- "parked for 5 minutes with the screen hidden: the getter is read every 2 s" is now "no read at all
+  while the screen is hidden" (0 in 321 s).
+- The checks of the GPS lines, the wheel table, the road gradient, the fix line and the "Reset
+  calibration" button look at the Signals tab's second page. One check waits 300 ms before it looks
+  (the Signals pages take their figures four times a second).
+- "nothing in the getter's row says present" looks at the left half of the table (it has two halves).
+- The Timeslip's BETA sentence. The count of the app's own files (15, now 16). The places that read
+  the wall clock (three, now four: `box.js` turns a start time into text).
+- "12 s at a steady 50 km/h: all four factors learned" is now two speeds, and has a new check before it
+  that one speed does not learn. The part with a downhill start and a speed that reads high cruises at
+  two speeds first.
+- "the subscriptions are the seven interfaces" is asked of the starts with every extra on.
+- The search for positions at the end also reads the folders that stand for the head unit's RAM disk.
+- `test_drag.js`: "after 20 steady moments at 80 km/h: learned" is now "does not count yet", and the
+  factor is learned after 80 and 55 km/h. The saved factors carry the speeds they were learned at.
+
+### What is not done, not fixed or not known
+
+- **The cause of the stops is not known, and nothing here is proven to end them.**
+- Nothing of 1.0.2 has been on a car or on Node.js 8. The record's two places, its 2 s write and the
+  write at a clean stop were only run on a PC.
+- Whether the platform counts a stop for memory or processor load as unexpected, whether it stops an
+  app that is not in front, and how the head unit ends apps when the car is switched off: not known.
+  The record will show the last two after one drive.
+- Which path draws the screen on the first car (GPU renderer or software) is not known. The record
+  says it from the first start on.
+- The wheel values are not decoded. No decoding is guessed.
+- Left alone on purpose in this release: where the 60 ft is counted from (with the "Slip" clock start
+  the app's 60 ft is the stretch from 1 ft to 61 ft; how a strip's beams and a GPS timer count is not
+  known here); saving the GPS ratios in progress (a factor needs
+  about a minute of steady driving above 60 km/h in ONE life of the app); and which pull-aways count as
+  runs (every pull-away from a standstill is timed and saved, and 30 of them push the real runs out of
+  the list of last runs; the best times stay).
+- A subscription that is tried again builds a new proxy and the old one is never shut down; where the
+  first try had in fact worked, every value is handled twice. Found by the investigation, not changed
+  (it happens in the first 80 s only, and shutting a proxy down is a call nobody has made on a car).
+- A car whose speed getter gives the kit's first read no answer: the first launch after opening the app
+  is not timed (the app does not know the car stands until it has moved once).
+- The kit's own weak points that were found (an unanswered frame freezes the picture, a getter that
+  throws in the kit's own read ends the process, a too-short message from the renderer ends it) are in
+  `kit/`, which is shared with the apps that run, and were not touched.
+- Parts 1 to 6 of this record were not brought up to date for 1.0.2 beyond their top: where they
+  describe how the speed is read, the Signals tab or the settings, this part holds.
+
+### For the next car
+
+One photo of the Signals tab, first page, after the app has been open for a minute, and one more right
+after it has come back from a stop. They show how each of the last starts ended, the memory, the
+processor share and the longest hold-up at the last note before it, what drew the screen, and which
+extras were on. If the Run tab says "The app stopped by itself last time", that is the moment.
+
+## 12. After the two checks of 1.0.2 (the repair)
+
+Two independent checks were made of the build that part 11 describes (commit bec94c6), one with the
+question "does it do what was asked", one with "the owner's car and the next photo". Both said: good
+after the repairs listed. This part is those repairs, and one thing the lead added on top: DATA GAP on
+a car that notifies its speed only when it changes. Each finding was first reproduced on the build as
+it was, then repaired, and each repair has a check that failed on that build. Everything here ran on a
+PC (a Mac, Node.js 24) with made-up cars. Nothing of it has been on a car or on Node.js 8, and **the
+cause of the stops is still not known.**
+
+### What the checks found in the record of starts and stops, and what was done
+
+| Found | What it meant for the next photo | Now |
+|---|---|---|
+| The note that says which extras are on was only taken every 2 s | An extra switched on, and the process gone within 2 s: the next start read "extras off, set-up done". That is the very moment the plan of switching extras on one at a time depends on | A note is taken and written to RAM at once whenever an extra or "Ask the car for values" is switched, and whenever a subscription is asked for, set up or has failed. Right after "GPS speed scale" is switched on the record says "GPS on, set-up: Vehicle2 CDS2 set up; SatellitePositioning asked" |
+| Frames and values a second were worked out over the time since the last note | A life that ended with a word takes two notes within a millisecond (the error, then the exit code): every such life read "0 frames/s, 0 values/s", as if the car's values had stopped before the error | The two rates are worked out over a second or more. A note taken sooner keeps the rates it had |
+| After a power loss only the data folder's copy is left, and that is written at the start and once a minute | A life 45 s old read "lived 0 s", with its start note as "Last note" | Such a life reads "lived at least N s" and its note is headed "Saved note of #N (up to a minute before its end)". The first copy written already says which extras the settings had on |
+| At a clean stop the word "asked" was written last, after the saved file | A platform that asks and then kills while the app saves left "NO WORD (killed or crashed)" | The word goes to the copy in RAM first (a small write), then the log and the saved file are written, then the data folder's copy of the record |
+| A stop by SIGTERM, SIGHUP or SIGINT left no word | It read exactly like kill -9 or a crash in native code | Noted as "ENDED BY THE SIGNAL ...", see below |
+| An exit code other than 0 with no word before it | An orange line on the Signals tab, nothing on the Run tab | The Run tab's line shows for that too |
+| The line of the app's own error held its first line only, and a long text cut the exit code off | What, but not where | "THE APP'S OWN ERROR at session.js:201 (exit code 1): ...": the file and line of the first place in the error's stack, and the exit code, stand before the text |
+| With extras on, the lines on the Signals tab lost their tail, and the set-up text was cut at 120 characters | The set-up, the tab and the rates were off the screen exactly when extras were on | The line of this life and the two lines of the life before may run on into a second row (seven rows in all; older lives keep one row each). The set-up text is grouped ("Vehicle2 CDS2 set up; Powertrain asked") and 200 characters are kept. Extras switched off but still subscribed are said in one part |
+| The record's file in RAM got its mode from the process's umask | Under a tighter umask another user id could not read it: lost after a reinstall | The file is set to 0644 and the folder to 0755 outright, as the kit does for its frames |
+| A record planted in a folder under the app's name that is not the app's own was not written to, but read and believed | A false "THE APP'S OWN ERROR" and a false line on the Run tab could be planted | The app's own copy in RAM is read only out of a real folder of its own user, the same test as for writing. And with a record of its own to go by, a record under another user id's name is not opened at all (a planted life number of 899998 used to stick for good) |
+
+### A signal that ends the process
+
+**Changed again in part 13: as shipped the app listens for no signal. What this section describes is
+what the Workshop setting "Note stop signals" switches on.**
+
+Whether the platform ever ends an app with a signal is not known. If it does, that is the one thing
+that tells such an end from a crash in native code, so the record now notes it. The lead's rules for
+it were: the note is written at once, and then the signal must do exactly what it would have done.
+
+- Neither the kit nor the app listened for any signal before (looked for in `kit/runtime` and in the
+  app: only `uncaughtException`, `exit` and `unhandledRejection`).
+- `box.js` puts a listener on SIGTERM, SIGHUP and SIGINT, each only if nobody else on the process
+  listens for it at that moment. If the kit or the SDK ever does, the app leaves that signal alone.
+- When one comes: the word is written in the same turn (RAM first, then the data folder), the listener
+  is taken off, and if no other listener for that signal is left the same signal is sent to the app's
+  own process. With no listener it ends the process as it always did. The app does not call `exit`.
+  If another listener is still there, nothing is sent: what it does with the signal is its own.
+- On the kit's real runtime (`test_drag_life.js`), each of the three: the process ended by that signal
+  (no exit code, the signal's name: the same end the platform saw before), and the next start said
+  "ENDED BY THE SIGNAL SIGINT (sent to the app from outside)" with the two before it listed as ended by
+  SIGHUP and SIGTERM. SIGKILL cannot be listened for and still reads "NO WORD".
+- The Run tab's line shows after such an end unless the head unit has restarted since. If switching the
+  car off ends the app with SIGTERM (not known), the Signals tab then reads "ended by the signal
+  SIGTERM, and the head unit has restarted since (switching the car off may end the app this way)".
+- **What is different, said plainly:** a signal reaches a listener only when the app's own code next
+  comes round. An app that hangs is no longer ended by SIGTERM while it hangs; SIGKILL ends it as
+  before. And the end comes a few milliseconds later than it did, by the two small writes.
+
+### "Ask the car for values": two more places where a read could run beside a set-up call
+
+Both need that setting switched on (it is off as shipped) and a second one switched while the app runs.
+
+- The GPS receiver's interface has one more set-up call after its proxy is there: the subscription to
+  its event. The app counted the interface as set up before that call, so its reads began again beside
+  it (2 and 6 reads with set-up calls of 100 and 300 ms). Now the interface counts as set up only once
+  the event is subscribed.
+- A read already on its way to the car when an extra was switched on was still in flight when the new
+  proxy was asked for. Now the two schedulers are stopped at once and the proxy is asked for when that
+  read has been answered (or 1.25 s after the switch if it never is: a read is asked to give up after
+  1 s).
+
+### A first read that is answered early
+
+If the binding says "available" through its callback at once and answers the kit's first read before
+the subscribe call has returned (and does not say "available" again afterwards), the value reached the
+engines but was not counted as heard. A standing car then read "ARMED, NO NEW SPEED" with no speed
+until it first moved; the launch was timed all the same. Now a value that came before the set-up had
+returned counts as the first one when the app first sees the service up: READY and 0 km/h. How fast
+the real binding answers is not known.
+
+### DATA GAP: a hole, or a speed that stood still and then moved on
+
+**Taken back in part 13: the flag goes by the hole's length again, as in part 11, and the judging
+described here only chooses the words on the Timeslip. Read this section as the record of what was
+tried; the notes in it marked "part 13" say where it no longer holds.**
+
+Part 11 said it plainly: with no reads of its own, a speed held to the last count for 0.3 s or more
+and then a pick-up was booked as a hole, so gentle pull-aways were flagged more often than in 1.0.1.
+The owner's first drives are gentle ones and four of six carried the flag already. The lead asked for
+the builder's proposal to be built, narrowly: judge a silence by the samples that follow it.
+
+**What the engine did, and still does first.** On a series that only sends when its value changes,
+silence means "nothing changed" only if what comes next fits that. After more than 1.6 send slots of
+silence the next sample may differ from the last by 1.5 times what the speed was doing per slot BEFORE
+the silence, plus 1/32 km/h. If it does, the speed is taken as unchanged through the silence. If the
+step is bigger, the stretch is timed as a hole: a straight line across it, and what it may hide goes
+into the ± of the splits after it. A car that crept or held its speed before the silence was doing
+next to nothing per slot, so any brisk pick-up after it is "too big", although nothing is missing.
+
+**What is new.** A stretch whose only sign of a hole is the size of that step is judged a second time,
+by the three samples that follow it, with the same measure turned round: if in one of those steps the
+speed moves as much per slot as it stepped across the silence (1.5 times that step per slot, plus
+1/32 km/h, covers the first step), the series is simply moving at that pace now, and it began to within
+a slot or two of its first sample. Nothing was missing: no gap. If none of the three does, the speed
+jumped across the silence by far more than it moves per slot afterwards, so notifications were lost
+while it moved: a gap, as before.
+
+Where the figures come from: the slot is this run's own (the middle one of its first 8 spacings, as the
+engine has always measured it), so a car that sends every 50 or 100 ms is judged by its own pace and
+not by the first car's 21 ms; 1.5 and 1/32 km/h are the engine's own figures for "no change"; three
+steps is how many the engine takes "the step before" from. No new figure was made up. The idea was
+"as far as the car can have moved in two or three slots"; with late stamps the measure comes out
+between 1.5 and 2 slots of the pace after the silence.
+
+**What did not change: the timing.** The stretch is still timed as a hole, with its straight line and
+its share of the ±. So no time and no ± of any run differs from before for the same samples. Only what
+is reported changed: the summary keeps `holeMs` as it was (every stretch timed as a hole) and has a new
+`lostMs` (the longest one the samples after it did not clear). DATA GAP goes by `lostMs`. Which series
+a run is taken from, with the app's own reads on, still goes by `holeMs`, exactly as before. The
+Timeslip says "steady speed 1.6 s (no gap)" for a cleared stretch and "hole N ms" for one that
+counts; the log line of the run says both figures.
+
+**Never cleared:** a stretch in which a sample was dropped or taken out as stamped late (samples that
+arrived in a lump after a hold-up are that); anything on a series that sends every slot (the getter);
+a stretch at the end of a run, before any sample has followed it (in doubt it is a gap).
+
+**Shown both ways** (`test_drag.js`, the part "1.0.2 repair, DATA GAP"; `test_drag_car.js`, the part
+of the same name on the whole app; made-up cars, not a car). **These are the figures of the repair.
+With the strict flag back the held speeds are flagged again: the list of changed checks in part 13
+has today's figures.**
+
+- Notifications lost for 0.3, 0.4 and 1 s while the speed changes, at full throttle (three places in
+  the run) and in a gentle pull-away (1.5 and 0.7 m/s2), with slots of 21, 50 and 100 ms: 54 of 54 are
+  a gap, as before (54 chosen places, not every place a hole can fall: a sweep of 38,960 found 155 that
+  were no longer flagged, part 13). On the whole app: 6 of 6 flagged DATA GAP.
+- A car like the first one holds its speed to the last count for 0.3 to 2.8 s and then pulls, is
+  braked or is floored at once: 60 runs, none has a gap that counts; 44 of them were a hole of 0.3 s or
+  more before and would each have been flagged. On the whole app: 16 gentle pull-aways, none flagged,
+  12 of them flagged before.
+- Both at once, a speed held for 1 s and then the first 0.3, 0.4 or 1 s of the pull lost: 18 of 18 are
+  a gap, the standstill before it counted with it (nothing says where the silence turned into a loss).
+- Slots up to 30 % longer or shorter with stamps up to 8 ms late: the true holes are gaps in 24 of 24,
+  the held speed is none in 12 of 12.
+- The line between them: a step of 0.5 km/h after 0.6 s of silence is no gap if the speed then moves
+  0.31 km/h a slot, and a gap if it moves 0.30.
+- 300 made-up drives through the engine and through the engine with the new judging taken out: not one
+  time, ±, distance, `holeMs` or end of a run differs. And on the scratch bench, 400 drives through the
+  engine of bec94c6 itself beside the new one: the same, 0 differ, 0 flagged now that were not before,
+  46 of 257 holes are no gap now.
+- **The app itself held up** is still flagged: that flag does not go by the samples at all, but by the
+  app's own 50 ms tick coming 0.3 s late. Held up for 0.4 s in a gentle pull-away: DATA GAP, "app held
+  up 410 ms". Held up while the speed stood still: DATA GAP too (the app was not looking, whatever the
+  car did meanwhile).
+
+**A notifier that has died while the speed service stays up.** In a run it does not read as a steady
+speed for ever: after 3 s with nothing notified the run ends there with DATA GAP ("nothing notified
+for 3 s (steady speed or signal lost)"), as before. If it comes back within the 3 s, the stretch is
+judged by what follows like any other: the speed having moved on meanwhile is a gap. Outside a run
+nothing is timed: the Run tab keeps showing the speed last notified for as long as the kit says the
+service is up, and the Signals tab says "silent" with for how long. That part is as part 11 left it,
+and the app still cannot tell a dead notifier from a constant speed there.
+
+**Can a steady cruise end a run early on such a car?** Yes, and that was looked at and left alone. A
+speed held to the last count (1/64 km/h) for more than 3 s ends the run at its last sample, with the
+splits it has and DATA GAP: shown with a pull-away to 57 km/h that then holds it exactly (the check
+marked NOT SOLVED). A speed that wavers as little as 0.05 km/h does not: the same pull-away held for
+22 s went on to the 1/4 mile with no flag. Whether the first car's speed ever sits still to the count
+for 3 s is not known. It was not changed because the same 3 s are what stops a dead notifier from
+reading as a steady speed, and no test here can tell those two apart: a run that is ended a flag too
+many is the lesser harm.
+
+**What the new judging does not do, said plainly.**
+
+- A pick-up whose FIRST step is far bigger than the steps after it (a jolt, then a gentler pull) is
+  still booked as a gap, although nothing was missing. A flag too many.
+- Notifications lost while the speed really did not move are not seen, and never were: nothing shows
+  them. And a loss of notifications that ends right where the car begins to pull much harder than it
+  did during the loss can pass as a held speed. Both need the speed to have changed across the silence
+  by less than the car then gains in one and a half to two slots.
+  (CORRECTED, part 13. This sentence went on: "which is also all the error such a stretch can put into
+  a distance". That was wrong. The measure bounds where the speed ENDS the silence, not what it did
+  inside it: in a made-up run the speed rose 5 km/h and came back inside a lost second, and the 60 ft
+  was 0.106 s off with a ± of 0.02 s, no flag and NEW BEST. That is why the flag no longer goes by this
+  judging.)
+- A split whose line is crossed inside a long steady stretch has a wide ± (a quarter of the stretch),
+  flagged or not. That was so before and is not changed.
+- All of this is arithmetic on made-up samples. What the first car's silences look like is not known.
+
+### Other small things
+
+- The Timeslip's DATA line says "steady speed N s (no gap)" (above). (No longer: it says "nothing
+  notified for N s (may be a steady speed)" and the flag stands. Part 13.)
+- `fakedrag.js` (the tests' stand-in) keeps the app's three signal listeners off the test's own
+  process, as it did with the other two, and can hand a signal to the app.
+
+### The tests
+
+| File | As checked (bec94c6) | After the repair |
+|---|---|---|
+| `test_drag.js` | 435 | 460 |
+| `test_drag_car.js` | 418 | 437 |
+| `test_fonts.js` on this app (shared, not changed) | 14 | 14 |
+| `test_drag_native.js` | 22 | 27 |
+| `test_drag_life.js` with `test_drag_life_host.js` | 19 | 27 |
+
+The new checks begin with "REPAIR." where they failed on the build as it was checked. Run on that
+build (a build of bec94c6), the four files fail in 26, 16, 3 and 8 of their checks: the new ones, and
+the ones whose wording was changed on purpose.
+
+Checks changed on purpose, none deleted:
+
+- `test_drag.js`: the line of this life reads "started 10:36, running 17 s" (it read "started 10:36:
+  17 s", which can be taken for a time of day) and says extras switched off but still subscribed in one
+  part; "exit code 3 and no word before it" now has the Run tab's line; the line of the app's own error
+  has the place and the exit code before the text; the clean-up check knows the new fields (where the
+  error came from, the signal, the saved-note mark) and 200 characters of set-up text.
+- `test_drag_car.js`: the same three wordings on the screens; "the head unit restarted in between" now
+  reads "lived at least 1 min ..." with "Saved note of #5 (up to a minute before its end)"; the made-up
+  run with all five flags carries the new figure (`lostMs`) beside `holeMs`.
+- `test_drag_life.js`: the line of the app's own error (place and exit code first).
+
+### What is not done
+
+- **The cause of the stops is not known, and nothing here is proven to end them.** Nothing of the
+  repair ran on a car, a head unit or Node.js 8.
+- Left alone in this release, as told: where the 60 ft is counted from, saving the GPS ratios in
+  progress, and which pull-aways count as runs (part 11).
+- A run still ends after 3 s with nothing notified (above).
+- Notes of the two checks that were not taken up: the memory figure is the process's whole memory
+  (RSS), the JavaScript heap is not noted beside it; the start time in a line has no seconds; under NO
+  SPEED FROM THE CAR nothing tells the driver that the timer arms once the car has rolled and stopped
+  (only if the kit's one first read of the speed gives nothing, which Proven Gauges relies on too);
+  "Ask the car for values" stays on when Workshop settings is switched off again, where the switch is
+  then hidden and only the record shows it; one more write of the data folder's copy about 10 s after
+  the start, so that a short life has a real note there after a power loss (the lead's call: it is one
+  more write to the flash, and the line now says honestly what it has).
+- What the photo still cannot tell (from the second check): an app that froze and was killed later
+  shows the note from before the freeze; memory is RSS only; "most" processor share does not tell a
+  steady load from one spike; if the head unit has to be restarted before a crashed app opens again,
+  both copies are gone and the next start is "#1 now" with nothing before it. So: **photograph the
+  Signals tab in the same drive, before the car is switched off.**
+- For the lead, outside this app's files: `proven/README.md` and the note at the top of `README.md`
+  still describe 1.0.1 (the version, "not yet tested on a car", the counts of checks, the preview's
+  fourth press of Next page, the two new test files, `PPS_BOX_TMP` for previews, the new settings).
+
+## 13. After the last read of 1.0.2 (the strict flag is back, no signal listener as shipped)
+
+One more independent read was made of the repaired build (commit ec4c05d), and the checker of the
+sister app, Proven Drift, looked at the same record of starts and stops there. Both found the repairs
+of part 12 good. Each also named one thing the repair had ADDED that costs more than it gives. The
+lead decided both, and this part carries those two decisions out, with a few small words. Nothing
+else was changed: no new feature, no other change to the engine, nothing more asked of the car.
+Everything here ran on a PC (a Mac, Node.js 24) with made-up cars, and with real processes on the
+kit's real runtime. Nothing of it has been on a car or on Node.js 8, and **the cause of the stops is
+still not known.**
+
+### DATA GAP: the strict flag is back
+
+**What was tried in part 12.** With no reads of its own, the app books a silence of the notified speed
+as a hole whenever the first sample after it is "too big" for a speed that had not changed, and flags
+the run DATA GAP from 0.3 s. A speed held to the last count and then moved on looks just like that,
+so gentle pull-aways were flagged although nothing was missing. The repair added a second look, by the
+three samples that follow the silence: if the speed then moves as much per slot as it stepped across
+the silence, the stretch was cleared as "steady speed N s (no gap)", the flag was not set, and the run
+could set a best. The stretch was still timed as a hole, so no time and no ± changed.
+
+**What the last read found.** That measure only bounds where the speed ENDS the silence. It says
+nothing about what the speed did inside it. A stretch in which notifications were lost while the speed
+rose and came back, or after which the car pulls much harder, reads exactly like a speed held to the
+count, and no rule on the notified samples alone can tell the two apart. Its figures, all on made-up
+cars:
+
+- True holes of 0.3, 0.4 and 1 s swept every 100 ms through 8 full-throttle and 4 gentle runs, slots of
+  21, 33, 50 and 100 ms: of 38,960 holes the published 1.0.1's rule flagged 38,495 and the repair
+  38,340. **155 were flagged by 1.0.1 and not by the repair**, all in gentle pull-aways.
+- Gentle drives whose pace changes every 0.5 to 3 s: 18 of 2,796 true holes (0.6 %) with a 21 ms slot
+  and 49 (1.7 %) with a 50 ms slot were flagged by 1.0.1 and not by the repair.
+- At full throttle with stamps up to 15 to 45 ms late: 36 of 13,200.
+- **One made-up run on the whole app as shipped**: roll away gently, the speed goes up 5 km/h and
+  comes back within one second, the notifications of that second are lost, then full throttle. The
+  60 ft read **4.54 s ± 0.02 where 4.44 was right** (0.106 s off, five times the ± shown). The run
+  carried no flag, set NEW BEST for 0-100, 60 ft and 330 ft, and the Timeslip said "steady speed 1.1 s
+  (no gap)". The published 1.0.1 flags that run.
+- Of the repair's own 400 drives, 46 holes had been cleared: in 3 of the 46, notifications HAD been
+  taken out in that stretch.
+- What held: no time and no ± differed from the published 1.0.1 for the same samples (0 of 55,760 runs).
+  Only the flag was lost, and with it the bar on setting a best.
+
+**What was decided.** A wrong time shown as clean is worse than a flag too many. So:
+
+- **A run is flagged DATA GAP by the hole's length again**, exactly as the builder's 1.0.2 (bec94c6)
+  and the published engine do. In `session.js` the line that sets the flag is the line of bec94c6
+  again, word for word (`holeMs` of 0.3 s or more, one value repeated for a second, a run that ended
+  silent, or the app held up for 0.3 s).
+- **The judging stays in the engine for one use: the words.** It was a choice between keeping it for
+  that and taking it out. Kept, because it costs nothing that can be seen (`run.js` is the repair's
+  code line for line, only its comments changed, and with the judging taken out not one time, ±,
+  distance or end differs in 300 drives), and it gives the one thing a photo can tell about the open
+  question of part 12: what the first car's silences look like. `lostMs` in a run's summary is now "the
+  longest hole that does NOT look like a speed that stood still". No flag, no best, no time and no
+  choice of series goes by it.
+- **The words say it as a possibility, never as a fact and never as "no gap".** Where the samples after
+  the longest silence look like a steady speed, the Timeslip's DATA line says, for example, **"nothing
+  notified for 1.1 s (may be a steady speed)"** (under one second the length is in ms: "nothing
+  notified for 420 ms (may be a steady speed)"). Where they do not, it says "hole 419 ms" as 1.0.1 did.
+  The FLAGS line says DATA GAP either way, with "A flagged run sets no best time." under it. The log
+  line of the run says "HOLE of 1053 ms (MAY BE A STEADY SPEED: the samples after it look like a speed
+  that stood still and then moved on; lost notifications can look the same)".
+
+**That the flags are those of bec94c6** was run two ways, build beside build (scratch benches, not in
+the repository): 5,961 series of made-up samples through `session.js` and `store.js` of this build and
+of bec94c6 (true holes, held speeds, 4,000 random drives, the app held up, the lost second and 87
+neighbours of it): **0 differ** in a flag, a best, a time, a ±, the longest hole or how the run ended.
+And 140 drives on the whole app as shipped, each copy on its own stand-in car: the two lists are the
+same line for line. Against the repair (ec4c05d) 563 of the series and 47 of the drives differ, and
+every one of them is a run flagged now that was not flagged then.
+
+**The lost second is pinned** in both test files (`test_drag.js`, the last check of the part "1.0.2,
+DATA GAP"; `test_drag_car.js`, the last checks of the part of the same name, on the whole app as
+shipped): with every notification the 60 ft is 4.44 s with no flag and a best; with that second lost it
+is 4.54 s ± 0.02, carries DATA GAP, sets no best, and the Timeslip says "nothing notified for 1.1 s
+(may be a steady speed), 7 merged". That stretch looks like a steady speed and was none: which is the
+whole reason the flag does not go by the look.
+
+**For the owner's notes, said plainly.**
+
+- **Gentle pull-aways on a car that notifies its speed only when it changes will often carry DATA
+  GAP.** Whenever the speed has stood still to the last count for 0.3 s or more and the next change is
+  a brisk one, the app cannot tell that from lost notifications, and it flags the run. On the made-up
+  car like the first one: of 16 gentle pull-aways that hold a speed for 0.5 or 1.5 s and then pull or
+  brake at once, 12 are flagged. With a speed that wavers a little, as a real one does, it is chance:
+  of 8 runs held for 2 s and then lifted, 1 was flagged (the speed had said nothing for 0.7 s when the
+  lift began) and 7 were not. On the first car four of six gentle runs carried the flag under 1.0.1.
+- **A flagged run keeps its times and sets no best.** The Run tab says "flagged: sets no best" under
+  each time.
+- **A full-throttle run is not affected in our tests**: the six full-throttle runs of three made-up
+  cars on the stand-in like the first car carry no flag and every split is within 0.004 s of the
+  model's own time (part 11; run again on this build). A true loss of notifications in one is flagged,
+  as it should be.
+- A gentle run that ends at a speed held to the count for 3 s still ends there with DATA GAP ("nothing
+  notified for 3 s (steady speed or signal lost)"): part 12, not changed.
+- A speed that stays on the Run tab while the car stands still means the car has stopped sending it
+  (a notifier that died outside a run: part 12). The Signals tab then says "silent for N s" for the
+  notified speed.
+- A photo of the Timeslip of a flagged run tells us which it looked like: "nothing notified for N s
+  (may be a steady speed)", "hole N ms" or "app held up N ms". (Put right in part 14: as this part
+  left it, the "may be" words stood alone on the line and hid the other two.)
+- A full-throttle run is flagged the same way if the driver holds one speed to the last count after
+  the pull instead of lifting (part 14). Lift off to end a run, as the Run tab says while it is timing.
+
+**What this puts right in part 12.** The section "DATA GAP: a hole, or a speed that stood still and
+then moved on" there describes the judging as it was built. Three things in it no longer hold: DATA
+GAP does not go by `lostMs`; the Timeslip never says "steady speed N s (no gap)"; and the sentence that
+such a stretch can put no more error into a distance than its net change of speed was wrong (the speed
+can rise and come back inside it: 0.106 s on a 60 ft above). Its "54 of 54" true holes are 54 chosen
+places in two runs, not every place a hole can fall. Notes at those places point here.
+
+### Signals: no listener as shipped, a Workshop setting that switches it on
+
+**What the repair did.** So that an end by SIGTERM, SIGHUP or SIGINT could be told from a kill, the
+record listened for the three as shipped: the word written at once, the listener taken off, the same
+signal sent to the app's own process. For an app whose code is running, that ends the process by the
+same signal a few milliseconds later.
+
+**What the checks showed it costs.** A signal reaches a listener only when the app's own code next
+comes round. While the app is held up, and for good while its main thread is stuck (the kit's own
+notes say the native binding can deadlock it), a signal then no longer ends the process; only SIGKILL
+does. Measured on the kit's real runtime: in Proven Drift, SIGTERM sent 1 s into a hold-up of 6 s ended
+the published 1.0.0 after 3 ms and the build with the listener after 5,009 ms; a process stuck for good
+in a file open was still alive 3 s after SIGTERM. The published Proven Drag, Proven Gauges and Proven
+Warm-Up have no such listener. Whether the platform ever sends a signal, and what it does with an app
+that does not go, is not known. The first job of this release is to do nothing as shipped that the
+working apps do not do.
+
+**Now.**
+
+- **As shipped the app puts no listener on its process for any signal.** `process.listenerCount` is 0
+  for SIGTERM, SIGHUP and SIGINT, and a signal ends the process at once, also in the middle of a
+  hold-up, exactly as it ends the published 1.0.1. The record then says "NO WORD (killed or crashed)"
+  for such an end, as it does for a kill, and the Run tab shows its line.
+- **A new Workshop setting, off as shipped: "Note stop signals, study (while on, an app that hangs is
+  not ended by one)"** (key `xSignals`). A setting has no help text of its own in the kit, so the price
+  is in the label. Switched on, the three listeners are on the process at once and work as in the
+  repair. Switched off, they are taken off at once and everything is as shipped again. It needs no
+  restart either way. With it on at a start, the listeners are there before the first copy of the
+  record is written.
+- **The record names it.** The line of this life on the Signals tab, and the last note of a life, say
+  "notes stop signals" among what is on (where "extras off" stands otherwise). If something else on
+  the process already listens for one of the three, the app leaves that signal alone as before and the
+  line says which: "notes stop signals (SIGHUP SIGINT only: SIGTERM has a listener already)". That
+  line would also be the first sign that BMW's SDK listens for a signal itself.
+- **The Run tab's line and a signal.** "The app stopped by itself last time" does not show after an end
+  where the car also asked the app to stop cleanly (the SDK's shutdown event), whichever came first. The
+  Signals tab then says "asked to stop by the car (the signal SIGTERM came too)". The signal can only
+  come first where something else on the process listens for it as well (with the app's listener alone
+  the signal ends the process there and then); in the repair that case read "ENDED BY THE SIGNAL" and
+  put the line on the Run tab. After a signal alone the line still shows, unless the head unit has
+  restarted since.
+
+On the kit's real runtime, real processes and real signals (a scratch bench; the two new parts of
+`test_drag_life.js` hold the same for this build):
+
+| Build | Listeners for SIGTERM, SIGHUP, SIGINT | Each of the three sent to the idle app | SIGTERM 1 s into a hold-up of 6 s | The record |
+|---|---|---|---|---|
+| Proven Drag 1.0.1 as published | 0, 0, 0 | ended by that signal after 2 to 3 ms | ended by SIGTERM after 3 ms | (it keeps none) |
+| this build as shipped | 0, 0, 0 | ended by that signal after 2 to 3 ms | ended by SIGTERM after 2 ms | NO WORD |
+| this build, "Note stop signals" on | 1, 1, 1 | ended by that signal after 8 to 14 ms | ended by SIGTERM after 5,009 ms | "signal SIGTERM" (or SIGHUP, SIGINT) |
+| the repair as shipped (ec4c05d) | 1, 1, 1 | ended by that signal after 7 to 9 ms | ended by SIGTERM after 5,008 ms | "signal SIGTERM" (or SIGHUP, SIGINT) |
+
+When to switch it on: only after the app has stayed up without it, on a drive of its own, to learn
+whether the platform ends the app with a signal. If the app closes by itself, the platform empties the
+settings and the switch is off again by itself.
+
+Not known: all of this ran on Node.js 24. That taking the last listener off a signal gives the signal
+its own effect back is how Node has worked since long before Node.js 8, but it was not run on Node.js 8.
+
+### Small words, from the notes of the last read
+
+- An error text longer than its 160 characters ended with a full stop, as if the error had ended
+  there. It now keeps 157 characters and ends with "...".
+- The Sources table said "silent 14 s ago" for the notified speed of a standing or steady car. It
+  says "silent for 14 s" now. ("stopped 14 s ago", for a source that has stopped, is as it was.)
+- Part 11's table said the kit reads the two getters "2 (the kit's own two)" times. The kit reads each
+  "r" field in two places (`kit/runtime/signals.js`: when the availability callback says up, and when
+  `isAvailable()` says up after the subscribe), so a binding that says "available" both ways gets 4
+  reads. Corrected there to "2, or 4 where the head unit says available twice: the kit's own, none of
+  the app's". The working apps have the same two places.
+
+### The tests
+
+| File | After the repair (ec4c05d) | Now |
+|---|---|---|
+| `test_drag.js` | 460 | 473 |
+| `test_drag_car.js` | 437 | 451 (457 after part 14) |
+| `test_fonts.js` on this app (shared, not changed) | 14 | 14 (16 settings in the list, was 15) |
+| `test_drag_native.js` (not changed) | 27 | 27 |
+| `test_drag_life.js` with `test_drag_life_host.js` | 27 | 38 |
+
+Checks changed on purpose, each with its replacement, none deleted (in the files they say "CHANGED ON
+PURPOSE", "AS SHIPPED", "WITH THE SETTING ON" or "NEW"):
+
+- `test_drag.js`, the part that was "1.0.2 repair, DATA GAP" and is "1.0.2, DATA GAP" now. It hands
+  every series to the app's own rule as well (`session.js` and `store.js` of the built app), not to the
+  engine alone, so that "flagged" and "sets no best" are the app's words.
+  - "none of the 60 held-speed runs has a hole that counts" is now: the 44 that are timed as a hole of
+    0.3 s or more are flagged, set no best, and the log says MAY BE A STEADY SPEED; the other 16 carry
+    no flag and set a best.
+  - "one of them, held 1.5 s: it does not count as one" is now: flagged, no best, `lostMs` 0 for the words.
+  - "the true holes count in 54 of 54" and "18 of 18" now also say flagged and no best, and "54 chosen
+    places".
+  - "with uneven slots the held speed is none in 12 of 12" is now: timed as a hole in 11 of 12, each
+    flagged and said to look like a steady speed; in the twelfth the engine took the speed as unchanged
+    (no hole, no flag, as in 1.0.1).
+  - "the line between a gap and no gap" and "a run that ends right after such a step" keep their
+    figures; their words say "looks like a steady speed" and "does not".
+  - "300 drives: 33 are no gap now" is: 193 have a hole of 0.3 s or more, all flagged; of 33 the words
+    say "may be".
+  - The log line "HOLE of ... (NO GAP: ...)" is "HOLE of ... (MAY BE A STEADY SPEED: ...)".
+- `test_drag.js`, the record: "one listener each for the three signals" is now "as shipped none"; the
+  checks of a signal noted, the next start, a restart in between, a listener that is there already and
+  one that comes later now switch the setting on first; "asked to stop by the car (and then sent the
+  signal SIGINT)" reads "(the signal SIGINT came too)"; the clean-up check knows the new figure of a
+  note (`sig`, 0 to 15).
+- `test_drag_car.js`, the part of the same name: "16 gentle pull-aways, none carries a flag" is "12 of
+  16 are flagged and set no best"; the Timeslip check holds the new words with FLAGS "DATA GAP" and "A
+  flagged run sets no best time."; the one wavering run that carried no flag is 8 runs, flagged exactly
+  when the stretch reaches 0.3 s (1 of 8); "app held up: no hole counted" goes by `holeMs`. In the part
+  about the record: the SIGTERM checks switch the setting on first, and the last note says "notes stop
+  signals". Elsewhere: "silent N s ago" is "silent for N s" (two checks), and the cut error text ends
+  with "...".
+- `test_drag_life.js`: the three checks "a signal sent to the process: both copies say signal" and "the
+  next start says ENDED BY THE SIGNAL" now run with the setting on.
+
+Added, 13, 14 and 11 checks: the lost second in both files; the same runs clean through the app's rule;
+a hole that looks like a steady speed beside a shorter one that does not; as shipped no listener and
+NO WORD (unit, whole app and real processes); the setting switched on, on at a start, off again;
+listeners that are there already; the car's word after a signal; an error after a signal; the price
+measured on a real process (SIGTERM 1 s into a hold-up of 4 s: ended about 3 s after the signal, when
+the hold-up was over; as shipped 2 to 3 ms after it);
+the shutdown event with a signal beside it, both orders, and no line on the Run tab; the line of this
+life with every switch on; the Run tab of a flagged run; the manifest's new switch, and that the app's
+files put a signal listener on the process in one place only.
+
+Also run for this part, outside the repository: the ES2017 parse of all 17 files of the app; the build;
+the generator writes `app.json` byte for byte as committed; Proven Gauges, Proven Warm-Up and Proven
+Drift build to the same files as from the published copy; the kit's preview as shipped and with every
+switch on, and the pictures looked at.
+
+### What is not done
+
+- **The cause of the stops is not known, and nothing here is proven to end them.** Nothing of this
+  part ran on a car, a head unit or Node.js 8.
+- DATA GAP on gentle pull-aways is not solved. It is flagged, on purpose, wherever the app cannot tell
+  a steady speed from a loss. What would tell them apart (the car's own acceleration reading staying
+  still through the silence, or the app's own reads) is not built and not tried.
+- As shipped the record cannot tell an end by a signal from a kill or a crash in native code: all
+  three read NO WORD. The setting is there to find that out on a drive of its own.
+- Whether the platform sends a signal at all, and whether BMW's SDK listens for one, is not known.
+- With every switch on AND a set-up that has failed for every interface (the preview, where no car
+  answers), the line of this life is longer than its two rows and loses its last part ("0 values/s");
+  the log has the whole line. On the stand-in car with every switch on the line is whole.
+- Left alone as before: a run ends after 3 s with nothing notified; outside a run a dead notifier reads
+  as the last speed; where the 60 ft is counted from; saving the GPS ratios in progress; which
+  pull-aways count as runs.
+- For the lead, outside this app's files (shared files, not changed here): `proven/README.md` and the
+  note at the top of `README.md` still describe 1.0.1, and the same sentence ("have not been on a car")
+  is in `README.ko.md`, `README.ru.md`, `README.zh-CN.md` and `docs/diagnostic-chinese.md`. They need
+  the version, the counts of checks above, the two test files added in 1.0.2, the preview's fourth
+  press of Next page, `PPS_BOX_TMP` for previews, the six new settings (all off as shipped, "Note stop
+  signals" among them), what is saved and where, and the new words for DATA GAP.
+
+## 14. After the check of part 13 (the Timeslip's words, and one retry that is no longer made)
+
+An independent check of part 13 (the work copy at 3567063, changed nothing itself) found both
+decisions carried out and holding: the flag line is the published 1.0.1's again (its own drives:
+7,998 series and 2,000 drives on the whole app against the builder's 1.0.2, none differs in a flag,
+a best, a time or a ±), and as shipped the running app has no listener on SIGTERM, SIGHUP or SIGINT.
+It asked for one repair, of words, and four notes. One more small repair comes from the last read of
+Proven Drift 1.0.1, which found a fault this app shares. All of it ran on a Mac with made-up cars, as
+before: nothing here has been on a car.
+
+**The repair: the Timeslip's DATA line.** Where a run had a silence that "may be a steady speed" and,
+beside it, a shorter hole that does not look like one, or the app was held up, the line showed the
+"may be" words alone. The line was filled by a rule of 60 characters, the new words are 50 long, and
+nothing but "N merged" could follow them. The flag, the best, the times and the log were right, but
+only a photo reaches us from the car. Now (`screens.js`, `slip`):
+
+- the line is filled by its measured width (616 px at 17 px type), not by 60 characters;
+- "hole N ms" (the one that does not look like a steady speed) and "app held up N ms" come before the
+  "may be" words.
+
+So a run with both reads "hole 440 ms, nothing notified for 1.6 s (may be a steady speed), 1 merged".
+A line that was shorter before can hold more now: the made-up run with five flags also says "launched
+0.04 s after a roll". Nothing else changed: no flag, no time, no setting, nothing the app asks of the
+car.
+
+**The second repair: an extra switched off while its subscription waits to be tried again.** It
+cannot happen as shipped, where no extra is on. With an extra on, a subscription that fails is tried
+again after 5, 15 and 60 s. If the owner switched the extra off in that time (switch one on, see
+trouble, switch it off: the careful path), the retry still subscribed to its interface. Now
+(`car.js`, `_failed`) the retry first asks whether the extra is still on; if not, nothing is asked of
+the car, the log says "signal Powertrain: not tried again (its extra is switched off)", and a later
+switch-on asks afresh. The core subscriptions (Vehicle2, CDS2) are tried again as before.
+
+**Checks** (`test_drag_car.js`, 451 to 457, 960 frames in 92 states): the five-flags check holds the
+longer line (changed on purpose); new: four made-up records with a silence that may be a steady speed
+beside a hole, a hold-up, both, and alone, each drawn and fit-checked at PC, iDrive 7 and iDrive 8
+size (4 draws and 1 check of the words); and "Wheel speeds" on, its first subscription failed, then
+switched off before the retry: Powertrain is asked for once, not twice, and afresh when switched on
+again. On the code before this part that last check fails (asked for twice).
+
+**The notes.**
+
+- One check was widened in part 13 without being listed there: the pull-away held at 57 km/h for
+  22 s, wavering by 0.05 km/h, passes if it carries no flag or, where its longest stretch reaches
+  0.3 s, exactly DATA GAP. Today it carries none (hole 0 ms).
+- **For the owner's notes: a full-throttle run that ends in a held speed is flagged too.** Of the
+  checker's 118 made-up drives that begin with a full-throttle pull, with nothing lost, 13 carry DATA
+  GAP: in each the driver held one speed to the last count after the pull instead of lifting. The
+  builder's 1.0.2 does the same; runs driven to the line or ended by a lift carry none. Whether the
+  first car's speed ever sits still to the last count is not known.
+- The list "Shown both ways" in part 12 now says at its head that its figures are the repair's.
+- Three checks of `test_drag_car.js` fail if the temporary folder's name is very long (156 characters
+  tried): the Signals tab cuts the line that names the folder. With the system's own folder all pass,
+  and on the car the folder is `/tmp/pps-box-pps_drag-<uid>`. Not changed.
+- Seen and left: after "Note stop signals" is switched off, the data folder's copy of the record keeps
+  the old note for up to a minute (as for every other switch); for half a second after the start-up
+  logo the Run tab of a standing car can say "SPEED 38/s, NOTIFIED".

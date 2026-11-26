@@ -31,7 +31,13 @@
  *   DOWNHILL START, SPEED READ HIGH AT LAUNCH   the brief's two (slope.js, wheels.js)
  *   DATA GAP          the speed series had a hole of 0.3 s or more while the speed moved, or repeated one
  *                     value for a second or more, or stopped before the run was over, or the app itself
- *                     was held up for 0.3 s or more during the run (its 50 ms tick came that late)
+ *                     was held up for 0.3 s or more during the run (its 50 ms tick came that late).
+ *                     A hole is every stretch the engine timed as one (the summary's holeMs, run.js),
+ *                     by its length alone, as in 1.0.1. The engine also says whether the samples after
+ *                     such a stretch look like a speed that stood still and then moved on (lostMs): that
+ *                     is for the words on the Timeslip and in the log only. It never takes a flag away
+ *                     (it did for a while in the work on 1.0.2, and passed a lost second as "no gap":
+ *                     proven/CHANGES-drag.md part 13).
  *   SPEED JUMP        the series made a step upwards that no car does and stuck to it: the run ended there
  *   SERIES DISAGREE   the notified and the polled engine timed the run and a split differs by more than
  *                     their two +- together (the +- shown is widened to that difference)
@@ -59,6 +65,33 @@
  *   getter that is too slow or has stopped, is such a case: its launch is timed. So is a car that never
  *   notifies and whose getter has died: there the line shows although nothing will be timed.
  *
+ * WHEN THE APP READS NOTHING ITSELF (as shipped since 1.0.2: the setting "Ask the car for values" is off, and
+ *   with it on while the screen is hidden or a subscription is being set up). All there is of the speed is
+ *   what the car notifies, and the kit's own first read when the car's service comes up. The first car
+ *   notifies its speed 47 to 50 times a second while it changes and nothing while it is constant. So:
+ *   - A speed the car has not notified anew is the speed it still has ("no news is no change"), for as long
+ *     as the kit says the car's speed service is up and a value has arrived since it came up (speedHeld).
+ *     The Run tab then shows that speed and says READY on a standing car, the Signals tab says "silent" for
+ *     the notified speed, and the data rate cell says SPEED WHEN IT CHANGES while nothing arrives.
+ *     What the app cannot tell apart then: a constant speed from a notifier that has died while the service
+ *     stayed up. The kit's own apps live with the same (kit/runtime/parked.js keeps the last reading).
+ *   - The helpers that only learn at a steady speed (the GPS speed scale, the wheel factors) want a speed
+ *     sample that is not old. They are told the held speed twice a second. The timing engines never are:
+ *     they only ever see samples the car sent.
+ *   - A RUN is not helped by this: if nothing at all is notified for 3 s while a run is timed, the run still
+ *     ends there with DATA GAP (ended 'silent'), exactly as before. Without its own reads the app cannot
+ *     tell a car that holds one speed to the last count for 3 s from one whose speed has stopped arriving,
+ *     and a run is not the place to guess. A full-throttle run never holds a speed that long.
+ *     That same rule is what keeps a notifier that has died (while the car's speed service stays up) from
+ *     reading as a steady speed for ever in a run: 3 s, then the run ends, flagged. A silence shorter than
+ *     that which ends in a step too big for "nothing changed" is timed as a hole and flagged from 0.3 s,
+ *     whether notifications were lost or the speed only stood still and then moved on: on the notified
+ *     samples alone the two cannot be told apart for certain, and a wrong time shown as clean is worse
+ *     than a flag too many. So a gentle pull-away on such a car often carries DATA GAP. The Timeslip and
+ *     the log say where the samples after the silence make a steady speed likely (run.js, lostMs).
+ *     Outside a run nothing is timed: the Run tab keeps showing the speed last notified, and the
+ *     Signals tab says for how long the notifier has been silent.
+ *
  * WHAT IS DECIDED HERE (each is a choice, none was tried on a car)
  *   - The speed scale is the "Speed scale" setting's whether or not the workshop switch is on: that
  *     switch only shows or hides the setting.
@@ -82,7 +115,7 @@
  */
 const { TwoSeries, pollPeriod, AccelFallback, Changing, RateMeter, describeRun, PARKED_AFTER_MS } = require('./feed');
 const { GpsScale, scaleFor, heightChange } = require('./gpsscale');
-const { WheelFactors, WheelSpin, AccelSpin } = require('./wheels');
+const { WheelFactors, WheelSpin, AccelSpin, WheelStudy } = require('./wheels');
 const { StartSlope, downhill } = require('./slope');
 const { STARTS, DISTANCES, splitsFor, LAUNCH_KMH } = require('./run');
 const { Store } = require('./store');
@@ -102,6 +135,8 @@ const HEIGHT_KEEP = 400;           // height readings kept through one run
 const HEIGHT_AGE_MS = 3000;        // a height reading counts for a line crossed up to this long after it
 const DEMO_AUTO_MS = 5000;         // "Auto": demo data once the car has said nothing for this long after the start
 const FACTOR_LOG = 0.001;          // the GPS factor is logged again when it has moved by this much
+const HOLD_MS = 500;               // a held speed (nothing notified anew) is handed to the steady-speed helpers this often
+const STATE_NAME = { wait: 'idle', ready: 'armed', run: 'timing' };
 
 const isNum = (x) => typeof x === 'number' && isFinite(x);
 const round = (x, d) => (isNum(x) ? Math.round(x * Math.pow(10, d)) / Math.pow(10, d) : null);
@@ -130,6 +165,7 @@ class Session {
         this.demoOn = false; this.demoSpeed = 0;
         this.gps = new GpsScale({ saved: this.store.data.gps, onResult: (r) => this._gpsResult(r) });
         this.factors = new WheelFactors({ saved: this.store.data.wheels, onLearned: (w, f, n) => this._wheelLearned(w, f, n) });
+        this.study = new WheelStudy();
         this.spin = new WheelSpin();
         this.est = new AccelSpin();
         this.slope = new StartSlope();
@@ -142,6 +178,10 @@ class Session {
         this.lastTick = null; this.stallMs = 0;
         this.stoodSince = null;            // since when the car has stood (either series), null while it moves
         this.carSeen = false;              // the car has answered (a speed sample, or its speed service is up)
+        // from car.js, every 50 ms: held = the car's speed service is up and has said its speed since it came up;
+        // polling = the app is reading the speed getter itself right now
+        this.feedNow = { held: false, polling: false };
+        this.heldT = -Infinity;
         this.getterAnswers = false;        // the speed getter has answered a read of the app at some time (in time, or too slowly to be used)
         this.launched = false; this.launch = null; this.heights = [];
         this.shown = null;                 // the run record on screen (until the next launch)
@@ -193,6 +233,15 @@ class Session {
     /** Is the car's speed arriving: a getter read kept lately, or a notification within the last second. */
     speedFresh(now) { return this.polledFresh(now) || this._age('speedN', now) <= FRESH_MS; }
 
+    /**
+     * The speed is known without a fresh sample: the app reads nothing itself, the car's speed service is up and
+     * has said its speed since it came up. A field is notified when it changes, so no news is no change (see the top).
+     */
+    speedHeld() { return !this.demoOn && !this.feedNow.polling && !!this.feedNow.held && this.live.speed !== null; }
+
+    /** Is the car's speed known right now: arriving, or held (speedHeld). What the screens go by. */
+    speedKnown(now) { return this.speedFresh(now) || this.speedHeld(); }
+
     /** A read of the speed getter was answered, but too slowly to be used (car.js): this car has a getter that answers. */
     slowRead() { this.getterAnswers = true; }
 
@@ -202,7 +251,7 @@ class Session {
      * tell: its notifier has been heard while the speed changed, or its getter has never answered. See the top.
      */
     armedQuiet(now) {
-        if (this.demoOn || this.speedFresh(now) || this.two.state() !== 'ready') return false;
+        if (this.demoOn || this.speedKnown(now) || this.two.state() !== 'ready') return false;
         const n = this.meters.speedN;
         return (!!n && n.spoke()) || !this.getterAnswers;
     }
@@ -222,9 +271,10 @@ class Session {
         this.live.accel = ms2; this.live.accelT = t;
     }
 
-    /** raw4: rawWheels() of a wheel event. */
-    wheels(t, raw4) {
+    /** raw4: rawWheels() of a wheel event; any4: rawWheelsAny() of it (every number as it came, for the study table). */
+    wheels(t, raw4, any4) {
         this.seen('wheels', t);
+        this.study.wheels(any4 || raw4, this.factors.steadyAt(t));
         this.factors.wheels(t, raw4);
         this.spin.wheels(t, this.factors.kmh(raw4));
     }
@@ -273,6 +323,12 @@ class Session {
             }
             // a getter that has stopped answering leaves no engine armed on the standstill it last reported
             if (!this.polledFresh(now) && this.two.engines.polled.state !== 'run' && this.two.engines.polled.last) this.two.engines.polled.disarm();
+            // nothing is read by the app itself and nothing new was notified: the speed the car last said is the speed
+            // it still has. The helpers that only learn at a steady speed are told so twice a second (never the engines)
+            if (this.speedHeld() && now - this.live.speedT >= HOLD_MS && now - this.heldT >= HOLD_MS) {
+                this.heldT = now;
+                this.gps.speed(now, this.live.speed); this.factors.speed(now, this.live.speed);
+            }
         }
         // the log is held back while it could spoil a time (heldlog.js)
         if (this.log.set) { const st = this.demoOn ? 'wait' : this.two.state(); this.log.set(st === 'run' ? 'run' : st === 'ready' ? 'armed' : 'write'); }
@@ -309,6 +365,15 @@ class Session {
         this.calDirty = false; this.calDrift = false; this.lastCalSave = now;
         this.store.save();
     }
+
+    /** The car asked the app to stop (the SDK's shutdown event, main.js): the calibration as it stands goes into the file now, once. */
+    stopping() { if (!this.demoOn) this._saveCal(this.now()); }
+
+    /** The app's state in a word, for the record of starts and stops: idle, armed, timing (demo: the demo's). */
+    stateName() { return (this.demoOn ? 'demo ' : '') + (STATE_NAME[this.active().state()] || 'idle'); }
+
+    /** Which extras are switched on right now (the settings). */
+    extras() { const g = (k) => !!this.settings.get(k); return { ask: g('askCar'), gps: g('gps'), wheels: g('xWheels'), pos: g('xPos'), study: g('xStudy') }; }
 
     /* ---------- how often the getters are read ---------- */
 
@@ -421,6 +486,8 @@ class Session {
         if (spin && spin.readHigh) flags.push('SPEED READ HIGH AT LAUNCH');
         if (!demo) {
             const frozen = isNum(s.frozenMs) && s.frozenMs >= FROZEN_FLAG_MS;
+            // (by the hole's length alone, as in 1.0.1. What the samples after it look like, the summary's lostMs, is for
+            // the words only and takes no flag away: see the top)
             if (s.holeMs >= GAP_FLAG_MS || frozen || s.ended === 'silent' || stall >= GAP_FLAG_MS) flags.push('DATA GAP');
             if (s.ended === 'jump' || s.jumps > 0) flags.push('SPEED JUMP');
             if (dis.length) flags.push('SERIES DISAGREE');
@@ -431,14 +498,18 @@ class Session {
         const rec = {
             date: this.wall(), demo: !!demo, start: s.start, unit: s.unit, series: s.series, why: run.why, results, flags,
             scale: round(s.scale, 5), scaleSource: s.scaleSource, scaleLabel: sc.label || 'UNCALIBRATED',
+            // (which extras were switched on for this run: the Timeslip says why a figure is not there)
+            ext: demo ? null : this.extras(),
             spin, slope, height,
             sum: {
                 vmax: round(s.vmax, 1), peakG: s.peakG, samples: s.samples, medianGap: round(s.medianGap, 1), longestGap: round(s.longestGap, 1),
                 launchGap: round(s.launchGap, 1), firstKmh: round(s.firstKmh, 2), launch: s.launch, dropped: s.dropped,
                 ended: s.ended, length: round(s.length, 2), dist: round(s.dist, 1), lastSplit: s.lastSplit || null,
-                holeMs: s.holeMs || 0, frozenMs: s.frozenMs || 0, merged: s.merged || 0, stallMs: Math.round(stall),
+                holeMs: s.holeMs || 0, lostMs: isNum(s.lostMs) ? s.lostMs : s.holeMs || 0, frozenMs: s.frozenMs || 0, merged: s.merged || 0, stallMs: Math.round(stall),
                 lowSeen: s.launch && isNum(s.launch.lowSeen) ? round(s.launch.lowSeen, 3) : null, afterCreep: isNum(s.afterCreep) ? s.afterCreep : null,
                 roundTrip: isNum(s.roundTrip) ? round(s.roundTrip, 1) : null, renderer: typeof this.env.renderer === 'string' ? this.env.renderer : null,
+                // (the app read nothing itself during this run: "ended silent" then means nothing was notified for 3 s)
+                noReads: !demo && !this.feedNow.polling,
             },
             other: o ? { series: o.series, ended: o.ended, times: times(o), medianGap: round(o.medianGap, 1), launchGap: round(o.launchGap, 1) } : null,
         };
@@ -502,7 +573,7 @@ class Session {
         // of its own samples (rateRun: the screen labels it as the run's). Else: its samples over the last 2 s. A
         // notifier that is silent right now (a steady car notifies nothing): the rate it was measured at while the
         // speed last changed. While no speed is arriving at all: none, whatever is on the screen.
-        const fresh = this.demoOn || this.speedFresh(now);
+        const fresh = this.demoOn || this.speedKnown(now), ext = this.extras();
         let rate = null, rateRun = false;
         const gap = rec ? rec.sum.medianGap : null;
         if (!fresh) rate = null;
@@ -521,13 +592,17 @@ class Session {
             now, demo: this.demoOn, state, hasSpeed: this.demoOn || (this.live.speed !== null && fresh), kmh,
             // armed: nothing arrives, and the timer is armed on the last value the car notified (armedQuiet)
             armed: this.armedQuiet(now), rateRun,
+            // held: the speed shown is the one the car last notified, and nothing new is arriving (a steady or standing car)
+            held: !this.demoOn && !this.speedFresh(now) && this.speedHeld(), ext,
             clock: rec ? (rec.results[rec.sum.lastSplit] ? rec.results[rec.sum.lastSplit].s : isNum(rec.sum.length) ? rec.sum.length : 0) : eng.elapsed(now),
             // lost: a speed did arrive once and has stopped (ms since the last sample of either series)
             lost: !this.demoOn && this.live.speed !== null && !fresh ? Math.min(this._age('speedN', now), this._age('speedP', now)) : null,
             notSaved: this.demoOn ? null : this.store.failed,
             results: rec ? rec.results : state === 'run' ? eng.results() : {}, rec, newBest: this.newBest,
             start, unit, splits: splitsFor(unit, start), best: store.data.best[start] || {}, allBest: store.data.best, runs: store.data.runs,
-            scale: rec ? { label: rec.scaleLabel } : sc, rate, series: this.demoOn ? 'demo' : rec ? rec.series : eng.series,
+            // (gpsOff: uncalibrated because the GPS speed scale is switched off in the settings, and nothing else is in the way)
+            scale: Object.assign({}, rec ? { label: rec.scaleLabel } : sc, { gpsOff: !this.demoOn && !ext.gps && (rec ? rec.scaleSource === 'none' : sc.source === 'none') }),
+            rate, series: this.demoOn ? 'demo' : rec ? rec.series : eng.series,
             spin, slope, slopeLive: !rec && state !== 'run', slopeLimit: this.settings.get('slopeLimit'),
             downhill: !!slope && downhill(slope.pct, this.settings.get('slopeLimit')),
             flags: rec ? rec.flags : [], last: rec || store.data.runs[0] || null,
@@ -538,7 +613,8 @@ class Session {
         const meters = {};
         Object.keys(this.meters).forEach((k) => { meters[k] = this.meters[k].stats(now); });
         return {
-            meters, wheels: this.factors.status(), gps: this.gps.status(now), scale: this.scaleNow(), setting: this.settings.get('scale'),
+            meters, wheels: this.factors.status(), study: this.study.status(), gps: this.gps.status(now), scale: this.scaleNow(), setting: this.settings.get('scale'),
+            ext: this.extras(), held: !this.speedFresh(now) && this.speedHeld(),
             // since when a speed series has stopped (ms; null: it is arriving, or it never did, or it is the notifier of a car whose getter answers)
             stopped: {
                 speedP: isFinite(this._age('speedP', now)) && !this.polledFresh(now) ? this._age('speedP', now) : null,

@@ -98,6 +98,27 @@
  *   that a line is crossed and the run ends on time; that is taken back when the next sample shows a hole.
  *   A hole longer than 2.5 slots is recorded (summary.holeMs), and what it may hide in distance (the
  *   change of speed across it x its length / 4) goes into the +- of every distance split after it.
+ *   A HOLE, OR A SPEED THAT STOOD STILL AND THEN MOVED ON? (since 1.0.2; summary.lostMs, FOR THE WORDS ONLY.) The
+ *   test above goes by what the speed was doing BEFORE the silence. A car that held its speed to the last count
+ *   and then picks up (or is braked) fails it: the speed was doing nothing before, so the first step after the
+ *   silence is "too big", and the whole silence is booked as a hole although no notification was missing. On a
+ *   car that notifies its speed only when it changes, and with no getter read beside it, that flags gentle
+ *   pull-aways again and again. So such a silence is looked at a second time, by the three samples that FOLLOW
+ *   it, with the same measure: if in one of those steps the speed moves as much per slot as it stepped across
+ *   the silence (1.5 times that step per slot, plus 1/32 km/h, covers the first step), the series looks like a
+ *   speed that stood still and then moved on at that pace. If none of the three does, or the run ends before a
+ *   sample has said so, it does not look like that.
+ *   THIS DECIDES NOTHING. It is a likelihood and no more: a stretch in which notifications WERE lost reads just
+ *   the same when the speed ends it near where it began and the car then pulls harder (the speed may have risen
+ *   and come back inside it), and no rule on the notified samples alone can tell the two apart. For a while in
+ *   the work on 1.0.2 the DATA GAP flag went by this, and a made-up run with a lost second then showed a 60 ft
+ *   time 0.1 s off, with no flag, as a new best (proven/CHANGES-drag.md part 13). So: the stretch is timed as a
+ *   hole (a straight line, and what it may hide in the +-), holeMs says how long it was, the DATA GAP flag
+ *   and which series a run is taken from go by holeMs (session.js, feed.js), all exactly as in 1.0.1. lostMs,
+ *   the longest hole that does NOT look like a speed that stood still, only lets the Timeslip and the log say
+ *   of a longer one "may be a steady speed". No time, no +-, no flag and no best depends on it. Never looked at
+ *   this way: a stretch in which a sample was dropped or taken out as stamped late, and anything on a series
+ *   that sends every slot. The slot is this run's own (the middle one of its first 8 spacings).
  *
  * SAMPLES STAMPED LATE. A stamp says when the app's handler ran. If the app was held up (a file write,
  *   a frame drawn in software, the garbage collector), a sample waits and is stamped late; the next one
@@ -216,7 +237,8 @@
  *   0; 20 km/h as the highest first moving sample that still counts as a launch seen; 5 km/h for a creep
  *   and for the lift that ends a run; 60 s as the longest run; 1.6 slots of silence before it is looked
  *   at, 1.5 times the step before plus 1/32 km/h as what still counts as "no change", 2.5 slots for a
- *   hole, and 3 s as the longest silence idle() fills; 2 ms for samples that arrived together; three
+ *   hole, 3 samples after a silence to say whether it looks like one (for the words only), and 3 s as the
+ *   longest silence idle() fills; 2 ms for samples that arrived together; three
  *   quarters of a slot, 1.75 slots and 1 s in the rule for a sample stamped late, 5 % of a slot (and 1 ms)
  *   as the least lateness that counts, 250 ms as the longest slot those rules reckon with, 2 s as the
  *   furthest a launch seen late is run back, 1.5 times its usual spacing plus 10 ms for a late tick; half
@@ -245,6 +267,7 @@ const HOLD_SLOTS = 1.6;        // silence longer than this many slots on an on-c
 const FILL_RATIO = 1.5, FILL_KMH = 1 / 32;  // "no change": the step after the silence is at most this much of the step per slot before it, plus this
 const HOLE_SLOTS = 2.5;        // a gap of more than this many slots with the speed moving across it: a hole in the series
 const HOLD_MAX_MS = 3000;      // idle() carries a silent speed forward this long at most (then the series may be dead)
+const DOUBT_STEPS = 3;         // a silence timed as a hole is looked at by this many plain steps after it, for the words only (as many as "the step before" is taken from)
 const BURST_MS = 2;            // a sample this soon after the one before it replaces it (they arrived together)
 const LATE_SHARE = 0.75;       // an on-change series: a sample stamped less than this share of a send slot after the one before it replaces it (that one was stamped late) ...
 const LATE_REACH = 1.75;       // ... if it comes more than this many slots after the sample before that one (it is where a sample is due: two slots on, less a quarter)
@@ -845,6 +868,11 @@ class RunEngine {
         r.acc = {
             prev: { t: r.t0, v: LAUNCH_KMH, launch: true }, prev2: null, realT: null, dist: 0, next: 0, cross: null, wait: false, touched: null, sameT: null, frozenMs: 0,
             vmax: 0, n: 0, gaps: [], slotGaps: [], peak: 0, win: [], trace: [], rates: [], holeMs: 0, holeD: 0, dropT: null,
+            // lostMs, for the words only (see the top): the longest hole that does not look like a speed that stood still
+            // and then moved on. doubt: a hole whose only sign is the size of the
+            // step after a silence, waiting for the samples after it: { ms, step km/h, n: plain steps seen since } (never
+            // changed in place: a snapshot may hold it)
+            lostMs: 0, doubt: null,
             at: null, before: null,       // the state after the last real sample, and after the one before it (_snap)
         };
         for (const c of r.buf) {
@@ -858,7 +886,7 @@ class RunEngine {
         const r = this.run, a = r.acc;
         return {
             prev: a.prev, prev2: a.prev2, realT: a.realT, dist: a.dist, next: a.next, cross: a.cross, wait: a.wait, touched: a.touched, sameT: a.sameT, frozenMs: a.frozenMs, vmax: a.vmax, n: a.n,
-            gaps: a.gaps.length, slotGaps: a.slotGaps.length, peak: a.peak, win: a.win.slice(), trace: a.trace.length, rates: a.rates.slice(), holeMs: a.holeMs, holeD: a.holeD,
+            gaps: a.gaps.length, slotGaps: a.slotGaps.length, peak: a.peak, win: a.win.slice(), trace: a.trace.length, rates: a.rates.slice(), holeMs: a.holeMs, holeD: a.holeD, lostMs: a.lostMs, doubt: a.doubt,
             slot: r.slot, took: r.took.length, tookMid: r.tookMid,
         };
     }
@@ -867,7 +895,7 @@ class RunEngine {
         const r = this.run, a = r.acc;
         for (let i = s.next; i < a.next && i < r.marks.length; i++) r.marks[i].t = null;
         a.prev = s.prev; a.prev2 = s.prev2; a.realT = s.realT; a.dist = s.dist; a.next = s.next; a.cross = s.cross; a.wait = s.wait; a.touched = s.touched; a.sameT = s.sameT; a.frozenMs = s.frozenMs;
-        a.vmax = s.vmax; a.n = s.n; a.gaps.length = s.gaps; a.slotGaps.length = s.slotGaps; a.peak = s.peak; a.win = s.win.slice(); a.rates = s.rates.slice(); a.holeMs = s.holeMs; a.holeD = s.holeD;
+        a.vmax = s.vmax; a.n = s.n; a.gaps.length = s.gaps; a.slotGaps.length = s.slotGaps; a.peak = s.peak; a.win = s.win.slice(); a.rates = s.rates.slice(); a.holeMs = s.holeMs; a.holeD = s.holeD; a.lostMs = s.lostMs; a.doubt = s.doubt;
         if (a.trace.length > s.trace) a.trace.length = s.trace;
         r.slot = s.slot; r.took.length = s.took; r.tookMid = s.tookMid;
     }
@@ -915,12 +943,17 @@ class RunEngine {
             // (what the speed did per slot before the silence: the largest of its last three plain steps, because the
             // step that runs into a gear change is a short one)
             const lastV = a.at.prev.v, per = a.at.rates.reduce((m, x) => Math.max(m, Math.abs(x)), 0) * r.slot;
-            const fits = !(a.dropT > a.realT) && Math.abs(c.v - lastV) <= FILL_RATIO * per + FILL_KMH;
+            const whole = !(a.dropT > a.realT), fits = whole && Math.abs(c.v - lastV) <= FILL_RATIO * per + FILL_KMH;
             this._restore(a.at);
             if (fits) {
                 if (t - r.slot > a.prev.t) this._step({ t: t - r.slot, v: lastV, filled: true }, true);
                 if (this.state !== 'run') return;
-            } else c.hole = true;
+            } else {
+                // A hole, for the timing and for the flag. Whether it LOOKS like one is in doubt where the size of this step is all there
+                // is against "nothing changed" (no sample was dropped in the silence): the samples after it will say.
+                c.hole = true;
+                if (whole) c.doubt = true;
+            }
         }
         // (a sample was dropped since the last one that counts: the stretch across it is a hole, however short)
         if (this.onChange && a.realT !== null && a.dropT > a.realT) c.hole = true;
@@ -1049,10 +1082,19 @@ class RunEngine {
                 // (a hole a dropped sample left before the slot is known counts by its length whatever that is)
                 if (this.onChange ? c.hole : r.slot !== null && gapReal > HOLE_SLOTS * r.slot) {
                     a.holeD += Math.abs(c.v - p.v) / KMH * gapReal / 1000 / 4;
-                    if ((r.slot === null || gapReal > HOLE_SLOTS * r.slot) && gapReal > a.holeMs) a.holeMs = gapReal;
+                    if (r.slot === null || gapReal > HOLE_SLOTS * r.slot) {
+                        if (gapReal > a.holeMs) a.holeMs = gapReal;
+                        // For the words only: does it look like a hole (lostMs)? At once, unless the step after a silence is its
+                        // only sign: then the samples after it say (_judge). A doubt still open from before: nothing has cleared it.
+                        this._judge(null);
+                        if (c.doubt === true) a.doubt = { ms: gapReal, step: Math.abs(c.v - p.v), n: 0 };
+                        else if (gapReal > a.lostMs) a.lostMs = gapReal;
+                    }
                 } else if (c.t > p.t && !p.launch) {
-                    a.rates.push((c.v - p.v) / (c.t - p.t));                    // km/h per ms over a plain step: the last three
+                    const rate = (c.v - p.v) / (c.t - p.t);
+                    a.rates.push(rate);                                         // km/h per ms over a plain step: the last three
                     if (a.rates.length > 3) a.rates.shift();
+                    if (a.doubt) this._judge(Math.abs(rate));
                 }
             }
             // a series that sends every slot and keeps saying exactly the same value while the run goes on: for how long
@@ -1076,6 +1118,25 @@ class RunEngine {
         }
         if (r.mark.quarter.t !== null) this._finish(c.t, 'quarter');
         else if (c.t > limit) this._finish(limit, 'limit');
+    }
+
+    /**
+     * FOR THE WORDS ONLY (the Timeslip's DATA line, the log): no time, no +-, no flag and no best goes by this.
+     * A silence that ended in a step too big for "nothing changed" is in doubt (a.doubt): a hole, or a speed that
+     * stood still and then moved on? rate: what the speed does in a plain step after it (km/h per ms). If 1.5
+     * times that per slot, plus 1/32 km/h, covers the step across the silence (the measure _running uses with the
+     * pace BEFORE a silence), the series looks like one that is simply moving at that pace now, and the doubt is
+     * dropped: the stretch "may be a steady speed". After three plain steps that do not cover it, or with rate
+     * null (another hole, or the end of the run, came first): it does not look like that (lostMs). Either way the
+     * stretch stays a hole in holeMs, which is what the flag goes by. See the top of the file.
+     */
+    _judge(rate) {
+        const r = this.run, a = r.acc, d = a.doubt;
+        if (!d) return;
+        if (rate !== null && r.slot !== null && d.step <= FILL_RATIO * rate * r.slot + FILL_KMH) { a.doubt = null; return; }
+        if (rate !== null && d.n + 1 < DOUBT_STEPS) { a.doubt = { ms: d.ms, step: d.step, n: d.n + 1 }; return; }
+        if (d.ms > a.lostMs) a.lostMs = d.ms;
+        a.doubt = null;
     }
 
     _finish(t, why) {
@@ -1177,7 +1238,10 @@ class RunEngine {
      *             lowSeen: the smallest speed above 0 this series had reported before the launch (null: none yet).
      *             0.1 or less: it reads from 0. 1 or more after a few stops: it reads 0 until the car does that. }
      *   ended: 'quarter' | 'lift' | 'limit' | 'jump' (a step no car does, confirmed) | 'silent' (the series stopped)
-     *   holeMs: the longest stretch with samples missing while the speed moved (0: none); frozenMs: the longest time
+     *   holeMs: the longest stretch timed as a hole: samples missing while the speed moved, or a silence that ended
+     *   in a step too big for "nothing changed" (0: none; the DATA GAP flag goes by this); lostMs, for the words only:
+     *   the longest of them that does not look like a speed that stood still and then moved on, by the samples after
+     *   it (see the top; less than holeMs: the longest stretch "may be a steady speed"); frozenMs: the longest time
      *   a series that sends every slot repeated one value (above 5 km/h); merged: samples replaced by one that
      *   arrived with them; disorder: a sample read far lower than the one right before it, or a stamp did not run
      *   forward (samples out of order, or a wrong reading next to a late stamp: the engine cannot tell which); jumps;
@@ -1197,7 +1261,9 @@ class RunEngine {
             vmax: a.vmax, peakG: Math.round(a.peak * 1000) / 1000,
             samples: a.n, medianGap: gaps.length ? median(gaps) : null, longestGap: gaps.length ? Math.max.apply(null, gaps) : null,
             launchGap: r.launchGap, firstKmh: r.firstKmh, launch: r.launch,
-            dropped: r.dropped, merged: r.merged, disorder: !!r.disorder, jumps: r.jumps, holeMs: Math.round(a.holeMs), frozenMs: Math.round(a.frozenMs), roundTrip: isNum(r.tookMid) ? r.tookMid : null,
+            dropped: r.dropped, merged: r.merged, disorder: !!r.disorder, jumps: r.jumps, holeMs: Math.round(a.holeMs),
+            // (a doubt nothing has cleared by now does not look like a steady speed)
+            lostMs: Math.round(Math.max(a.lostMs, a.doubt ? a.doubt.ms : 0)), frozenMs: Math.round(a.frozenMs), roundTrip: isNum(r.tookMid) ? r.tookMid : null,
             afterCreep: r.afterCreep,
             scale: r.scale, scaleSource: r.scaleSource,
             ended: r.ended, length: r.endAt, dist: a.dist, slot: r.slot,

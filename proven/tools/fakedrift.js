@@ -13,6 +13,9 @@
  *   await bench.advance(5000);               5 s pass on both clocks: timers, the car's signals, the app's ticks
  *   await bench.stall(400);                  the app is held up for 0.4 s: the clocks go on, nothing runs meanwhile
  *   car.session, car.store, car.side         the app's own session (session.js), saved file (store.js), car side (car.js)
+ *   car.box                                  the app's record of starts and stops (box.js); car.boxTmp: the folder that
+ *                                            stands in for the head unit's /tmp (each car its own, unless boot is given boxTmp)
+ *   car.shutdown()                           the SDK's "shutdown" event, as MainApp sends it to stop the app
  *   await car.draw()                         one frame of the page shown: every text on it, with where it is
  *
  * THE CLOCKS: bench.clock.mono is the forward-only clock (process.hrtime), bench.clock.wall the wall clock
@@ -22,13 +25,15 @@
  * THE STAND-IN CAR is driftsim.js's made-up car: a scripted true motion, and what each sensor would say of it by
  * exact kinematics. Its true drift angle is known at every moment (car.truthNow()). Its sources, as the app gets
  * them (boot options change them):
- *   speed          notified on change every 100 ms (30 ms on the way); its getter answers after 25 ms
+ *   speed          notified on change every 100 ms (30 ms on the way; notifyMs, notifyDelay); its getter answers after 25 ms
  *   CDS2           sideways and forward acceleration and the yaw rate, each notified on change every 20 ms. As
  *                  shipped each flickers by one count from slot to slot, as a sensor's reading is taken to do, so
  *                  it is notified all the time. Their getters answer after 25 ms
  *   chassis yaw    the same yaw rate in OTHER raw units (another scale and zero, the sign turned round), every 20 ms
  *   steering       four sources: the front wheels' angle from the chassis (every 20 ms) and from XView (every
- *                  50 ms), the steering wheel's angle (14.6 times that, in other raw units) from both
+ *                  50 ms), the steering wheel's angle (14.6 times that, in other raw units) from both; the chassis'
+ *                  steering wheel angle under the field name ActualSteeringAngleDriver (and, with driverNoCRC: true or
+ *                  'only', under actualSteeringAngleDriverNoCRC as well, or under that name alone)
  *   pedal, wheels  every 50 ms;  handbrake, DSC button: on change
  *   study only     the car's own motion estimate and BMW's drift analyser: made-up numbers
  *   GPS sentences  once a second: RMC with a position, the TRUE speed and a course, GGA, GSA
@@ -39,7 +44,11 @@
  *   numbers, not names), missing ([interface names] this head unit does not have), watchFail ({ Vehicle2: 2 }: that
  *   many subscriptions fail first), noEvent, upAfter ({ CDS2: 1500 }), faults (driftsim's sensor faults), limit,
  *   model (what differs from driftsim's car "a", e.g. { speedFrom: 'u' }: the speed it reports is the speed along
- *   its own length).
+ *   its own length), silent ([sources] the car never sends by itself, e.g. ['driver']), cdsMs (CDS2 notified every so many ms: 100 for a car that sends its accelerations 10 times a
+ *   second), nmeaSentences (so many more sentences in each GPS event), boxTmp (see car.box), uptime (() => s: what
+ *   os.uptime() says to the app), wheelForm ((count) => raw: the form the four wheel values are sent in).
+ * THE APP'S SETTINGS are the shipped defaults (plus demo off) unless boot is given sets: as shipped the app subscribes
+ *   to its core signals only and reads no getter itself. ALL_ON (exported) switches every extra on, as 1.0.0 had them.
  * While running: car.on.<source> = false silences one source (car.on.yaw = false: CDS2's yaw rate alone, its getter
  *   too; car.on.cds2 = 'off': all of CDS2); car.send.<source>(value) sends anything at all;
  *   car.dsc; car.nmeaMode ('ok' | 'bad' checksums | 'void' | 'knots' whole knots | 'junk').
@@ -48,7 +57,8 @@
  * 283.74. Those figures are what the tests look for in the log and the saved file (they must never be there).
  *
  * WHAT LEAVES THE APP is recorded in car.calls: { type: 'watch' | 'getValue' | 'on' | ... }. Anything that is not
- * a subscription, a getter read or an event subscription is in car.forbidden.
+ * a subscription, a getter read or an event subscription is in car.forbidden. ('on' is the kit's call for one more
+ * subscription on a proxy that is there: the GPS receiver's event, or a field of an extra switched on later.)
  */
 const fs = require('fs'), os = require('os'), path = require('path');
 const sim = require('./driftsim');
@@ -65,11 +75,15 @@ const IFACE = {
     DrivingVector: 'de.bmw.chassis.DrivingVector', MDrive: 'de.bmw.infotainment.misc.MDrive', SatellitePositioning: 'de.bmw.infotainment.SatellitePositioning',
 };
 const OPTIONAL = ['SpeedAcceleration', 'SteeringAngle', 'XView', 'AcceleratorPedal', 'Powertrain', 'CDS', 'FES', 'DrivingVector', 'MDrive', 'SatellitePositioning'];
-/** The fields of each interface that have a getter on the stand-in head unit (the kit reads each once when the service comes up). */
+/**
+ * The fields the kit reads once itself when a service comes up: those the app's manifest asks for with "r" (1.0.1:
+ * the speed, the two accelerations and CDS2's yaw rate; the kit reads a getter only where the installer made one).
+ */
 const GETTERS = {
     Vehicle2: ['statusCarSpeed2'], CDS2: ['statusLateralAccelerationMassCenter', 'statusLongitudinalAccelerationMassCenter', 'statusYawVelocityVehicle'],
-    XView: ['statusFrontAxleSteeringAngle', 'statusSteeringAngleDriver'], CDS: ['statusHandBrake'], FES: ['statusDSCSwitchHMI'], MDrive: ['statusDriftLast', 'statusDriftBest'],
 };
+/** Every extra switched on, and the app's own getter reads: what 1.0.0 did without being asked. */
+const ALL_ON = { askCar: true, gpsOn: true, wheelsOn: true, sourcesOn: true, pedalOn: true, studyOn: true };
 /** The other raw units the same quantities come in from the second sources (the app is told none of them). */
 const CHASSIS_YAW = { yawStep: 0.0125, yawZero: 32000, yawSign: -1 };
 const STEERING_WHEEL = { steerStep: 0.04375, steerZero: 32767, steerSign: -1, steerRatio: 14.6 };
@@ -85,7 +99,8 @@ function sentence(body, bad) {
 const dm = (deg, width) => { const d = Math.floor(Math.abs(deg)), m = (Math.abs(deg) - d) * 60; return String(d).padStart(width, '0') + m.toFixed(4).padStart(7, '0'); };
 
 module.exports = function (stageArg) {
-    const STAGE = path.resolve(stageArg), JS = path.join(STAGE, 'source', 'javascript');
+    // (the real path: Node keeps loaded files under their real paths, and boot() drops the app's by that path)
+    const STAGE = fs.realpathSync(path.resolve(stageArg)), JS = path.join(STAGE, 'source', 'javascript');
     const real = { setImmediate };
     const clock = { mono: 100000, wall: Date.UTC(2026, 10, 24, 9, 0, 0), timers: [], id: 1 };
     const dirs = [];
@@ -154,7 +169,7 @@ module.exports = function (stageArg) {
         const car = {
             k: o.k || 1, model,
             getterMs: o.getterMs == null ? 25 : o.getterMs, notifyMs: o.notifyMs || 100, notifyDelay: o.notifyDelay == null ? 30 : o.notifyDelay,
-            on: { notifier: o.notifier !== false, getter: o.getter !== false, cds2: o.cds2 || 'notify', yaw2: true, front: true, driver: true, xfront: true, xdriver: true, pedal: true, wheels: true, hb: true, dsc: true, study: true, nmea: true },
+            on: { notifier: o.notifier !== false, getter: o.getter !== false, cds2: o.cds2 || 'notify', yaw2: true, front: true, driver: o.driverNoCRC !== 'only', driver2: !!o.driverNoCRC, xfront: true, xdriver: true, pedal: true, wheels: true, hb: true, dsc: true, study: true, nmea: true },
             yawCds2: o.yawCds2 || 'ok', nmeaMode: 'ok', dsc: 0, speedFault: null,
             missing: {}, watchFail: Object.assign({}, o.watchFail),
             handlers: {}, events: {}, calls: [], forbidden: [], logs: [], logAt: [], errors: [], barText: {}, subs: {},
@@ -162,6 +177,8 @@ module.exports = function (stageArg) {
             positions: { lonMax: LON0, n: 0 }, screen: true, mode: 'pc', picture: null,
         };
         (o.missing || []).forEach((n) => { car.missing[n] = true; });
+        // (silent: sources the car never sends by itself, from the start; the test may send them by hand: car.send.<source>)
+        (o.silent || []).forEach((k) => { car.on[k] = false; });
 
         /* the true motion: a script of driftsim.js, played from car.t0; before it and after it the car holds its state */
         let truth = null, read = null, odoT = clock.mono, odo = 0;
@@ -217,10 +234,12 @@ module.exports = function (stageArg) {
             yaw2: (t) => ({ cRCYawVelocityVehicle: 91, aliveYawVelocityVehicle: 3, dummy: 0, yawVelocityVehicle: raws.yaw2(t), yawVelocityVehicleErrorAmplitude: 40, qualifierYawVelocityVehicle: 0 }),
             front: (t) => ({ cRCSteeringAngleFrontAxleEffective: 17, aliveSteeringAngleFrontAxleEffective: 5, dummy: 1, steeringAngleFrontAxleEffective: raws.front(t), qualifierSteeringAngleFrontAxleEffective: 0, statusConditionSteeringAngle: 1, steeringAngleFrontAxleEffectiveErrorAmplitude: 9 }),
             driver: (t) => ({ cRCActualValueSteeringAngleDriver: 44, aliveActualValueSteeringAngleDriver: 2, controlHandsOffRecognitionVehicleGuiding: 0, dummy1: 0, actualValueSteeringAngleDriver: raws.wheel(t), actualValueSteeringAngleVelocityDriver: 32768, dummy2: 0, qualifierActualValueSteeringAngleDriver: 0 }),
+            driver2: (t) => ({ controlHandsOffRecognitionVehicleGuiding: 0, actualValueSteeringAngleDriver: raws.wheel(t), actualValueSteeringAngleVelocityDriver: 32768, qualifierActualValueSteeringAngleDriver: 0 }),
             xfront: (t) => ({ steeringAngleFrontAxleEffective: raws.front(t) }),
             xdriver: (t) => ({ actualValueSteeringAngleDriver: raws.wheel(t), qualifierActualValueSteeringAngleDriver: 0 }),
             pedal: (t) => ({ cRCAngleAcceleratorPedal: 7, aliveAngleAcceleratorPedal: 1, dummy: 1, actualValueAngleAcceleratorPedal: raws.pedal(t), qualifierActualValueAngleAcceleratorPedal: 0, actualValueAngleAcceleratorPedalVirtual: raws.pedal(t), gradientActualValueAngleAcceleratorPedal: 2048, dummy2: 0, dummy3: 0, dummy4: 0 }),
-            wheels: (t) => { const w = raws.wheels(t); return { CRCActualValueRPMWheel: 77, aliveActualValueRPMWheel: 4, dummy: 0, actualValueRPMWheelRLH: w.rl, actualValueRPMWheelRRH: w.rr, actualValueRPMWheelFLH: w.fl, actualValueRPMwheelFRH: w.fr, qualifierActualValueRPMWheelRLH: 0, qualifierActualValueRPMWheelRRH: 0, qualifierActualValueRPMWheelFLH: 0, qualifierActualValueRPMWheelFRH: 0 }; },
+            // (wheelForm: the four wheel values in another form than a plain count, as the first car sends them)
+            wheels: (t) => { const w0 = raws.wheels(t), f = typeof o.wheelForm === 'function' ? o.wheelForm : (x) => x, w = { fl: f(w0.fl), fr: f(w0.fr), rl: f(w0.rl), rr: f(w0.rr) }; return { CRCActualValueRPMWheel: 77, aliveActualValueRPMWheel: 4, dummy: 0, actualValueRPMWheelRLH: w.rl, actualValueRPMWheelRRH: w.rr, actualValueRPMWheelFLH: w.fl, actualValueRPMwheelFRH: w.fr, qualifierActualValueRPMWheelRLH: 0, qualifierActualValueRPMWheelRRH: 0, qualifierActualValueRPMWheelFLH: 0, qualifierActualValueRPMWheelFRH: 0 }; },
             hb: (t) => ({ statusContactHandBrake: o.hbNumbers ? (raws.hb(t) ? 2 : 1) : raws.hb(t) ? 'HANDBREMSE_ANGEZOGEN' : 'HANDBREMSE_GELOEST' }),
             dsc: () => ({ displayStatusDSC2: car.dsc, counterControlDisplayStatusDSC: 1 }),
             // the study-only values: made-up numbers that follow the true motion
@@ -233,7 +252,7 @@ module.exports = function (stageArg) {
         /** [source, interface, field]: where each source's values go. */
         const ROUTE = {
             speed: ['Vehicle2', 'statusCarSpeed2'], lat: ['CDS2', 'statusLateralAccelerationMassCenter'], long: ['CDS2', 'statusLongitudinalAccelerationMassCenter'], yaw: ['CDS2', 'statusYawVelocityVehicle'],
-            yaw2: ['SpeedAcceleration', 'YawSpeedVehicle'], front: ['SteeringAngle', 'SteeringAngleFrontAxleEffective'], driver: ['SteeringAngle', 'ActualSteeringAngleDriver'],
+            yaw2: ['SpeedAcceleration', 'YawSpeedVehicle'], front: ['SteeringAngle', 'SteeringAngleFrontAxleEffective'], driver: ['SteeringAngle', 'ActualSteeringAngleDriver'], driver2: ['SteeringAngle', 'actualSteeringAngleDriverNoCRC'],
             xfront: ['XView', 'statusFrontAxleSteeringAngle'], xdriver: ['XView', 'statusSteeringAngleDriver'], pedal: ['AcceleratorPedal', 'AngleAcceleratorPedal'],
             wheels: ['Powertrain', 'ActualValueRPMWheel'], hb: ['CDS', 'statusHandBrake'], dsc: ['FES', 'statusDSCSwitchHMI'],
             move: ['DrivingVector', 'ActualVectorVehicleMove'], est: ['DrivingVector', 'VehicleDynamicDataEstimatedVerified'], mLast: ['MDrive', 'statusDriftLast'], mBest: ['MDrive', 'statusDriftBest'],
@@ -259,7 +278,7 @@ module.exports = function (stageArg) {
         const emit = {
             speed: onChange('speed', () => car.on.notifier, car.notifyDelay),
             lat: onChange('lat', cds), long: onChange('long', cds), yaw: onChange('yaw', () => cds() && car.on.yaw !== false),
-            yaw2: onChange('yaw2', () => car.on.yaw2), front: onChange('front', () => car.on.front), driver: onChange('driver', () => car.on.driver),
+            yaw2: onChange('yaw2', () => car.on.yaw2), front: onChange('front', () => car.on.front), driver: onChange('driver', () => car.on.driver), driver2: onChange('driver2', () => car.on.driver2),
             xfront: onChange('xfront', () => car.on.xfront), xdriver: onChange('xdriver', () => car.on.xdriver),
             pedal: onChange('pedal', () => car.on.pedal), wheels: onChange('wheels', () => car.on.wheels),
             hb: onChange('hb', () => car.on.hb), dsc: onChange('dsc', () => car.on.dsc),
@@ -272,16 +291,18 @@ module.exports = function (stageArg) {
                 const rmc = 'GPRMC,' + hms + ',' + (m === 'void' ? 'V' : 'A') + ',' + dm(p.lat, 2) + ',N,' + dm(p.lon, 3) + ',E,' + (m === 'knots' ? knots.toFixed(0) : knots.toFixed(3)) + ',' + COURSE + ',241126,,,A';
                 const gga = 'GPGGA,' + hms + ',' + dm(p.lat, 2) + ',N,' + dm(p.lon, 3) + ',E,1,09,0.9,' + p.alt.toFixed(1) + ',M,47.0,M,,';
                 const gsa = 'GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1';
-                car.send.nmea({ nmeaString: [rmc, gga, gsa].map((b) => sentence(b, m === 'bad')).join('\r\n') + '\r\n', delayCounter: 2 });
+                // (a receiver that says much more each second, as the first car's: satellites in view, over and over)
+                const more = Array.from({ length: o.nmeaSentences || 0 }, (_, i) => 'GPGSV,9,' + (i % 9 + 1) + ',34,' + String(i).padStart(2, '0') + ',61,117,39,13,48,265,44,22,23,158,33,27,14,057,28');
+                car.send.nmea({ nmeaString: [rmc, gga, gsa].concat(more).map((b) => sentence(b, m === 'bad')).join('\r\n') + '\r\n', delayCounter: 2 });
             },
         };
         /** Start the car's own senders: [period ms, phase ms]. */
         car.start = () => {
             const every = (period, phase, fn) => setTimeout(() => { fn(); setInterval(fn, period); }, phase);
-            const fast = car.on.cds2 === 'slow' ? 250 : 20;
+            const fast = o.cdsMs > 0 ? o.cdsMs : car.on.cds2 === 'slow' ? 250 : 20;
             every(car.notifyMs, 37, emit.speed);
             every(fast, 3, emit.lat); every(fast, 9, emit.long); every(fast, 14, emit.yaw);
-            every(20, 6, emit.yaw2); every(20, 11, emit.front); every(20, 17, emit.driver); every(50, 23, emit.xfront); every(50, 41, emit.xdriver);
+            every(20, 6, emit.yaw2); every(20, 11, emit.front); every(20, 17, emit.driver); every(20, 18, emit.driver2); every(50, 23, emit.xfront); every(50, 41, emit.xdriver);
             every(50, 29, emit.pedal); every(50, 44, emit.wheels); every(100, 61, emit.hb); every(500, 77, emit.dsc);
             every(200, 83, emit.move); every(200, 131, emit.est); every(1000, 210, emit.mLast); every(1000, 215, emit.mBest);
             every(1000, 400, emit.nmea);
@@ -345,9 +366,12 @@ module.exports = function (stageArg) {
                 return Promise.resolve(sub);
             },
             on: (p, ev, fn) => {
-                note({ type: 'on', iface: p && p.name, event: ev });
+                // (the kit's signals.on: one more subscription on a proxy that is there, an event or a field)
+                const name = p && p.name, field = Object.keys(ROUTE).some((k) => ROUTE[k][0] === name && ROUTE[k][1] === ev);
+                note({ type: 'on', iface: name, event: ev, field });
+                if (field) { if (o.onFail && o.onFail[name + '.' + ev]) return Promise.reject(new Error('test: this field cannot be subscribed to')); (car.handlers[name] || (car.handlers[name] = {}))[ev] = fn; return Promise.resolve(); }
                 if (o.noEvent) return Promise.reject(new Error('test: no events on this head unit'));
-                car.events[(p && p.name) + '.' + ev] = fn;
+                car.events[name + '.' + ev] = fn;
                 return Promise.resolve();
             },
             proxy: (iface) => { note({ type: 'proxy', iface }); return Promise.reject(new Error('test: read only')); },
@@ -374,10 +398,20 @@ module.exports = function (stageArg) {
         const log = {};
         ['info', 'warn', 'error', 'debug'].forEach((l) => { log[l] = function () { car.logAt.push(clock.mono); car.logs.push((l === 'info' ? '' : l.toUpperCase() + ' ') + Array.prototype.map.call(arguments, (x) => (x && x.stack) || String(x)).join(' ')); }; });
         car.dataDir = opts.dataDir || newDir();
+        // what stands in for the head unit's /tmp, where the app keeps its record of starts and stops (box.js): a folder
+        // of this car's own, so that one car's starts are not another's, unless the test hands one on (boxTmp)
+        car.boxTmp = opts.boxTmp || newDir();
+        process.env.PPS_BOX_TMP = car.boxTmp;
         const quiet = console.log; console.log = () => {};          // (the stand-in head unit says which screen it opens)
         const hu = headUnit(STAGE, { dataDir: car.dataDir, fresh: true, sets: Object.assign({ demo: 'off' }, opts.sets), image: (name, cv) => { car.picture = cv; return Promise.resolve(); }, log });
         car.hu = hu; car.settings = hu.settings;
         hu.ctx.signals = car.signals;
+        // the SDK's app object, as far as the app uses it: it listens for "shutdown" (kit/runtime/mgu.js hands ctx.app on)
+        const appEvents = {};
+        hu.ctx.app = { on: (ev, fn) => { (appEvents[ev] || (appEvents[ev] = [])).push(fn); } };
+        /** MainApp asks the app to stop: the SDK's "shutdown" event (the kit would end the process 200 ms later; the test goes on). */
+        car.shutdown = () => (appEvents.shutdown || []).forEach((fn) => fn());
+        if (opts.uptime) { const os0 = require('os'), up0 = os0.uptime; os0.uptime = opts.uptime; car.uptimeBack = () => { os0.uptime = up0; }; }
         hu.ui.isVisible = (n) => n === 'MAIN' && car.screen;
         hu.ui.text = (n, t) => { car.barText[n] = t; return Promise.resolve(); };
         // the frame surface: the PC's, or as where the kit runs the screen itself on iDrive 7 (text 1.165 times the size,
@@ -391,18 +425,28 @@ module.exports = function (stageArg) {
             frame = r;
             return r;
         };
-        hu.ui.image = (name, cv) => (wantPng && car.mode === 'pc' ? image(name, cv) : Promise.resolve());
+        // (car.images: how many frames the app has handed to the screen)
+        car.images = 0;
+        hu.ui.image = (name, cv) => { car.images++; return wantPng && car.mode === 'pc' ? image(name, cv) : Promise.resolve(); };
         // the app's own session (session.js) and car side (car.js), as the app holds them
         const S = require(path.join(JS, 'session')).Session, tick = S.prototype.tick;
         S.prototype.tick = function () { car.session = this; car.store = this.store; return tick.apply(this, arguments); };
         const C = require(path.join(JS, 'car')).CarSide, ctick = C.prototype.tick;
         C.prototype.tick = function () { car.side = this; return ctick.apply(this, arguments); };
+        const B = require(path.join(JS, 'box')).Box, bnote = B.prototype.note, blines = B.prototype.lines;
+        B.prototype.note = function () { car.box = this; return bnote.apply(this, arguments); };
+        B.prototype.lines = function () { car.box = this; return blines.apply(this, arguments); };
         hu.start();
+        if (car.uptimeBack) car.uptimeBack();
         car.start();
         await advance(60);
         console.log = quiet;
-        /** Open tab i (0 Drift, 1 Last, 2 Session, 3 Best, 4 Signals). */
-        car.page = (i) => hu.display.onTab(i);
+        /**
+         * Open tab i (0 Drift, 1 Last, 2 Session, 3 Best, 4 Signals); 5: the Signals tab's second page. The Signals tab touched
+         * while it shows changes between its two pages, so 4 and 5 are reached from another tab: car.page(4) always lands on
+         * page 1, car.page(5) on page 2, whatever was showing. (A test of that touch itself calls car.hu.display.onTab(4).)
+         */
+        car.page = async (i) => { if (i < 4) return hu.display.onTab(i); await hu.display.onTab(0); await hu.display.onTab(4); return i === 5 ? hu.display.onTab(4) : undefined; };
         /** Press a button of the HMI's bar. */
         car.press = (id) => hu.handlers[id]({});
         /** Draw one frame of the page shown: the texts on it ({ s, x0, y, size, w, font }); car.boxes: the boxes on it. */
@@ -411,6 +455,8 @@ module.exports = function (stageArg) {
         car.save = async (dir, name) => {
             const mode = car.mode;
             car.mode = 'pc'; wantPng = true; car.picture = null;
+            // (the app hands a frame over only when it differs from the last: this one is wanted whatever it shows)
+            hu.display._layoutChanged();
             await hu.loopFn();
             wantPng = false; car.mode = mode;
             if (car.picture) { fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, name + '.png'), Buffer.isBuffer(car.picture) ? car.picture : car.picture.png()); }
@@ -450,5 +496,5 @@ module.exports = function (stageArg) {
     /** Everything any car's app did with its signals, and what of it was not allowed. */
     const allCalls = () => [].concat.apply([], cars.map((c) => c.calls));
     const allForbidden = () => [].concat.apply([], cars.map((c) => c.forbidden));
-    return { boot, advance, stall, clock, mishaps, allCalls, allForbidden, cars, fonts, rec, JS, IFACE, OPTIONAL, GETTERS, LAT0, LON0, COURSE, metresPerDegLon, sim };
+    return { boot, advance, stall, clock, mishaps, allCalls, allForbidden, cars, fonts, rec, JS, IFACE, OPTIONAL, GETTERS, ALL_ON, LAT0, LON0, COURSE, metresPerDegLon, sim, newDir };
 };

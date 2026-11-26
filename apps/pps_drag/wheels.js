@@ -4,6 +4,9 @@
  * a launch's wheelspin is read off them. Pure logic: every time comes in as an argument.
  *
  *   rawWheels(value)                 Powertrain.ActualValueRPMWheel -> { fl, fr, rl, rr } raw (null = no value)
+ *   rawWheelsAny(value)              the same members as they came: any number at all (for the study table)
+ *   const y = new WheelStudy()       the raw values of this start, for a photo: now, lowest, highest, at a steady speed
+ *   y.wheels(any4, steady), y.status()
  *   const f = new WheelFactors({ saved, onLearned })
  *   f.speed(t, kmh)                  every vehicle speed sample (as the car reports it, no GPS scale)
  *   f.wheels(t, raw)                 every wheel event; learns while the car holds a steady speed
@@ -26,6 +29,17 @@
  *     vehicle speed is above 30 km/h and has moved by less than 1 km/h over the last second. If the raw
  *     value had an offset as well, the ratios would spread with speed: a wheel whose ratios spread by
  *     more than 3 % is not used, and the Signals page shows the spread.
+ *     THAT TEST ONLY MEANS SOMETHING ACROSS SPEEDS (found for 1.0.2, on a PC, with a made-up car whose wheel
+ *     values are not a plain multiple, as the first car's are not): ratios all taken at ONE speed agree
+ *     with each other whatever form the raw value has. Until 1.0.2 a factor counted after 20 steady
+ *     moments, which one second at one speed gives, and a launch right after it got a wheelspin figure
+ *     and a SPEED READ HIGH AT LAUNCH flag made of nothing; a factor learned that way was saved, and used
+ *     again from the first moment of the next start. Now a factor counts only once its ratios come from
+ *     steady speeds at least 20 km/h apart, the ratios of every stretch of 10 km/h are kept (a long drive
+ *     at one speed does not push out what another speed showed) and each such stretch must agree with the
+ *     whole, and a saved factor is only read if it
+ *     says it was learned that way (a file written before 1.0.2 does not: its wheel factors are learned
+ *     again).
  *   - The vehicle speed (the stability control's own, already corrected for wheelspin by the car) and the
  *     wheel speeds reach the app equally late. If one is later than the other, the cross-check reads a
  *     difference that is only that delay: at 0.8 g, 50 ms are 1.4 km/h, which is 5 % at 28 km/h. So
@@ -55,8 +69,9 @@
  * the delay between the car's acceleration and its speed reaching the app, which is not known: if the
  * acceleration arrives later than the speed, the estimate still reads high at low speed.
  *
- * FIGURES THAT ARE GUESSES: 20 steady moments before a factor counts, the last 200 kept; the 3 % spread
- * limit; a speed sample may be 1.5 s old for learning; a step between two wheel events counts for at most
+ * FIGURES THAT ARE GUESSES: 20 steady moments before a factor counts, 200 kept (the oldest of the stretch
+ * of 10 km/h that holds the most goes first), and 20 km/h between the slowest and the fastest of them; the
+ * 3 % spread limit; a speed sample may be 1.5 s old for learning; a step between two wheel events counts for at most
  * 0.5 s; the fallback's 8 km/h floor and its 2 s of standing for the sensor's zero (the kit's figures); the
  * quarter of a second before the launch whose readings are not taken as "standing".
  */
@@ -68,6 +83,9 @@ const MEMBER = { fl: 'actualValueRPMWheelFLH', fr: 'actualValueRPMwheelFRH', rl:
 const RAW_NONE = 65534;
 const LEARN_KMH = 30, LEARN_MS = 1000, LEARN_TOL_KMH = 1, LEARN_AGE_MS = 1500;
 const FACTOR_NEED = 20, FACTOR_KEEP = 200, FACTOR_SPREAD = 0.03;
+const SPAN_KMH = 20;               // a factor counts once its ratios come from steady speeds this far apart
+const BUCKET_KMH = 10;             // the ratios are kept per stretch of this many km/h
+const BUCKET_NEED = 5;             // a stretch with this many ratios counts: it must agree with the whole, and it widens the span
 const WINDOW_MS = 3000, SPIN_FLOOR_KMH = 5, SPIN_PCT = 10, HIGH_PCT = 5, HIGH_SECS = 0.3, STEP_MAX_MS = 500;
 const EST_FLOOR_KMH = 8, EST_BIAS_MS = 2000, STAND_KMH = 0.5, HIST_MS = 1500, BIAS_GUARD_MS = 250;
 
@@ -94,6 +112,51 @@ function rawWheels(v) {
     return out;
 }
 
+/**
+ * The four wheel members of an ActualValueRPMWheel event exactly as they came: any finite number, also the ones
+ * rawWheels() takes for "no value". For the study table only: nothing is worked out from these.
+ */
+function rawWheelsAny(v) {
+    const out = { fl: null, fr: null, rl: null, rr: null };
+    if (!v || typeof v !== 'object') return out;
+    const lower = {};
+    Object.keys(v).forEach((k) => { if (!/^(qualifier|crc|alive|dummy)/i.test(k)) lower[k.toLowerCase()] = v[k]; });
+    WHEELS.forEach((w) => { const x = lower[MEMBER[w].toLowerCase()]; out[w] = isNum(x) ? x : null; });
+    return out;
+}
+
+/**
+ * The raw wheel values of this start of the app, kept so that ONE photo of the Signals tab can show what form
+ * they have: per wheel the value now, the lowest and the highest seen since the app started, and the value at the
+ * last moment the car held a steady speed above 30 km/h, with that speed. Nothing here is decoded and nothing of
+ * it enters a result: on the first car all four read 65407 standing still, which is not the plain multiple of the
+ * wheel's speed this file assumes, and the form is not known.
+ *   y.wheels(any4, steady)   any4: rawWheelsAny() of an event; steady: WheelFactors.steadyAt() of that moment, or null
+ *   y.status()               -> { n, wheels: { fl: { raw, min, max, at, kmh } ... } }   (at: raw at the steady moment, kmh: its speed)
+ */
+class WheelStudy {
+    constructor() { this.n = 0; this.w = {}; WHEELS.forEach((k) => { this.w[k] = { raw: null, min: null, max: null, at: null, kmh: null }; }); }
+
+    wheels(any4, steady) {
+        if (!any4) return;
+        this.n++;
+        WHEELS.forEach((k) => {
+            const x = any4[k], o = this.w[k];
+            o.raw = isNum(x) ? x : null;
+            if (!isNum(x)) return;
+            if (o.min === null || x < o.min) o.min = x;
+            if (o.max === null || x > o.max) o.max = x;
+            if (steady && isNum(steady.kmh)) { o.at = x; o.kmh = steady.kmh; }
+        });
+    }
+
+    status() {
+        const out = { n: this.n, wheels: {} };
+        WHEELS.forEach((k) => { out.wheels[k] = Object.assign({}, this.w[k]); });
+        return out;
+    }
+}
+
 class WheelFactors {
     /** o.saved: what export() gave last time;  o.onLearned(wheel, factor, n): a wheel's factor is known (said once per start). */
     constructor(o) {
@@ -111,47 +174,78 @@ class WheelFactors {
         this.lastRaw = null;
     }
 
+    /** A saved factor counts only if it says it was learned across speeds (lo, hi: the slowest and fastest steady speed it came from). */
     load(saved) {
         WHEELS.forEach((w) => {
             const s = saved && saved[w];
-            if (s && isNum(s.f) && s.f > 0) this.saved[w] = { f: s.f, n: isNum(s.n) ? s.n : 0 };
+            if (s && isNum(s.f) && s.f > 0 && isNum(s.lo) && isNum(s.hi) && s.hi - s.lo >= SPAN_KMH) this.saved[w] = { f: s.f, n: isNum(s.n) ? s.n : 0, lo: s.lo, hi: s.hi };
         });
     }
 
-    /** For the saved file: { fl: { f, n }, ... } of the wheels that have a factor. */
+    /** For the saved file: { fl: { f, n, lo, hi }, ... } of the wheels that have a factor. */
     export() {
         const out = {};
-        WHEELS.forEach((w) => { const c = this._factor(w); if (c) out[w] = { f: c.f, n: c.n }; });
+        WHEELS.forEach((w) => { const c = this._factor(w); if (c && isNum(c.lo) && isNum(c.hi)) out[w] = { f: c.f, n: c.n, lo: Math.round(c.lo * 10) / 10, hi: Math.round(c.hi * 10) / 10 }; });
         return out;
     }
 
     speed(t, kmh) { this.w.add(t, kmh); }
 
+    /** Is the car holding a steady speed above 30 km/h at time t (the moments a factor is learned at)? -> { kmh } | null */
+    steadyAt(t) {
+        if (!this.w.steady(t, LEARN_MS, LEARN_TOL_KMH, LEARN_AGE_MS)) return null;
+        const r = this.w.range(t, LEARN_MS);
+        return r && r.min > LEARN_KMH ? { kmh: (r.min + r.max) / 2 } : null;
+    }
+
     /** A wheel event: raw = rawWheels(value). Learns when the car is steady above 30 km/h. */
     wheels(t, raw) {
         this.lastRaw = raw;
-        if (!raw || !this.w.steady(t, LEARN_MS, LEARN_TOL_KMH, LEARN_AGE_MS)) return;
-        const r = this.w.range(t, LEARN_MS);
-        if (!(r.min > LEARN_KMH)) return;
-        const v = (r.min + r.max) / 2;
+        const st = raw ? this.steadyAt(t) : null;
+        if (!st) return;
+        const v = st.kmh;
+        const b = Math.floor(v / BUCKET_KMH);
         WHEELS.forEach((w) => {
             if (!isNum(raw[w]) || !(raw[w] > 0)) return;
             const list = this.ratios[w];
-            list.push(v / raw[w]);
-            if (list.length > FACTOR_KEEP) list.shift();
+            list.push({ r: v / raw[w], v, b });
+            // (200 kept: the oldest of the stretch of 10 km/h that holds the most goes first, so what another speed
+            // showed stays however long the car then holds one speed)
+            if (list.length > FACTOR_KEEP) {
+                const count = {};
+                let most = b;
+                list.forEach((x) => { count[x.b] = (count[x.b] || 0) + 1; if (count[x.b] > (count[most] || 0)) most = x.b; });
+                for (let i = 0; i < list.length; i++) if (list[i].b === most) { list.splice(i, 1); break; }
+            }
             if (list.length < FACTOR_NEED) return;
-            const a = list.slice().sort((x, y) => x - y), n = a.length, f = median(a);
-            const spread = Math.max(f - a[Math.floor(0.1 * (n - 1))], a[Math.ceil(0.9 * (n - 1))] - f) / f;
-            this.cur[w] = { f, n, spread };
-            if (!this.said[w] && spread <= FACTOR_SPREAD) { this.said[w] = true; if (this.o.onLearned) this.o.onLearned(w, f, n); }
+            const a = list.map((x) => x.r).sort((x, y) => x - y), n = a.length, f = median(a);
+            let spread = Math.max(f - a[Math.floor(0.1 * (n - 1))], a[Math.ceil(0.9 * (n - 1))] - f) / f;
+            // Across speeds: every stretch of 10 km/h that has 5 ratios or more must agree with the whole (its middle
+            // ratio within the same 3 %: the middle 80 % above do not see a new speed until a tenth of the ratios are
+            // from it), and the slowest and fastest speed of those stretches say how far apart the factor was tested.
+            const by = {};
+            list.forEach((x) => { (by[x.b] = by[x.b] || []).push(x); });
+            let lo = Infinity, hi = -Infinity;
+            Object.keys(by).forEach((k) => {
+                const g = by[k];
+                if (g.length < BUCKET_NEED) return;
+                spread = Math.max(spread, Math.abs(median(g.map((x) => x.r)) - f) / f);
+                g.forEach((x) => { if (x.v < lo) lo = x.v; if (x.v > hi) hi = x.v; });
+            });
+            this.cur[w] = { f, n, spread, lo, hi };
+            if (!this.said[w] && spread <= FACTOR_SPREAD && hi - lo >= SPAN_KMH) { this.said[w] = true; if (this.o.onLearned) this.o.onLearned(w, f, n); }
         });
     }
 
-    /** A wheel's factor: learned since the start (if its ratios agree), else the saved one, else null. */
+    /**
+     * A wheel's factor: learned since the start if its ratios agree AND come from speeds far enough apart to show
+     * that they would not; else the saved one (which was learned that way), unless this start's ratios contradict
+     * it; else null.
+     */
     _factor(w) {
         const c = this.cur[w];
-        if (c && c.spread <= FACTOR_SPREAD) return c;
-        if (c) return null;                                     // learned, and the ratios do not agree: not a plain factor
+        if (c && c.spread > FACTOR_SPREAD) return null;         // learned, and the ratios do not agree: not a plain factor
+        if (c && c.hi - c.lo >= SPAN_KMH) return c;
         return this.saved[w] ? Object.assign({ saved: true }, this.saved[w]) : null;
     }
 
@@ -166,7 +260,11 @@ class WheelFactors {
         return out;
     }
 
-    /** For the Signals page: per wheel { raw, f, n, spread, saved, usable }, and whether all four are usable. */
+    /**
+     * For the Signals page: per wheel { raw, f, n, spread, saved, usable, why }, and whether all four are usable.
+     * why (not usable): 'few' (under 20 steady moments), 'spread' (the ratios do not agree), 'span' (they agree,
+     * but all come from within 20 km/h of each other, which shows nothing).
+     */
     status() {
         const out = { all: true, wheels: {} };
         WHEELS.forEach((w) => {
@@ -174,6 +272,7 @@ class WheelFactors {
             out.wheels[w] = {
                 raw: this.lastRaw ? this.lastRaw[w] : null, f: u ? u.f : c ? c.f : null, n: c ? c.n : this.ratios[w].length,
                 spread: c ? c.spread : null, saved: !!(u && u.saved), usable: !!u,
+                why: u ? null : !c ? 'few' : c.spread > FACTOR_SPREAD ? 'spread' : 'span',
             };
             if (!u) out.all = false;
         });
@@ -295,4 +394,4 @@ class AccelSpin {
     }
 }
 
-module.exports = { rawWheels, WheelFactors, WheelSpin, AccelSpin, WHEELS, WINDOW_MS, SPIN_PCT, FACTOR_NEED };
+module.exports = { rawWheels, rawWheelsAny, WheelFactors, WheelSpin, AccelSpin, WheelStudy, WHEELS, WINDOW_MS, SPIN_PCT, FACTOR_NEED, SPAN_KMH };

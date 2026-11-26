@@ -8,8 +8,8 @@
  * scene, clean and dirty, at 5, 10, 20 and 50 samples a second, with and without steering, before and after
  * learning, on three made-up cars, and what each single fault costs. Then it checks bounds: the figures as
  * they were measured, with some room, so that a later change that makes the estimate worse is noticed. A bound
- * here says what this engine does on this made-up car. It is no promise for any real car: nothing here has
- * been on one.
+ * here says what this engine does on this made-up car. It is no promise for any real car: no figure here has
+ * been compared with one.
  *
  * Checks that say KNOWN LIMIT or NOT SOLVED pass while the engine does what proven/CHANGES-drift.md says it
  * does in a case that is known and left open, and pin the figure quoted there.
@@ -120,6 +120,8 @@ const OWN = {
     fadeout: () => laps(S({ v: 70 }).hold(3).to(1.3, { lat: 0.78, drift: 45, spin: 0.3, pedal: 0.7 }).hold(6).to(20, { drift: 0, lat: 0.35, spin: 0, pedal: 0.3 }).hold(3).to(1.5, { lat: 0 }).hold(1), 2),
     fadeout12: () => laps(S({ v: 70 }).hold(3).to(1.3, { lat: 0.78, drift: 45, spin: 0.3, pedal: 0.7 }).hold(6).to(12, { drift: 0, lat: 0.35, spin: 0, pedal: 0.3 }).hold(3).to(1.5, { lat: 0 }).hold(1), 2),
     frozenbank8: () => laps(S({ v: 34 }).hold(4).to(1.5, { lat: 0.45 }).hold(5).to(2.5, { lat: -0.3, v: 40, bank: -8 }).hold(12).to(1.5, { lat: 0, bank: 0 }).hold(1), 1),
+    // (1.0.1, after the first car: six slow, gentle corners, 32 km/h at 0.12 g, too slow and too gentle to teach the yaw rate anything)
+    slowfirst: () => { const s = S({ v: 32, pedal: 0.2 }).hold(3); for (let i = 0; i < 6; i++) s.to(1.5, { lat: (i % 2 ? -1 : 1) * 0.12 }).hold(5); return s.to(1.5, { lat: 0 }).hold(2); },
 };
 const truths = {};
 function truthOf(name, car) {
@@ -518,6 +520,19 @@ function wheel(fn, seconds, learnedMore) {
         ok(Math.abs(s1.yaw.k / (0.005 * DEG) - 1) < 0.01, 'with the zero from standing or going straight, those corners still give a K to work with meanwhile (within 1 %)');
         sim.drive(eng, sim.sampleAll(truthOf('ordinary', sim.CARS.b), sim.CARS.b, { spacing: 50, rand: sim.rng(3) }));
         ok(seen.join() === 'yaw:learning,yaw:learned' || seen.join() === 'yaw:learning,steer:learning,yaw:learned' || /^yaw:learning,.*yaw:learned/.test(seen.join()), 'the app is told when a state changes (' + seen.join(', ') + ')');
+
+        // (1.0.1) steering moments are kept from the start, also before the yaw rate has its line
+        const sf = run({ scene: 'slowfirst', spacing: 50 }).eng.learn.status();
+        ok(sf.yaw.state === 'none' && sf.yaw.moments === 0 && sf.steer.state === 'none' && sf.steer.moments >= 8,
+            '(1.0.1) slow, gentle corners on a car that has learned nothing: the yaw rate takes no moment from them (they are under its 30 km/h and its 1.5 m/s2), and ' + sf.steer.moments + ' steering moments are kept all the same, with no line yet. 1.0.0 kept none: it waited for the yaw rate\'s line, and on the first car the steering was still not learned after 20 minutes');
+        const sfo = run({ scene: ['slowfirst', 'ordinary'], spacing: 50 }), so = sfo.eng.learn.status(), carA = sim.CARS.a, kcA = carA.steerSign * carA.steerStep * DEG / carA.steerRatio / carA.wheelbase;
+        const only = run({ scene: 'ordinary', spacing: 50 }).eng.learn.status();
+        ok(so.yaw.state === 'learned' && so.steer.state === 'learned' && Math.abs(so.steer.k / kcA - 1) < 0.1 && only.steer.state !== 'learned' && sfo.recs.length === 0,
+            '(1.0.1) followed by the scene "ordinary" (corners at 44 to 100 km/h): once the yaw rate has its line the steering\'s is drawn through the moments kept before, and it is "learned" (' + so.steer.n + ' moments, its scale within ' + (100 * Math.abs(so.steer.k / kcA - 1)).toFixed(1) +
+            ' % of the truth). The same ordinary driving alone leaves the steering "' + only.steer.state + '" with ' + only.steer.moments + ' moments. Nothing was scored');
+        const { STEER, YAW } = LearnMod;
+        ok(STEER.V_LO === 12 && STEER.V_HI === 60 && STEER.AY_LO === 0.5 && STEER.AY_HI === 2.5 && STEER.NEED === 14 && STEER.NEED_SIDE === 4 && STEER.SPREAD === 0.12 && YAW.V_LO === 30 && YAW.V_HI === 110 && YAW.AY_LO === 1.5 && YAW.NEED === 20 && YAW.NEED_SIDE === 6 && YAW.SPREAD === 0.08,
+            '(1.0.1) no learning limit was changed with it: the steering still learns at 12 to 60 km/h with 0.5 to 2.5 m/s2, 14 moments, 4 each way, within 12 %; the yaw rate at 30 to 110 km/h from 1.5 m/s2, 20 moments, 6 each way, within 8 %');
 
         // not from a slide
         const L = learned('a', 50, true);

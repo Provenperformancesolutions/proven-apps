@@ -45,8 +45,10 @@
  * 2. THE STEERING: scale, sign and zero. In a slow, gentle corner the front wheels point where the car
  *    goes: front-wheel angle = wheelbase x yaw rate / speed. Learned the same way, as "curvature per count"
  *    (so the wheelbase setting can change without learning again): moments of one second at 12 to 60 km/h
- *    with 0.5 to 2.5 m/s2 of sideways acceleration, everything steady, at most one every 0.8 s. It needs
- *    the yaw rate's line first.
+ *    with 0.5 to 2.5 m/s2 of sideways acceleration, everything steady, at most one every 0.8 s. The LINE
+ *    needs the yaw rate's line first; the moments are kept from the start (1.0.1: on the first car the
+ *    steering was still not learned after 20 minutes of ordinary driving, and on a made-up road most slow
+ *    corners came before the yaw rate had its line and were thrown away).
  *    learned: 14 moments, 4 each way, the middle 80 % within 12 %.
  * 3. THE ACCELERATOR: the smallest and largest raw value seen. Shown as a share, never scored.
  * 4. THE WHEELS (where there are wheel speeds; their scale is not known, only ratios are used): the usual
@@ -251,7 +253,9 @@ class Learn {
 
         // a slow, gentle corner: one moment for the steering's line
         const S = this._steer();
-        const steerOk = !!Y.fit && !!m.yaw && !!m.steer && steadyV && kmh >= STEER.V_LO && kmh <= STEER.V_HI && abs >= STEER.AY_LO && abs <= STEER.AY_HI && steadyA && yawSteady(zeroNow) && alike && quiet &&
+        // (1.0.1: a steering moment is kept from the start, also before the yaw rate has its line. It holds raw readings
+        // only, and the steering's line is still drawn with the yaw rate's: _fitSteer. 1.0.0 threw such seconds away)
+        const steerOk = !!m.yaw && !!m.steer && steadyV && kmh >= STEER.V_LO && kmh <= STEER.V_HI && abs >= STEER.AY_LO && abs <= STEER.AY_HI && steadyA && yawSteady(zeroNow) && alike && quiet &&
             (isNum(m.szero) ? moved(m.steer) <= STEADY.SHARE * Math.abs(m.steer.mean - m.szero) + STEADY.RAW : true);
         // (a second that would have been a moment but for the forward acceleration: counted, one a second at most, for the Signals tab)
         if ((yawOk || steerOk) && !grips && m.t - this.slid.at >= YAW.EVERY_MS) { this.slid.at = m.t; this.slid.n++; }

@@ -1,7 +1,13 @@
-# Proven Drift 1.0.0: what was built, what is assumed, what to check on a car
+# Proven Drift 1.0.0 and 1.0.1: what was built, what is assumed, what to check on a car
 
-BETA. Nothing here has run on a car or on a head unit. Everything below was checked on a PC only (a Mac,
-Node.js 24), against made-up cars. The head unit runs Node.js 8: the engine's files were parsed as ES2017 and
+BETA, and still being tested on cars. Version 1.0.0 was on one car on 25 November 2026: it closed by itself
+there, again and again, and no screen of it was photographed. Part 9 is what that car showed
+and what version 1.0.1 changed for it; parts 10 to 12 are what followed before 1.0.1 was published. Where
+parts 9 to 11 say that `proven/README.md` still describes 1.0.0, that was true when they were written: the
+shared pages were brought up to date with this release. Parts 1 to 8 were written before any car: where they say that
+nothing has run on a car, that was true of everything they describe when they were written, and it is still
+true of every figure in them. Everything in this record, part 9 included, was checked on a PC only (a Mac,
+Node.js 24), against made-up cars. The head unit runs Node.js 8: the app's files were parsed as ES2017 and
 scanned for newer library calls, they were not run on Node 8. No figure in this record says how exact the
 app is on a car. The angle is an estimate everywhere.
 
@@ -30,6 +36,29 @@ Part 8 is what a fifth check found, of part 7: two limits that parts 6 and 7 had
 that said too little and one check that was too loose. No line of code in the app was changed for it:
 comments, scenes in the test, and words. Sentences of parts 1 to 7 that it found untrue or too narrow
 say what holds now, with "(part 8)" beside them. No cell of part 1's tables moved in part 8.
+Part 9 is version 1.0.1, after the first car: what the car showed, what the app now leaves alone unless a
+setting is switched on, the record of starts and stops it keeps and shows, and one change to learning.
+Parts 1 to 8 are left as they were written, as the record of 1.0.0: where part 9 changed what a file does
+(what is subscribed as shipped, the app's own getter reads, the order of the steering sources, how often
+learning is written, the Signals tab, two files and three tests that are new), part 9 says so and the
+sentences of parts 1 to 8 were NOT rewritten. Read them as "this is what 1.0.0 did, and what 1.0.1 still
+does with every setting of part 9 switched on". No cell of part 1's tables moved in part 9.
+Part 10 is the second part of version 1.0.1, built before 1.0.1 was published: no accelerator pedal figure
+anywhere (the owner saw it "jumping about" on the first car), wheel values that must prove themselves before
+anything is worked out from them, and the faults that two checks of Proven Drag's record of starts and
+stops had found, tried on this app's record and put right. Sentences of part 9 that part 10 made untrue say
+what holds now, with "(part 10)" beside them. Parts 1 to 8 still say what 1.0.0 did, pedal and all. No cell
+of part 1's tables moved in part 10.
+Part 11 is the repair of version 1.0.1 after two independent checks of parts 9 and 10, still before 1.0.1 was
+published: most of it is the record of starts and stops (a planted record, a record in RAM that is gone, a
+pipe, a signal the SDK turns into a clean stop), the signal listeners of part 10 are now behind a setting
+that is off as shipped, the Signals tab takes what it shows once a second, and some words. Sentences of
+parts 9 and 10 that part 11 made untrue say what holds now, with "(part 11)" beside them. Nothing in the
+engine changed, and no cell of part 1's tables moved in part 11.
+Part 12 is what the last independent read of version 1.0.1 found, still before 1.0.1 was published: two
+small repairs (an older life in the record keeps what is known of it; a failed subscription is not tried
+again once its extra is switched off) and two sentences. Nothing in the engine changed, nothing the app
+asks of the car as shipped changed, and no cell of part 1's tables moved in part 12.
 Where this record says "assumed" or "a guess", read that literally: nobody at Proven has measured it.
 
 ## How it was tested
@@ -38,14 +67,19 @@ From the top of the repository:
 
 ```
 python3 kit/tools/build.py --preview-only pps_drift
-node proven/tools/test_drift.js dist/pps_drift        # 303 checks, ALL OK: the engine alone
+node proven/tools/test_drift.js dist/pps_drift        # 306 checks, ALL OK: the engine alone (303 in 1.0.0)
 node proven/tools/test_drift.js                       # the same on apps/pps_drift, without a build
-node proven/tools/test_drift_car.js dist/pps_drift    # 418 checks, ALL OK: the built app on a stand-in car (part 2)
+node proven/tools/test_drift_car.js dist/pps_drift    # 608 checks, ALL OK: the built app on a stand-in car (part 2; 418 in 1.0.0; 587 before part 11; 607 before part 12)
+node proven/tools/test_drift_native.js dist/pps_drift # 27 checks, ALL OK: what the app asks of the native binding, under the kit's real signals.js (parts 9 and 11)
+node proven/tools/test_drift_box.js dist/pps_drift    # 69 checks, ALL OK: the record of starts and stops, and files it did not write (parts 9 to 12; 68 before part 12)
+node proven/tools/test_drift_real.js dist/pps_drift   # 44 checks, ALL OK: every kind of end on the kit's real runtime, in real time (parts 9, 10 and 11)
 ```
 
 `test_drift.js` prints the error tables of part 1 and then checks them. It takes about 30 seconds,
-`test_drift_car.js` about 30. The ES2017 check (`recover/es2017.js`, outside the repository) says
-"ES2017 ok" for all 17 files of the app.
+`test_drift_car.js` about 75, `test_drift_real.js` about three minutes (it runs in real time, fourteen
+starts of the app; part 11), `test_drift_native.js` about ten seconds, `test_drift_box.js` a few
+seconds. The ES2017 check (`recover/es2017.js`, outside the repository) says "ES2017 ok" for all 19 files
+of the app (17 in 1.0.0; `box.js` and `rawstudy.js` are new).
 
 The three existing apps were built and their eleven test runs made in the same copy, after part 1, again
 after part 2, after part 3, after part 4, after part 5, after part 6, after part 7 and again after part 8, each time on a clean export of the last commit: 133, 121, 55, 128, 50 and 44 (Proven Gauges), 350
@@ -2993,3 +3027,918 @@ steering is found there). The script is in the checks folder, not in the reposit
 - The checkers' probes and cars are not in the repository.
 - The earlier rounds' breaks were not run again. No random fleet of cars, as before. Each new
   check is one run of one scene.
+
+## 9. Version 1.0.1: after the first car
+
+BETA stays. The app is still being tested on cars, and every screen that said "not yet tested on a car"
+now says "still being tested on cars". Nothing of 1.0.1 has been on a car, a head unit or Node.js 8:
+everything in this part was checked on a PC, against made-up cars and stand-ins.
+
+### What the first car showed (25 November 2026)
+
+One car, a BMW with the curved display (iDrive 8 screens). What is known comes from the
+owner's two messages and ten phone photos of Proven Drag's screens. There is no photo of Proven Drift, no
+log, and nobody could attach a debugger.
+
+- **Both new apps close by themselves**, Proven Drag 1.0.1 and Proven Drift 1.0.0, "generally within 30
+  seconds, randomly", and after the second time the app cannot be opened again. Proven Gauges and Proven
+  Warm-Up run on the same car without trouble. That is what the kit's README (4.3) says the platform does
+  with an app that exits unexpectedly: the first time it empties the app's data folder, the second time
+  it removes the app. So these were unexpected exits, not clean stops. One life of Proven Drag was at
+  least 191 s old when it was photographed, so it is not tied to the start.
+- **The log is gone with the data folder.** It was in the folder the platform empties.
+- **How that car sends its signals**, read off Proven Drag's Signals tab: the speed is notified 47 to 50
+  times a second while it changes and not at all while it holds still; the forward acceleration 10 times
+  a second; the GPS receiver's event comes once a second with about 38 sentences. The wheel speeds arrive
+  in a form nobody expected: all four read 65407 standing still.
+- **"The steering on the drift also is calibrating from 20 min of normal driving."** The sentence reads
+  both ways (it did learn, or it was still not learned). A check on the PC showed that 1.0.0 usually does
+  NOT learn the steering in 20 minutes of mixed road even on the stand-in car: the steering learns only
+  from slow, gentle corners, and 1.0.0 threw those away until the yaw rate had its line.
+- **What is NOT known:** why the apps close. Seven separate checks could not make either app's own
+  JavaScript throw, hang or grow on a PC. What only the two new apps do to the car, and the two working
+  ones do not: getter reads of their own on a fast schedule (Drift 10 a second on the move, 35 where CDS2
+  sends too little, also with its screen hidden), the GPS receiver's event, the wheel speeds, and (Drift
+  alone) several chassis fields that no app of the kit reads. None of these is proven to be the cause.
+
+Each failed try costs the owner a reinstall. So 1.0.1 has two jobs: (A) as shipped, ask nothing of the
+car that apps known to run on cars do not also ask, with every extra behind a setting that is off; and
+(B) put on the screen, for the next photo, how the app last stopped and what it was doing.
+
+### A. What the app asks of the car as shipped, and what is behind a setting
+
+**The core, always subscribed.** What the angle, the score, the flags and the steering check need. Each
+is asked for exactly as apps of the kit ask for it (the manifests under `apps/` of the kit's own apps):
+
+| Interface and field | Flag | Which apps of the kit ask for it the same way |
+|---|---|---|
+| Vehicle2 statusCarSpeed2 | rs | 12 of them (M Vitals, G-Force, Live Data, Redline, ...; counted again in part 11, it said 14), and Proven Gauges and Proven Warm-Up |
+| CDS2 statusLateralAccelerationMassCenter | rs | M Vitals, G-Force, Live Adjustments, Live Data, Redline; Proven Gauges |
+| CDS2 statusLongitudinalAccelerationMassCenter | rs | Brake Test, M Vitals, Draggy, Dyno, G-Force, Live Adjustments, Live Data, Redline; Proven Gauges |
+| CDS2 statusYawVelocityVehicle | rs | Live Adjustments, Live Data |
+| SteeringAngle ActualSteeringAngleDriver | s | Live Adjustments, Live Data |
+| SteeringAngle actualSteeringAngleDriverNoCRC | s | Live Adjustments, Live Data (new in this app's manifest) |
+
+Of these, the speed and the two accelerations are known to work on the first car (Proven Gauges asks for
+them the same way and runs there). CDS2's yaw rate and the steering wheel's angle are asked for by the
+kit's own Live Data and Live Adjustments; whether those two apps have run on THIS car is not known.
+
+**"rs" for four fields only.** With "r" the kit reads the field's getter once itself whenever the car's
+service comes up. 1.0.0 asked that for ten fields, five of which no app had ever read a getter of (XView's
+two, the DSC button, BMW's drift analyser's two; the handbrake's is read by the kit's Live Data). Now only the four in the table have it:
+they are read that way by the kit's own apps, and the app needs the first value (a standing car notifies
+nothing, so that first read is how it knows the car stands). Every other field is "s". The handbrake
+is "rs" in the kit's Live Data; here it is "s" all the same, because the brief for this version says
+every other field, and the price is small (see "Not fixed, not known").
+
+**Where 1.0.0's choice differed from what the kit's apps read:** the steering. 1.0.0 took the front
+wheels' own angle first (SteeringAngle SteeringAngleFrontAxleEffective), which no app of the kit reads,
+and subscribed to the steering wheel's angle under one of its two field names. 1.0.1 takes the steering
+wheel's angle first, under both names as Live Data does (whichever delivers first feeds the engine, the
+other is counted and shown), and the front wheels' own angle is an extra.
+
+**The extras.** Each group has a setting under Settings, Workshop settings. All six are OFF as shipped,
+and OFF is also what the app goes back to when the platform has emptied its data (the settings file is in
+that folder). (Part 11: a seventh setting, "Note stop signals", is beside them and OFF as shipped too. It
+asks nothing of the car: it lets the record listen for the signals that end a process.) A group that is off is not subscribed at all, and no proxy is built for an interface none
+of whose fields is wanted: as shipped the app builds three proxies (Vehicle2, CDS2, SteeringAngle) and
+makes 15 set-up calls to the binding where 1.0.0 built twelve and made 54.
+
+| Setting (Workshop settings) | What it switches on | What the app does without it |
+|---|---|---|
+| Ask the car for values (study) | The app's own getter reads: the speed 2 to 10 times a second, and CDS2's yaw rate and accelerations where the car sends them fewer than 8 times a second | It reads no getter at all. The engine works from what the car notifies |
+| GPS receiver (study, ...) | SatellitePositioning and its event updatePosition | No GPS check of the car's speed |
+| Wheel speeds (study, ...) | Powertrain ActualValueRPMWheel. Used only once the four values have proven themselves (part 10) | No rear wheelspin; learning cannot check that the wheels grip, and which way is left stays assumed |
+| Other steering and yaw (study, ...) | SteeringAngle SteeringAngleFrontAxleEffective, XView's two steering angles, SpeedAcceleration YawSpeedVehicle | Steering: the steering wheel's angle. Yaw rate: CDS2's |
+| Pedal and handbrake (study, ...) | AcceleratorPedal AngleAcceleratorPedal (shown raw only: part 10), CDS statusHandBrake | The pedal's raw value is not shown, "handbrake at the start" not known. Neither enters a flag or the score, which is why they are extras. (There is no pedal bar and no average pedal, with the setting or without: part 10) |
+| Car estimate and analyser (study, ...) | DrivingVector's two fields, MDrive statusDriftLast and statusDriftBest, FES statusDSCSwitchHMI | No raw study values. (The DSC button's state is in this group and is not named in the setting: a row "DSC ... Off" could be taken for something this app never does) |
+
+Each of the five that subscribe says in its name "off in full at next start". Switching one ON subscribes
+at once: with a new proxy, or, for the one extra field that shares its interface with core fields (the
+front wheels' own angle), on the proxy that is there. Switching one OFF stops using its values at once
+(its handlers hand nothing on, its rows say "switched off", what it gave the engine is taken back); the
+subscription itself ends with the next start of the app, because the kit has no call that ends one
+subscription, and shutting a proxy down is something no app here has done on a car.
+
+**The app's own getter reads** ("Ask the car for values"). With it off the two schedulers are never made,
+let alone started: the app calls getValue never, shown or hidden. With it on they run as in 1.0.0, with
+three limits taken from an earlier prototype: never while the app's screen is hidden, never before
+every subscription wanted has been set up, never while one is being tried again. While the reads are held
+back in one of those three ways the engine is on the notified speed, as with the setting off: a car that
+stands, or holds its speed, with the screen hidden is not taken for a car whose speed is lost. (The first
+build of this version did take it so: DATA LOST after 1.5 s. A second look at the code found it, on the
+stand-in car; two checks hold it now.)
+
+**What the engine does without the getters.** It is on the notified speed, where silence is "no change":
+the kit's first read says that a standing car stands, and the last value notified stands after that. No
+age limit is put on the speed. The yaw rate and the sideways acceleration get their age limit of 2.5 s
+only while a drift runs or may be beginning (a car that slides does not hold both still to the last
+count, so silence there is a source that has died; the drift ends flagged DATA GAP, as in 1.0.0), and,
+with "Ask the car for values" on and the screen showing, as in 1.0.0. A car that notifies those two
+fewer than 8 times a second gets the LOW DATA RATE flag as before; nothing is read to top it up and
+nothing divides by a missing rate. On the stand-in car made to send as the first car was seen to (speed
+47 a second on change only, CDS2 10 a second), five kinds of drift came out within 0.6 degrees of the
+made-up car's peak, with no flag, and not one getter read (`test_drift_car.js`). Those are a made-up
+car's figures, no promise for a real one.
+
+**A screen that reads sensibly with the extras off.** A bar, a row or a figure that needs an extra says
+"switched off" or "switched off in Settings", not "--": the rear wheelspin bar on the Drift tab, three
+figures on the Last tab, the rows and lines of the Signals tab (part 10: it was two bars and four figures,
+with the pedal's).
+
+### B. The record of every start and stop (`box.js`), and where it is shown
+
+The app keeps the last five lives of its process. Per life: its number; when it started (the wall clock,
+and the head unit's uptime, so that lives can be placed when the wall clock jumps and a restart of the
+head unit shows); how long it lived; how it ended; which of the six settings above were on in it; and a
+LAST NOTE, refreshed every 2 s: memory now and the most (the process's resident memory, MB), processor
+share now and the most (percent of one core), the longest hold-up of the event loop in the last 10 s and
+in the life (a timer every 100 ms that notes how late it fires), frames handed to the screen a second
+and whether the GPU renderer or software frames show them, values from the car a second, the app's own
+getter reads answered and asked, what was showing, the app's state (learning, ready, in a drift, no
+data, demo data), and how far set-up had got: how many interfaces were set up of those wanted, and the
+names of those still under way and of those that had failed ("set-up 9 of 12 (under way: Vehicle2 CDS2
+Powertrain)").
+
+**How a life ends, as the next start reads it:**
+
+| On the screen | What was written | What it means |
+|---|---|---|
+| asked to stop by the car | The SDK's "shutdown" event came | A clean stop by the platform. The last note's memory and processor say whether a limit was near |
+| THE APP'S OWN ERROR (exit code 1): first line | An uncaught error: its first line (160 characters at most), written before the kit's own handler logs it and ends the process. The error is not swallowed | A fault in the app's or the kit's JavaScript, with its name |
+| EXIT CODE N AND NO WORD BEFORE IT (part 10; "exit code 0" where N is 0) | The process's exit event, and neither of the two above | The process ended itself some other way. With a code other than 0 it counts as a stop by itself (part 10) |
+| ENDED BY THE SIGNAL SIGTERM (or SIGHUP, SIGINT) (sent from outside the app) (part 10; part 11: ONLY WITH "Note stop signals" ON. As shipped such an end reads NO WORD) | The signal was noted before it ended the process | Something outside the app ended it politely: the platform, or a person. Not a crash |
+| asked to stop by the car (the signal SIGTERM came first) (part 11, with "Note stop signals" on) | A signal was heard, somebody else on the process handled it, and the SDK's "shutdown" event followed | A clean stop that began with a signal. Not a stop by itself |
+| NO WORD (killed, crashed or power lost) | None of these | Killed outright from outside (kill -9: a limit of the platform), a crash in native code, or the power went. The last note says what the app was doing up to 2 s before |
+| The saved data was emptied after #N | The record in RAM says the data folder had its copy, and the copy is gone | The platform emptied the app's data folder: it counted that end as unexpected |
+
+**Where it is kept.** (1) `/tmp/pps-box-pps_drift-<user id>/box.json`: /tmp is RAM on the head unit (the
+kit keeps its drawn frames there the same way). Written at the start, every 2 s and at every kind of
+end. It outlives the process and a wipe of the data folder; it is gone when the head unit restarts.
+(2) `pps_drift_box.json` in the app's data folder: written at the start, once more when the life is 10 s
+old (part 10), at a clean stop, and at most once a minute, each only while no drift runs (a write to the
+flash can hold the app up). It outlives a restart of
+the head unit. At a start both are read and the newer is taken. The records of other user ids in /tmp
+are read too, never written: after a reinstall the app may run as another user ("as another user:
+installed again since"). (Part 11: ONLY where the app has no record of its own. With one, such a folder is
+not opened.) Where the record comes from the data folder alone and the head unit's uptime
+has gone back (or the record in RAM that the life had is gone), the first line says "the head unit was
+restarted since #N", and the app does not say that it stopped by itself. (Part 11: where the record in RAM
+is gone and the head unit's uptime and wall clock both say that it ran on, the line says "the record in RAM
+was gone, no restart since #N", and that life counts as a stop by itself like any other.)
+
+**Anybody on the unit can write to /tmp.** The folder is made with mode 0755 and used only if it is a
+real directory (no symbolic link) that belongs to the app's user; a file is written under a temporary
+name, never through a link, mode 0644, and renamed; a file is read only if it is a plain file of 64 KB
+at most (opened without following links and without waiting, so a pipe cannot hold the start up), parsed
+inside try / catch, and every field is taken through a clean-up: numbers that are finite and within
+bounds, words from fixed lists, the one free text (an error's first line) cut to 160 characters of
+printable ASCII, five lives at most. Every file operation is inside try / catch. If /tmp cannot be used
+the app runs on with the copy in the data folder and says so on its first line. No position, course or
+heading is in the record: none ever reaches that file.
+
+**On the screen.** The Signals tab opens with the block "STARTS AND STOPS OF THE APP, NEWEST FIRST",
+always shown: one line per life (this life on up to two, and the life before it too where eight lines
+allow it: part 10), eight lines at most. These are the lines the
+fifth start drew in a run of `test_drift_real.js` (the kit's real runtime on a PC: memory and processor
+are a PC's Node.js 24, not a head unit's; life 1 was stopped by the SDK's shutdown event, life 2 threw an
+uncaught error, lives 3 and 4 were killed with kill -9, and the data folder was emptied after life 4):
+
+```
+#5 now: 7 s (started 0 s after #4's last note), memory 133 MB, processor 14 %, longest hold-up 2 ms (last 10 s: 0), Signals tab, learning, set-up done, 5 frames/s software, 91 values/s, own reads 0 of 0, on: none
+#4 25.11. 14:17:38 lived 8 s, NO WORD (killed, crashed or power lost), Last note: memory 122 MB, processor 21 % (most 22), hold-up 11 ms, Drift tab, learning, set-up done, 10 frames/s software, 90 values/s, own reads 0 of 0, on: GPS
+The saved data was emptied after #4
+#3 25.11. 14:17:27 lived 10 s, NO WORD (killed, crashed or power lost), Last note: memory 140 MB, processor 19 % (most 21), hold-up 0 ms (most 4), Drift tab, learning, set-up done, 10 frames/s software, 92 values/s, own reads 0 of 0, on: GPS
+#2 25.11. 14:17:19 lived 8 s, THE APP'S OWN ERROR (exit code 1): Error: injected by the test: an uncaught error in a timer, Last note: memory 146 MB, processor 17 % (most 20), hold-up 7 ms, Drift tab, learning, set-up done, on: none
+#1 25.11. 14:17:13 lived 6 s, asked to stop by the car, Last note: memory 99 MB, processor 10 %, hold-up 5 ms, Drift tab, learning, set-up done, 3 frames/s software, 93 values/s, own reads 0 of 0, on: none
+```
+
+Each line keeps its number, how the life ended and what was switched on; of the last note as much is
+shown as the line has room for, in the order above. The same lines go to the log at each start. On the
+Drift tab, when the life before this one ended with no word or with the app's own error while the head
+unit went on running, the banner's small text says for the first minute: "The app stopped by itself
+last time. Please photograph the Signals tab." (Part 11: the minute runs from when the page first shows,
+after the first screen, not from the start of the process.)
+
+**To make room** the Signals tab now has two pages under the one tab. Page 1: the starts and stops, 13
+sources (the core and the extras that feed the engine) and what was learned. Page 2 ("Next page", or the
+Signals tab touched again): what is switched on in Workshop settings, the getter's row, the GPS and the
+five study rows, the study-only raw values, the GPS check. A sixth tab was tried and not taken: with
+seven entries the kit leaves the app's name out of the header it draws on iDrive 7.
+
+**Saved at a clean stop.** On the SDK's shutdown event (the kit ends the process 200 ms later) the app
+notes the stop in the record in RAM, writes its saved file once, synchronously, writes the record's copy
+in the data folder, and releases the held-back log. On the kit's real runtime with a stand-in SDK the
+process ended 209 ms after the event with exit code 0 and the file held every moment memory had held.
+
+### Other changes
+
+- **No banner redraws for its own sake.** 1.0.0 let the banner of a running drift pulse with the clock;
+  it is steady now. Nothing on any page is drawn from the clock: a page drawn twice with the same data
+  is the same frame to the last byte. Where the kit draws in software it would rasterise every frame to
+  find that out; there the app compares what it drew and hands a frame that is the same as the last one
+  over once in 0.9 s only (with the GPU renderer the kit does the comparing itself). The first screen is
+  one frame; the fade after it lasts 0.45 s and then ends. (Part 11: the two Signals pages take what they
+  show every 0.9 s, and at once when the page or a setting changes. Their counts and raw values moved with
+  every value the car sends, so the first Signals page was a new picture ten times a second.)
+- **Steering moments from the start** (`learn.js`, one condition dropped): a slow, gentle corner is kept
+  as a steering moment also before the yaw rate has its line. The steering's line is still drawn with
+  the yaw rate's, so nothing is used earlier than before; the moments are just not thrown away. No other
+  learning limit changed: 12 to 60 km/h, 0.5 to 2.5 m/s2, 14 moments, 4 each way, within 12 %.
+- **Learning is written every 20 s** on the move instead of every 2 minutes, still never while a drift
+  runs or may be beginning. An app that is stopped loses 20 s of learning at most.
+- **How far learning is, in words**, under the drawn car and on the Signals tab, with the counts of
+  `learn.js`: "YAW RATE: 12 OF 20 CORNERS, 3 MORE TO THE LEFT", "STEERING: 9 OF 14 SLOW CORNERS, 2 MORE
+  TO THE RIGHT", "(YAW RATE FIRST)" while the sides of the steering moments are not known yet, "UNEVEN:
+  34 %, LIMIT 12 %" where the count is there and the spread is too wide (part 11: once a count has reached
+  what is needed it is said without "OF", for example "STEERING: 18 SLOW CORNERS KEPT (YAW RATE FIRST)"); and the speeds: "IT LEARNS IN
+  GENTLE CORNERS AT 12 TO 60 KM/H" (in mph where mph is set), on the Signals tab "Only gentle corners
+  between 12 and 60 km/h, both ways, teach the steering. Yaw rate: 30 to 110 km/h". To make room for
+  three lines under the drawn car, the car is drawn at 0.93 of its size and 16 px higher.
+- **The raw value of each steering row, now and lowest to highest in this life**, on the Signals tab
+  (the yaw rate's two rows have it too), shown as it came, whatever its form. A value that arrives and
+  cannot be read as a count from 0 to 65535 says "arrives, not readable" and, where its member is
+  missing, names the members it did have. One photo with the car standing then shows the form of the
+  value. NO decoding guess was added: a steering angle sent as a signed number is shown, not used.
+- **A subscription that is tried again** no longer leaves handlers of the earlier attempt at work: each
+  attempt has a number, and only the latest one's handlers hand values on.
+- **A car that sends next to no motion data** (fewer than five values of the sideways acceleration or of
+  the yaw rate after 10 s on the move) is not asked for more corners: the LEARNING THE CAR banner then
+  says "Almost no motion data arrives from the car. Please photograph the Signals tab."
+- **Words.** "BETA, still being tested on cars" in the Store description, on the first screen and on
+  the Last tab. Version 1.0.1.
+
+### How to use it on the next drive
+
+1. Install 1.0.1 and drive as before, with nothing changed in Settings.
+2. If the app closes by itself: open it again and photograph the Signals tab (the fifth tab) before
+   anything else, in the same drive, before the car is switched off. The Drift tab asks for that photo
+   for the first minute. (Part 11: one more photo helps a great deal, of the Signals tab after an
+   ordinary day: switch the car off, come back, open the app. It shows how this car ends the app when
+   nothing is wrong, and nobody knows that yet.)
+3. If it does not close: the cause is among what 1.0.1 leaves switched off. Then switch ONE setting on
+   under Settings, Workshop settings, drive, and photograph the Signals tab again; then the next. Each
+   life's line says what was on in it.
+4. For the steering: with the car standing and the engine running, photograph the Signals tab with the
+   steering wheel straight, a quarter turn left and a quarter turn right. The row "Steering wheel,
+   chassis" (or "Steering wheel, NoCRC") shows the raw value now and its lowest and highest.
+
+### What the tests are now, and what was changed in them on purpose
+
+| File | 1.0.0 | 1.0.1 | |
+|---|---|---|---|
+| `test_drift.js` | 303 | 306 | no check changed, 3 added (steering moments from the start; no limit changed) |
+| `test_drift_car.js` | 418 | 549, then 587 (part 10) | 131 added, then 38 more; the checks listed below and in part 10 changed |
+| `test_drift_native.js` | new | 24 | what the app and the kit ask of the native binding, counted under the kit's REAL signals.js |
+| `test_drift_box.js` | new | 37, then 47 (part 10) | the record: what is written, the kinds of end, and files it did not write |
+| `test_drift_real.js` | new | 19, then 30 (part 10) | the kit's real mgu.js, display.js and signals.js on a stand-in SDK, in real time: clean stop, uncaught error, kill -9, kill then emptied data folder; part 10: the three signals, an exit code with no word |
+
+The parts of `test_drift_car.js` that were written for 1.0.0 now run with what 1.0.0 did without being
+asked switched on in Settings (every extra, the app's own getter reads, and "Steering from: Front wheels,
+chassis"), so that each of their checks still tests what it tested. The parts marked "(1.0.1)" run the
+app as shipped. Checks of 1.0.0 that had to change, each marked "CHANGED for 1.0.1" in the test:
+
+- The first screen, the Last tab and the Store description say "still being tested on cars".
+- The sources are on two pages: 13 rows on page 1 and 7 on page 2 (20 in all; the steering wheel's
+  second field name is the new one). Checks that counted rows, "present, in use", "not on this unit",
+  "not answering" or rates on "the Signals tab" count on both pages; the study values, the GPS check and
+  the top-up line are looked for on page 2. The stand-in car shows 19 of the 20 present.
+- "Steering, front wheels, chassis: LEARNED" reads "(set by hand)", because the test sets it: on Auto
+  the steering wheel's angle comes first now. For the same reason the car without SteeringAngle goes to
+  XView's front wheels from "driver", not from "front", and the log of the first drive names "front".
+- The standing line of a steering that is only not learned yet reads "NO BEST IS SET UNTIL THEN. IT
+  LEARNS AT 12 TO 60 KM/H" under the line that says how far it is; the other three standing lines are
+  as they were.
+- "The saved file was written once after the drift" became "never written while a drift ran or was
+  beginning (looked at ten times a second), and written after it": with a write every 20 s "once" no
+  longer holds for every drive. The rule it stood for is what is checked.
+- "Parked for 5 minutes with the screen hidden the speed getter is read every 2 s" became "with the
+  screen hidden no getter is read at all".
+- The kit's own first reads: 4 where the checks said "8 or more" (it was 10).
+- 12 pages drawn without a touch target where it was 10; "Previous page" from the first tab lands on
+  the Signals tab's second page.
+- 22 settings where it was 16. 18 fields in the manifest where it was 17, "r" for four of them. 17 own
+  files where it was 16 (18 with part 10's `rawstudy.js`). The wall clock is read in five places in four files (`box.js` notes when a
+  start was); it was three.
+- The one event subscription is still the GPS receiver's; the same call of the kit is now also allowed
+  for one field, the front wheels' own angle, when that extra is switched on after the start.
+- The search for a text that tells the driver to switch a safety system off was rewritten: the app now
+  says "switched off" of its own sources. It looks for an instruction (the plain form of the verb) and
+  for DSC, traction control, ESP or stability control beside "off", "disable" or "deactivate", in every
+  file and in every text drawn in the test (and is shown to find eight ways of saying it).
+
+The header check is as it was: five tabs and Settings, with the app's name, on iDrive 7 and iDrive 8.
+The two KNOWN LIMIT checks of part 8 in `test_drift.js` are as they were, and so are `angle.js`,
+`drift.js` and `score.js`: byte for byte the files of 1.0.0.
+
+### Not fixed, not known
+
+- **Why 1.0.0 closed by itself is not known, and 1.0.1 may close too.** 1.0.1 takes away what set the
+  app apart from the apps that run, and records how it stops. If it still closes as shipped, the cause
+  is not among the extras, and the Signals tab says what kind of end it was.
+- **Nothing ran on a car, a head unit or Node.js 8.** Whether the app's user may write to /tmp on a car
+  is known from the kit's own comment only. If it may not, the first line says "(no record in RAM: data
+  folder only)", and a wipe of the data folder then takes the record with it.
+- **Whether the writes at a clean stop fit into the kit's 200 ms on a head unit's flash is not known.**
+  The record in RAM is written first.
+- **Memory and processor are what the process can see of itself** (resident memory, its own processor
+  time). How the platform counts against its limits is not known.
+- **The steering wheel's angle may arrive in a form this version does not read.** The kit's own apps
+  read it as a signed number in an unsigned field (their best guess). If this car sends it so, the
+  steering will not learn, every drift carries NO STEERING CHECK and none is a best, until a version
+  that decodes it. That is on purpose: no decoding guess before a photo shows the form.
+- **A steering wheel's angle is a plain multiple of the front wheels' only where the steering ratio is
+  fixed.** On another car its line has a wider spread and may not reach "learned". Then "Other steering
+  and yaw" with "Steering from: Front wheels, chassis" is 1.0.0's way.
+- **A car that does not notify CDS2's yaw rate and accelerations, or its speed, needs "Ask the car for
+  values".** As shipped nothing is learned on it (the Drift tab says that almost no motion data
+  arrives), and a speed that is never notified reads as the first value for good. The first car notifies
+  its speed and its forward acceleration; its yaw rate has not been seen.
+- **NEW: CDS2 stopping as a whole on a straight is not noticed as shipped.** A sensor that has died and
+  one whose value holds still look alike without a getter: the banner stays READY and a drift then is
+  not counted. In a drift it is noticed after 2.5 s, as before. With "Ask the car for values" on it is
+  noticed on a straight within about 3 s, as in 1.0.0.
+- **The speed going silent is not noticed as shipped** either (silence is "no change"): the last speed
+  stands.
+- **The GPS check, with "GPS receiver" on and "Ask the car for values" off,** takes a sentence only
+  while the car's speed was notified in the last 1.5 s. A speed held perfectly still gives none.
+- **An extra's first value shows when the car next sends it.** Extras are subscribed without a first
+  read by the kit ("s"), so a value that rarely changes (the handbrake, the DSC button, the analyser's
+  results) says "no data yet" until it changes. Whether the car's binding hands a new subscriber the
+  current value at once is not known; the stand-in does not.
+- **Switching an extra off does not end its subscription** until the app is next started.
+- **A car learned by 1.0.0 with the front wheels' own angle** starts the steering again on the steering
+  wheel's angle (each source has its own moments; the old ones stay in the file). The first car's data
+  was emptied, so no car is known to be in that state.
+- **The record of a life read from the data folder is up to a minute behind** ("lived at least ...").
+- **Running the app on a PC** (the kit's preview) writes the record to the PC's /tmp unless the
+  environment sets PPS_BOX_TMP, as the tests do.
+- **The settings as the head unit's own settings screen lists them** (not the kit's drawn sheet) were
+  not looked at: six more rows there, with long names (part 11: seven).
+- **`proven/README.md` still describes 1.0.0** (five tabs with 19 sources on Signals, "has not been on a
+  car", 721 checks). It is shared with the other apps and is not changed in this part.
+
+### Can the new checks fail
+
+The built app was copied to a scratch folder 23 times, one thing was broken in each copy, and the tests
+named were run on the copy (`breaks.js` in the checks folder, not in the repository). Each break is
+noticed by at least one check. The figures are the checks that fail, of those that ran:
+
+| What was broken in the copy | Checks that fail |
+|---|---|
+| Every extra and the app's own reads on, whatever Settings say | native 17 of 24, real 6 of 19 |
+| The own reads also while the screen is hidden and before set-up is done | car 3 of 549, native 3 of 24 |
+| An extra that is switched off goes on being used | car 5 of 549, native 5 of 24 |
+| The DRIFT banner pulses with the clock again | car 1 of 549 |
+| Every frame is handed to the screen, changed or not | car 2 of 549 |
+| Nothing is done at the SDK's shutdown event | car 4 of 549, real 4 of 19 |
+| An uncaught error is not noted | car 2 of 549, real 2 of 19 |
+| The exit code is not noted | real 3 of 19 |
+| A text from the record goes to the screen as it came | box 2 of 37 |
+| Numbers from the record are taken unchecked | box 4 of 37 |
+| Links are followed when the record is read and written | box 4 of 37 |
+| A folder in /tmp is used whoever owns it | box 1 of 37 |
+| A record of up to 6 MB is read (the 64 KB limit itself) | box 1 of 37 |
+| The emptied data folder is not noticed | car 2 of 549, box 2 of 37, real 2 of 19 |
+| The record's copy in the data folder is written with every note | box 2 of 37 |
+| Steering moments wait for the yaw rate's line again | engine 2 of 306, car 2 of 539 |
+| Learning progress is written every 2 minutes again | car 1 of 539 |
+| No age limit on the yaw rate and the sideways acceleration while a drift runs | car 2 of 549 |
+| Own reads on, screen hidden: the engine stays on the getter's speed although nothing is read | car 1 of 549 |
+| The progress words count wrongly | car 3 of 549 |
+| The steering wheel's second field name is not subscribed to | car 3 of 549, native 2 of 24 |
+| The notice on the Drift tab stays for good | car 1 of 549 |
+| Own reads on and held back while a set-up is tried again: the engine stays on the getter's speed | car 1 of 549 |
+
+("of 539": with those two breaks the part about learning stops at an error, which counts as one failed
+check, and the ten checks after it did not run.)
+
+Two breaks were NOT noticed when they were first run, and this is what was done about each:
+
+- **The size of a record.** The break took away one of the three places where `box.js` checks the size
+  of the file. The other two still refused it, so nothing changed, and no check can show a change that
+  is not there. The break now changes the limit itself, and the test writes the 64 KB out instead of
+  taking the figure from the app: 1 check fails.
+- **The speed series while nothing is read.** The break took away the line that puts the engine on the
+  notified speed while "Ask the car for values" is off. Nothing changed: with the setting off no getter
+  answer is kept, so that line is a second guard. Looking at why led to a real fault of the first build
+  of 1.0.1 (the setting ON and the screen hidden, or a set-up being tried again: the speed was taken for
+  lost when it held still; see part A). That was fixed, two checks were added, and the two breaks of
+  the new rule are the two rows above that begin "Own reads on".
+
+### What was not done, in this part
+
+- Nothing ran on a car, a head unit or Node.js 8.
+- `kit/`, the other three apps, their tests, `proven/README.md`, `proven/tools/fakecar.js`,
+  `proven/tools/textfit.js` and `mgu-repo.json` were not touched (`mgu-repo.json` carries no version).
+- `angle.js`, `drift.js`, `score.js`, `series.js`, `gpscheck.js`, `store.js`, `heldlog.js`, `demo.js`
+  and the logo files are the bytes of 1.0.0. `learn.js` differs by the one condition and its comment.
+- No decoding of the steering or the wheel speeds was added. No learning limit was changed.
+- The getter reads were not routed through the kit's one-at-a-time lane, old proxies are not shut down,
+  and the app does not run in the background: each needs the kit or a car.
+- The break runs of parts 1 to 8 were not made again.
+
+## 10. Version 1.0.1, second part: the pedal, the wheel values, the record's faults
+
+Built on 25 November 2026, after part 9 and before 1.0.1 was published. BETA stays. Nothing of it has been
+on a car, a head unit or Node.js 8: a PC, made-up cars and stand-ins, as before. Three things came in after
+part 9 was written, and this part is what was done about each.
+
+### A. The accelerator pedal: no percentage anywhere
+
+**What the owner said.** "The accelerator % is also always way off", and, asked in what way: "jumping
+about". Only Proven Drift showed the pedal: a PEDAL bar on the Drift tab and AVERAGE PEDAL on the Last tab.
+1.0.0 showed the raw value's share between the smallest and the largest value seen so far, and took a raw
+value of 4095 or more for "no value". The value plainly does not arrive in that form. The kit's own
+Redline app leaves the pedal out for the same reason (its note: Live Data's guess "read 60-96 % at a light
+touch"). The wheel speeds, of the same family of interfaces, arrive in an unexpected form on that car too.
+
+**What changed.**
+
+- No pedal percentage is shown, logged or newly saved anywhere: the PEDAL bar and AVERAGE PEDAL are gone,
+  the Drift tab has two bars (opposite lock, rear wheelspin) and the Last tab seventeen figures in five
+  rows of three and one of two. The Session and Best tabs never showed the pedal. The log's line for a
+  drift has no pedal in it.
+- The pedal never reaches the engine, the car's or the demo's (`session.js`). So `drift.js` and `learn.js`,
+  which are unchanged, never see a pedal value: a drift's record has `pedal: null`, and the pedal's range
+  in what was learned is never moved.
+- **Did the score, a flag or the engine depend on the pedal? No.** `drift.js` summed the pedal's share over
+  a drift for the one figure "pedal" of its record, and nothing read that figure back: not `score.js`, not
+  a flag, not learning, not the angle. Checked by reading the three files, and by the test: the same drive
+  with "Pedal and handbrake" on and off gave the same drift to the last figure (373 points, grade C, peak
+  30 degrees, 6.52 s, multiplier 1.65).
+- **A saved file of 1.0.0 still loads.** Its pedal range and the pedal figure of its drifts are read and
+  kept in the file as they were (`store.js` and `learn.js` are unchanged); they are not shown.
+- **The subscription is an extra, in the group it was in: "Pedal and handbrake", off as shipped.** With it
+  on, the Signals tab's second page shows what two photos need to read the value's form off, one with the
+  foot off and one with the foot on the floor: the raw value now, the lowest and the highest of this life,
+  each in decimal and in hexadecimal, how many different values were seen (counted up to 256) and how many
+  arrive a second. The value is an object with several numeric fields on the head unit whose catalogue the
+  names come from, so each numeric field is shown the same way under its own name: the one the kit's Live
+  Data reads (actualValueAngleAcceleratorPedal) first, then two more, and how many are not shown. Fields
+  whose names begin with crc, alive or dummy are left out. Page 1 has the lowest and highest beside the
+  pedal's row. NO DECODING IS GUESSED.
+
+### B. Wheel values in an unknown form: they must prove themselves
+
+**What the first car showed.** All four wheel values read 65407 (0xFF7F) standing still, and they are no
+plain multiple of the car's speed. Proven Drag's builder found that Drag's wheel factors could be "learned"
+from such values within seconds at one speed, and then gave a wheelspin made of nothing.
+
+**Proven Drift had the same trap, in its own shape.** It only ever uses ratios of the wheel values: rear
+over front (rear wheelspin, and learning's check that the wheels grip) and right over left (which way is
+left). Values in another form still give ratios, steady ones at one speed. With "Wheel speeds" on, 1.0.1
+as part 9 left it would have learned a "usual ratio" from them, shown, scored and saved a wheelspin read
+against it, and let them vote on which way is left.
+
+**The rule (`rawstudy.js`, after Proven Drag's `wheels.js`).** No wheel value reaches the engine until all
+four have proven themselves:
+
+- a steady moment: the speed is 30 km/h or more and has moved by less than 1 km/h over the last second,
+  the car goes straight (no more than 1 m/s2 sideways) and no drift runs or may be beginning. In it, raw
+  value / speed is one ratio of that wheel, taken five times a second from the value that stands;
+- the ratios are kept per stretch of 10 km/h (the newest 20 of each); a stretch counts with 5;
+- proven: every wheel has stretches that count whose speeds lie 20 km/h apart or more, and the middle
+  ratio of each is within 3 % of the middle of them all. Ratios taken at one speed agree with each other
+  whatever the form: only across speeds does the test mean anything.
+
+Until then, and whenever it stops holding, the engine has no wheels at all: no wheelspin is shown, scored
+or saved, nothing is learned from them, and the place of the figure says why in a few words: "wheel values
+not proven yet", "wheel values in an unknown form", "no wheel values from the car" (the Drift tab's bar),
+"wheels not proven" (the Last tab), and the same in a sentence on the Signals tab. With the extra on, the
+Signals tab's second page shows per wheel the raw value now, the lowest and the highest of this life, and
+the raw value at the last steady speed above 30 km/h with that speed.
+
+On two made-up cars whose wheel values read 65407 standing (an offset count with its bytes swapped, and a
+count that falls from 65407), 5 s at 60 km/h gave 20 ratios that agreed to the last digit, which is the
+trap; after 36 and 62 km/h the values were "no plain multiple of the speed", and a drift with 35 % of
+rear wheelspin was counted and scored as ever with no wheelspin in memory, in the saved file or in the
+log. The stand-in car's own values, which are plain multiples, were proven by the same drive and its
+drift had its 37 %.
+
+**The choices taken, the simpler each time.** The proof is made again in every life of the app (it is not
+saved). The limits are Proven Drag's (30 km/h, 1 km/h, 20 km/h apart, 3 %). `angle.js`, `drift.js` and
+`score.js` are still the bytes of 1.0.0: the gate is in `session.js`, in front of the engine.
+
+### C. The faults two checks found in Proven Drag's record, tried on this one
+
+Two independent checkers of Proven Drag's record of starts and stops (another builder's code, the same
+brief) found faults. Each finding about the record was tried on Proven Drift's `box.js` and `main.js`:
+
+| Found in Proven Drag | In Proven Drift as part 9 left it | Now, and the check that holds it |
+|---|---|---|
+| The record says "extras off, set-up done" for up to 2 s after an extra is switched on | Half: what was on was written at once, but how far set-up had got waited for the next 2 s note | A note is taken at once when a setting that asks more of the car is switched, and whenever a subscription changes its state. At the moment of the switch the record says "on: GPS" and "set-up 3 of 4 (under way: SatellitePositioning)" (`test_drift_car.js`) |
+| The last note of a life that ends with a word has false frames and values a second | No: an end works out no rates. But notes taken close together would have | Frames and values a second are worked out over a second at least; a note taken sooner, and every end, keeps the last figures (`test_drift_box.js`, `test_drift_car.js`, and on the real runtime after an own error: `test_drift_real.js`) |
+| After a power loss or a restart of the head unit a life that was 45 s old reads "lived 0 s" | Yes, as "lived at least 0 s" with no note | The data folder's copy is written once more when the life is 10 s old, and the line says "lived at least 10 s (saved note, up to a minute old)" with its note headed "Saved note" (`test_drift_box.js`) |
+| At a clean stop the word "asked" is written last: a kill while saving reads NO WORD | No: the word goes into the record in RAM first | Held by two checks: the record already says "asked" when the saved file is written (`test_drift_car.js`), and a life killed before the saved file reads "asked to stop by the car" (`test_drift_box.js`) |
+| A stop by a signal reads like kill -9 | Yes | SIGTERM, SIGHUP and SIGINT are noted: "ENDED BY THE SIGNAL SIGTERM (sent from outside the app)". See below |
+| The file in RAM is not 0644 under another umask | No: the mode is set on the open file | Held by a check under umask 077 (`test_drift_box.js`) |
+| An exit code other than 0 with no word gets no line on the main tab | Yes | It counts as a stop by itself: "EXIT CODE 3 AND NO WORD BEFORE IT", marked, and the Drift tab asks for the photo (`test_drift_box.js`, `test_drift_real.js`) |
+| The line is cut when several extras are on | Partly: what was on always showed, the note in front of it was cut short | The words are shorter ("on: own reads, GPS, wheels, other sources, pedal, study"), and the life before this one has two lines like this life where eight lines allow it (`test_drift_car.js`) |
+| A record planted in a folder that is not the app's own is read and believed | Yes: through a symbolic link under the app's own name, and from a folder of that name that belongs to somebody else | The app's own record is read only out of a real folder of its own user. A folder of that name that belongs to somebody else is read as another user's and said to be one (no "stopped by itself"); a link is not read at all; neither is written to (`test_drift_box.js`) |
+| The own-error line has no file or line number | Yes | The error's first line is kept with the file and line its stack names first: "Error: ... (session.js:201)", 160 characters at most, the exit code in front of it |
+| Getter reads run beside the GPS event's subscribe call | No: a subscription under way holds the reads back, the event's included | Part 9's check stands (`test_drift_native.js`, third part) |
+| The first standstill reads "NO NEW SPEED" where the kit's first read is answered early | Does not apply: the engine takes a speed from its handler whenever it arrives | Nothing changed |
+
+**Signals.** (Part 11: all of this paragraph now holds ONLY WITH THE SETTING "Note stop signals" ON. As
+shipped the app listens for no signal, as 1.0.0 did, and an end by a signal reads NO WORD. See part 11.)
+The kit listens for no signal (`kit/runtime/mgu.js`: an uncaught error and the exit only), so
+SIGTERM, SIGHUP and SIGINT each end the process at once. `box.js` now listens for the three, writes the end
+into the record in RAM (one small synchronous write), takes its listener off and sends the same signal to
+its own process, which then ends by that signal as it would have without the listener. On the kit's real
+runtime on a PC the process ended with no exit code and the signal's name each time (`test_drift_real.js`).
+Where some other listener for the signal exists, nothing is sent: what that listener does is what happened
+before. A life ended by a signal is marked, and the Drift tab asks for the photo at the next start, as
+after a kill: it was a stop nobody asked for through the SDK.
+
+**The lines as the screen drew them** in a run of `test_drift_real.js` (a PC's memory and processor; life
+6 was sent SIGTERM, life 7 SIGHUP, life 8 SIGINT, life 9 ended itself with exit code 3):
+
+```
+#7 now: 7 s (started 1 s after #6 ended), memory 137 MB, processor 12 %, longest hold-up 8 ms (last 10 s: 8), Signals tab, learning, set-up done, 10 frames/s software, 94 values/s, own reads 0 of 0, on: none
+#6 25.11. 16:12:36 lived 8 s, ENDED BY THE SIGNAL SIGTERM (sent from outside the app), Last note: memory 146 MB, processor 10 % (most 11), hold-up 7 ms, Drift tab, learning, set-up done, 10 frames/s software, 95 values/s, own reads 0 of 0
+    on: none
+#9 25.11. 16:13:01 lived 8 s, EXIT CODE 3 AND NO WORD BEFORE IT, Last note: memory 137 MB, processor 10 % (most 11), hold-up 5 ms, Drift tab, learning, set-up done, 10 frames/s software, 95 values/s, own reads 0 of 0, on: none
+#2 25.11. 16:12:01 lived 8 s, THE APP'S OWN ERROR (exit code 1): Error: injected by the test: an uncaught error in a timer (test_drift_real.js:71), Last note: memory 147 MB, processor 10 % (most 11), hold-up 0 ms (most 3), Drift tab, learning
+    set-up done, 10 frames/s software, 96 values/s, own reads 0 of 0, on: none
+```
+
+and, from `box.js` on its own with made-up figures (as `test_drift_box.js` does it), the start after a life
+that was 45 s old when the power went:
+
+```
+#2 now: 0 s (the head unit was restarted since #1), on: none
+#1 25.11. 19:00:00 lived at least 10 s (saved note, up to a minute old), NO WORD (killed, crashed or power lost), Saved note: memory 65 MB, processor 31 % (most 44), hold-up 40 ms (most 85), Drift tab, ready, set-up done, 58 frames/s GPU, 310 values/s, own reads 0 of 0, on: none
+```
+
+### What the tests are now, and what was changed in them on purpose
+
+| File | Part 9 | Part 10 | |
+|---|---|---|---|
+| `test_drift.js` | 306 | 306 | not touched |
+| `test_drift_car.js` | 549 | 587 | 38 added (the pedal, wheel values in an unknown form, the record right after a switch, a clean stop that saves a planted file clean); the checks below changed |
+| `test_drift_native.js` | 24 | 24 | not touched |
+| `test_drift_box.js` | 37 | 47 | 10 added (a signal, an exit code 0, the faults of the table above); two changed |
+| `test_drift_real.js` | 19 | 30 | 11 added (the rates after an own error; lives 6 to 10: three signals, an exit code with no word); one changed |
+
+Checks that had to change, each marked "CHANGED for 1.0.1" in the test:
+
+- `test_drift_car.js`: "the three bars" is two bars and no PEDAL; a finished drift has no pedal figure
+  (it was "pedal > 50 %"); "all eighteen figures" on the Last tab is seventeen and no AVERAGE PEDAL; a
+  head unit without the pedal's interface changes nothing on the pages (the bar said "--"); the pinned
+  limit "the pedal goes silent and its last value stands" is gone with the pedal figure; as shipped one
+  bar says "switched off in Settings", not two, and the Last tab says "switched off" for three figures,
+  not four; "a drift with all of them on" has no pedal figure, and its rear wheelspin only after the car
+  has held 36 and 62 km/h (two checks added in front of it); "the car pulls away: 25 or more of 30 frames
+  are handed over" is 20 or more (the pedal's bar moved on every frame; a frame on which the whole km/h
+  did not change is the same picture); 18 own files; the own error's text ends "(file.js:1)"; after a
+  restart of the head unit the line reads "lived at least ... (saved note, up to a minute old)"; the
+  words of what is switched on are the shorter ones; the lowest and highest raw value stands beside
+  seven rows, the pedal's included.
+- `test_drift_box.js`: the data folder's copy is written twice in 200 s, not once (the write at 10 s);
+  "exit code 3" reads "EXIT CODE 3 AND NO WORD BEFORE IT" and counts as a stop by itself.
+- `test_drift_real.js`: the own error's text ends with the file and line.
+
+One thing the pedal's removal showed: 1.0.0 wrote its saved file again within seconds of every start,
+because the pedal's range moved with every pedal value. Now the file is written when there is something
+to write. A file with members that do not belong in it (the test plants one) is therefore cleaned at the
+next write, not within seconds: the test now checks it at a clean stop.
+
+### Can the new checks fail
+
+As in part 9: the built app was copied to a scratch folder 13 times, one thing was broken in each copy and
+the tests named were run on the copy (`breaks2.js` in the checks folder, not in the repository). The
+figures are the checks that fail, of those that ran:
+
+| What was broken in the copy | Checks that fail |
+|---|---|
+| Unproven wheel values reach the engine | car 13 of 587 |
+| The stretches of speed need not agree for the wheel values to count as proven | car 8 of 587 |
+| The pedal reaches the engine again | car 6 of 587 |
+| No note is taken when a subscription changes its state | car 1 of 587 |
+| Frames and values a second are worked out anew with every note | car 1 of 587 |
+| The PEDAL bar is back | car 7 of 587 |
+| The word "asked" is written after the saved file | car 4 of 587 |
+| A signal is not noted | real 6 of 30 |
+| After a signal is noted the process ends itself with exit code 0, not by the signal | real 3 of 30 |
+| An exit code other than 0 with no word is no stop by itself | box 1 of 47, real 1 of 30 |
+| The app's own record is read from whatever stands under its name | box 2 of 47 |
+| No write of the data folder's copy when the life is 10 s old | box 2 of 47 |
+| The file in RAM keeps the mode the umask leaves | box 1 of 47 |
+
+One break was NOT noticed when it was first run: the rates worked out anew with every note. The check
+compared two notes that the stand-in takes at the same instant, so nothing could differ. It now takes a
+third note 30 ms later with no frame drawn in between (worked out anew, that reads 0 frames a second), and
+the break was run again: 1 check fails. The other twelve breaks were run before that check was made
+stricter; nothing else in the tests changed after them but that check and the generator's comment.
+
+### Not fixed, not known (more than part 9 lists)
+
+- **Why 1.0.0 closed by itself is still not known.** If 1.0.1 as shipped still closes, the cause is in
+  what is left. Besides its six subscriptions and the kit's four first reads that is: the manifest, which
+  still names all twelve interfaces so that the switches work (nine of them no running Proven app asks
+  for); the app's own 50 ms timer, shown or hidden, and the 100 ms timer that measures hold-ups; and the
+  record's own file writes, to /tmp every 2 s and to the data folder at the start, at 10 s and once a
+  minute. Whether a Proven app has ever written to /tmp on that car is not known (the kit does so only
+  where it draws in software).
+- **Signals.** Whether the platform ever sends one is not known. A process whose event loop is held up
+  hears a signal only when the loop turns again, where without a listener it ended at once: a frozen app
+  that is sent SIGTERM now lives until the loop comes back or until something kills it outright. The
+  listeners ran on Node.js 24, not on Node.js 8. (Part 11: for this reason the listeners are behind a
+  setting that is off as shipped.)
+- **The write at 10 s** is one write to the head unit's flash more than the brief's "at most once a
+  minute". It is skipped while a drift runs or may be beginning.
+- **The wheel proof needs two steady speeds on a straight** above 30 km/h and 20 km/h apart, a second or
+  two each, in every life of the app. On a skid pan that may never come: then there is no rear wheelspin,
+  and the bar says "wheel values not proven yet". After the proof the engine still has to learn the usual
+  ratio of rear to front (8 steady readings) before a wheelspin shows.
+- **What 1.0.0 learned from the wheels stays in its saved file** (the usual ratio, the votes on which way
+  is left), proven or not. The first car's data was emptied, so no car is known to be in that state;
+  "Reset what was learned" clears it.
+- **The pedal's form is not known**, and nothing is shown of it without its setting. Two photos of the
+  Signals tab's second page with the setting on are what a later version needs.
+- **Eight lines.** With five lives, two of them on two lines and several "saved data was emptied" lines,
+  the oldest life can fall off the block. The log has every line in full.
+- **A record of another user id is still believed as far as its life number goes**: a planted one can push
+  the count up, and the number then stays. It is marked "as another user" and raises no notice. (Part 11:
+  it did more harm than this said. A planted number at the top of the range stopped the record recording.
+  Put right in part 11: another user's record is looked at only where the app has none of its own.)
+- **Memory is the process's resident memory only**; the JavaScript heap is not in the note.
+
+### What was not done, in this part
+
+- Nothing ran on a car, a head unit or Node.js 8.
+- `kit/`, the other three apps, their tests, `proven/README.md`, `proven/tools/fakecar.js`,
+  `proven/tools/textfit.js` and `mgu-repo.json` were not touched. `proven/README.md` still describes
+  1.0.0 (see part 9); it is the lead's.
+- `angle.js`, `drift.js`, `score.js`, `series.js`, `gpscheck.js`, `store.js`, `heldlog.js`, `demo.js`,
+  `feed.js` apart from part 9's lines, and the logo files were not changed in this part. `learn.js` is as
+  part 9 left it.
+- The drawn car on the Drift tab is the one of 1.0.0, at part 9's size. A new drawing is separate work.
+- No decoding of the pedal, the steering or the wheel speeds was added.
+- The break runs of parts 1 to 9 were not made again. Part 9's `breaks.js` no longer fits every line it
+  breaks (some of those lines changed in this part).
+
+## 11. Version 1.0.1, the repair: what two checks of the release found
+
+Two independent checkers looked at 1.0.1 as parts 9 and 10 left it (commit a186feb), each with their own
+benches: one through the release's tests and pictures, one through a stand-in of the first car on the
+kit's real runtime. Neither found a fault that had to be fixed before a car; between them they found ten
+that should be. Each was first made to happen again on the unrepaired build, then put right, and each has
+a check that fails on the unrepaired build. Everything here ran on a PC (a Mac, Node.js 24). NOTHING OF IT
+RAN ON A CAR, ON A HEAD UNIT OR ON NODE.JS 8, AND WHY 1.0.0 CLOSED BY ITSELF IS STILL NOT KNOWN.
+
+### What was found, and what was changed
+
+| Found | How it showed on the unrepaired build | Now, and the check that holds it |
+|---|---|---|
+| ONE PLANTED FILE SWITCHES THE RECORD OFF FOR GOOD. Any process on the unit can make a folder /tmp/pps-box-pps_drift-<some number> with a record in it. The app took its life number from such a record when it was higher; with 999999999, the highest a record may hold, this life became #1000000000, which the next start could not read back | Every start called itself #1000000000, the app's own killed lives were never shown, and the Drift tab never asked for the photo. It outlived a restart of the head unit | The record of another user id is looked at ONLY where the app has no record of its own (after a reinstall). With one, such a folder is not opened. And where the number found is at the top, the lives found are kept and numbered again from 1, so this life and the next can always be read back (`test_drift_box.js`, five checks) |
+| "THE HEAD UNIT WAS RESTARTED" was said whenever the record in RAM was gone, even when the head unit's own uptime showed that it had run on. That life then did not count as a stop by itself | A life 45 s old killed, its folder in RAM removed: "#2 now: 0 s (the head unit was restarted since #1)", no line on the Drift tab | Where that life had its record in RAM and RAM holds none now, the two clocks decide: if the uptime and the wall clock have both grown by the same since that life's last sign (within 20 s), the unit ran on. The line says "#2 now: 0 s (the record in RAM was gone, no restart since #1)" and the Drift tab asks for the photo. If the clocks differ, or one is not known, it is taken as a restart, as before (`test_drift_box.js`; on the real runtime: `test_drift_real.js`, lives 13 and 14) |
+| The folder in RAM, once gone, was never made again while the app ran | "no record in RAM: data folder only" to the end of that life | It is looked at again, and made again, once a minute at most. One warning in the log, and "the record in RAM is kept again" when it is (`test_drift_box.js`) |
+| A NAMED PIPE under the temporary name the record is written under (box.json.tmp) hung the app at its start for good. Only the app's own user or root can put one there, so it is very unlikely on a car | `new Box()` did not come back in 5 s, and SIGTERM did not end the process | What stands under that name is looked at first and removed if it is no plain file, and the open itself does not wait (`test_drift_box.js`, run in a process of its own with a time limit) |
+| A SIGNAL THAT THE SDK ANSWERS WITH ITS SHUTDOWN EVENT read "ENDED BY THE SIGNAL SIGTERM" and counted as a stop by itself, although the app had saved its file and ended with exit code 0. Nobody knows whether BMW's SDK does that | With a stand-in SDK that emits "shutdown" 20 ms after SIGTERM: the photo would have pointed at a kill | A signal that another listener on the process handles is only noted with the life. If the SDK then asks the app to stop: "asked to stop by the car (the signal SIGTERM came first)", a clean stop. A later exit code is shown on a signal's line (`test_drift_box.js`; `test_drift_real.js`, lives 10 and 11) |
+| A HELD-UP APP NO LONGER ENDED WHEN IT WAS SENT SIGTERM. Part 10's three signal listeners are heard only when the app's code comes round again | Published 1.0.0: ended 3 ms after SIGTERM, in the middle of a hold-up of 6 s. Part 10: 5 s later, when the hold-up was over; never while the main thread is stuck | THE LISTENERS ARE BEHIND A WORKSHOP SETTING, "Note stop signals (study)", OFF AS SHIPPED. See below (`test_drift_box.js`, `test_drift_car.js`, `test_drift_real.js` lives 1, 6, 11 and 12) |
+| With "Ask the car for values" on, an own getter read could START beside the set-up calls of an extra that is switched on while the app runs. The two read schedulers were stopped by the next 50 ms tick only, and a read's own timer could fire before it. Part 9's test could not see it: its clock kept the tick and the reads exactly in step | After one hold-up of the app of 23 ms: in 5 of 20 tries, with set-up calls of 20 ms and of 150 ms alike | Both schedulers are stopped in the moment something new is asked of the car, and the new subscription's first call waits for a read that is already on its way (it cannot be called back): until it is answered, 1.25 s at most. As shipped there are no schedulers and nothing changes (`test_drift_native.js`, three checks: 80 tries, 24 of them with a read on its way, and a read that is never answered) |
+| THE SIGNALS TAB, the page the owner is asked to photograph, was a new picture with every value the car sends: its sample counts and raw values move ten times a second on a standing car | 100 of 100 frames handed to the screen in 10 s, where every other page hands over one or two | The two Signals pages take what they show every 0.9 s, and at once when the page or a setting changes: 11 of 100 frames in 10 s. What they show is never more than a second old (`test_drift_car.js`) |
+| "STEERING: 18 OF 14 SLOW CORNERS (YAW RATE FIRST)" under the drawn car. Since part 9 keeps steering moments from the start, that is the usual state after a few minutes in town | The line as drawn | Once a count has reached what is needed it is said without "OF": "STEERING: 18 SLOW CORNERS KEPT (YAW RATE FIRST)", "STEERING: 30 SLOW CORNERS KEPT, 4 MORE TO THE LEFT". Below it nothing changed: "13 OF 14 SLOW CORNERS ..." (`test_drift_car.js`: every count from 0 to 40 with every split of sides, and each phrase at its widest) |
+| The Drift tab's line "The app stopped by itself last time" counted its minute from the start of the process. An app that the platform starts again by itself and that is opened later than a minute after never showed it | First shown 90 s after the start: the line was not there | The minute runs from when the page first shows, after the first screen (`test_drift_car.js`: first shown two minutes after the start) |
+
+Smaller things, from the checkers' notes:
+
+- The heading of the block names the version: "STARTS AND STOPS OF PROVEN DRIFT 1.0.1, NEWEST FIRST". A
+  photo then says which release it was taken of.
+- "1 frames/s" is "1 frame/s"; the pedal's row said "none now, most 20/s", which read as if it took back
+  the value before it: "0/s now, most 20/s".
+- A source chosen under "Steering from" or "Yaw rate from" that belongs to "Other steering and yaw", while
+  that is switched off, is not used. Nothing said so. The Signals tab now says "Steering, steering wheel,
+  chassis (the source set in Settings is switched off)", and the log has a line.
+- Part 9 said the speed is asked for the same way by 14 apps of the kit. It is 12.
+
+### The signal listeners: off as shipped, and why
+
+Part 10 made the record listen for SIGTERM, SIGHUP and SIGINT, so that an end by a signal does not read
+like kill -9. On a healthy app that works as it should: the note is written, the listener is taken off, the
+same signal is sent again and the process ends by it. Two things about it cannot be put right in JavaScript:
+
+1. A listener is heard only when the app's own code comes round again. A process that is held up, in a
+   long frame or a slow file write, ends LATER than it would have without a listener, and one whose main
+   thread is stuck for good (the kit's own comments say its binding can do that) does not end by the
+   signal at all. Measured on the kit's real runtime on a PC (`test_drift_real.js`): held up for 3 s and
+   sent SIGTERM half a second in, the app ends about 2.5 s after the signal with the listener, and 2 ms
+   after it without.
+2. If BMW's SDK or its native module handle a signal below JavaScript, a listener here takes that
+   handler's place, and nothing in JavaScript can see whether one is there. Neither is in this source.
+
+No app known to run on a car has such a listener. The rule of this release is that the app does nothing,
+as shipped, that those apps do not also do, and that every extra is behind a setting that is off. So:
+
+- **"Note stop signals (study)"**, a Workshop setting, OFF as shipped and after the platform has emptied
+  the app's data. With it off the app has no listener for any signal: the process answers a signal exactly
+  as 1.0.0 did, and an end by a signal reads "NO WORD (killed, crashed or power lost)", as it did before
+  part 10.
+- Switched ON, the three listeners are put on at once and the record lists "on: signals". Switched OFF,
+  they are taken off at once (nothing stays to the next start) and it is no longer listed. The Signals
+  tab's second page says which it is: "Note stop signals: OFF. An end by a signal reads NO WORD, like a
+  kill" or "... ON. A signal that ends the app is noted first".
+- When to switch it on: if a photo of the Signals tab reads NO WORD and the last note beside it shows no
+  high memory, processor or hold-up, switching it on for the next try tells a polite stop by the platform
+  (SIGTERM) from a kill or a crash. Remember that the platform's wipe of the data puts it back to off.
+
+Proven Drag 1.0.2 has the same listeners and has them ON as shipped. That is a decision for both apps
+together and it is one word in each generator (`'default': False`).
+
+### The lines as the screen drew them
+
+From a run of `test_drift_real.js` on the kit's real runtime (26 November 2026; a PC's memory and
+processor). Life 10 was sent SIGTERM with the setting on and a stand-in SDK that answers it with its
+shutdown event; life 11 was sent SIGTERM while it was held up, with the setting on; life 12 the same as
+shipped (no listener: no word); life 13 was killed and its folder in RAM removed while the "head unit"
+ran on:
+
+```
+#11 now: 7 s (started 0 s after #10 ended), memory 112 MB, processor 6 % (most 8), longest hold-up 3 ms (last 10 s: 0), Signals tab, ready, set-up done, 5 frames/s software, 92 values/s, own reads 0 of 0, on: signals
+#10 26.11. 09:30:44 lived 9 s, asked to stop by the car (the signal SIGTERM came first), Last note: memory 112 MB, processor 3 % (most 8), hold-up 0 ms (most 3), Drift tab, learning, set-up done, 3 frames/s software, 93 values/s
+    own reads 0 of 0, on: signals
+#11 26.11. 09:30:53 lived 11 s, ENDED BY THE SIGNAL SIGTERM (sent from outside the app), Last note: memory 112 MB, processor 98 %, hold-up 2974 ms, Drift tab, ready, set-up done, 1 frame/s software, 4 values/s, own reads 0 of 0
+    on: signals
+#12 26.11. 09:31:04 lived 10 s, NO WORD (killed, crashed or power lost), Last note: memory 109 MB, processor 7 %, hold-up 0 ms (most 3), Drift tab, ready, set-up done, 10 frames/s software, 92 values/s, own reads 0 of 0, on: none
+#14 now: 7 s (the record in RAM was gone, no restart since #13), memory 112 MB, processor 6 % (most 9), longest hold-up 3 ms (last 10 s: 0), Signals tab, ready, set-up done, 4 frames/s software, 94 values/s, own reads 0 of 0, on: none
+#13 26.11. 09:31:15 lived at least 10 s (saved note, up to a minute old), NO WORD (killed, crashed or power lost), Saved note: memory 119 MB, processor 9 %, hold-up 0 ms (most 3), Drift tab, ready, set-up done, 10 frames/s software
+    93 values/s, own reads 0 of 0, on: none
+```
+
+Life 11's last note is worth a look: "processor 98 %, hold-up 2974 ms". That is what a held-up app leaves
+behind, and it is in the note whether or not a signal was listened for.
+
+### What the tests are now, and what was changed in them on purpose
+
+| File | Part 10 | Part 11 | |
+|---|---|---|---|
+| `test_drift.js` | 306 | 306 | not touched |
+| `test_drift_car.js` | 587 | 607 | 20 added: the setting "Note stop signals" (two, and the Signals tab's second page drawn with it off, on and off again: three), the Signals tab's frames, the Drift tab's line when the screen is first shown late, the words without "OF", three more phrases at their widest (twelve); the checks below changed |
+| `test_drift_native.js` | 24 | 27 | 3 added: an extra switched on while the app reads getters itself |
+| `test_drift_box.js` | 47 | 68 | 21 added: 19 in the part "the repair of 1.0.1", one more kind of end, a setting taken off the list; one changed |
+| `test_drift_real.js` | 30 | 44 | 14 added: as shipped no listener; lives 6 to 9 with the setting switched on first; lives 10 to 14; one changed |
+
+Checks that had to change, each marked "CHANGED in the repair of 1.0.1" in the test:
+
+- `test_drift_car.js`: the block's heading names the version (three places); the three phrases with a
+  count beyond what is needed read "120 CORNERS KEPT ..." and "80 SLOW CORNERS KEPT ..." (they read "120
+  OF 20", "80 OF 14"), and three phrases below what is needed were added so that "OF" is still drawn at
+  its widest; the six slow corners read "STEERING: 30 SLOW CORNERS KEPT (YAW RATE FIRST)"; 23 settings
+  where it was 22, and "Note stop signals" is one of those that only show with Workshop settings on; the
+  pedal's row says "0/s now"; a steering source set by hand whose group is switched off reads
+  "Steering, steering wheel, chassis (the source set in Settings is switched off)"; the Drift tab's line
+  still stands a minute after the start and is gone six seconds later (the minute runs from when the page
+  first shows); the widest starts and stops have the seventh setting ("..., study, signals") and one
+  clean stop with a signal noted beside it; and one check that failed for a reason of the test's own:
+  with pictures saved (`node proven/tools/test_drift_car.js dist/pps_drift <folder> sizes`) the test's
+  process passes 1000 MB, the memory figure in a life's note is a digit longer, and "on: GPS, wheels" moves
+  to that life's second line. The check now takes it from either place. (The app was right both times.)
+- `test_drift_box.js`: after `end('signal')` and an exit code, the line reads "ENDED BY THE SIGNAL SIGTERM
+  (sent from outside the app), exit code 0".
+- `test_drift_real.js`: lives 6, 7 and 8 are sent their signals with "Note stop signals" switched on (in
+  life 6; the setting is saved). The old life 10 (a clean stop at the end) is now the first of five.
+
+### Can the new checks fail
+
+The four changed test files were run on a build of the unrepaired commit (a186feb), with every check let
+run on after a failure. The checks that fail there are the new ones and those changed on purpose. Among them are the findings
+themselves, seen again: "held up for 4 s and sent SIGTERM half a second in, as shipped: the process ends by
+SIGTERM 3509 ms after the signal", "#14 now: 7 s (the head unit was restarted since #13)", "page 1 is
+another picture 99 times" in 10 s, an own getter read beside a set-up call "in 10 of 80 tries".
+
+| File | Checks that fail on the unrepaired build |
+|---|---|
+| `test_drift_box.js` | 15 of the 61 that ran (7 more could not run: a part stops where the old file lacks a function) |
+| `test_drift_native.js` | 3 of 27 |
+| `test_drift_car.js` | 17 of 607 |
+| `test_drift_real.js` | 12 of 44 |
+
+No break run of single deliberate faults was made in this part (parts 9 and 10 made two).
+
+### What is left if 1.0.1 still closes (more than parts 9 and 10 list)
+
+What 1.0.1 as shipped still does on that car that Proven Gauges and Proven Warm-Up do not:
+
+- CDS2 statusYawVelocityVehicle: a subscription, and the kit's own first read of its getter. Gauges asks
+  CDS2 for the two accelerations only. The kit's Live Data and Live Adjustments ask for the yaw rate the
+  same way; whether they have run on this car is not known.
+- A proxy for de.bmw.chassis.SteeringAngle with two field subscriptions (both names). No Proven app that
+  runs on this car builds it.
+- The manifest still names all twelve interfaces.
+- Frames: while the car moves the Drift tab is another picture about nine times a second, as in 1.0.0
+  (the angle and the speed change). If the stops come from the drawing path, 1.0.1 changes nothing there
+  on the Drift tab. Whether the car draws in software or with the GPU renderer is not known; the record's
+  "frames/s software" or "GPU" will say.
+- The app's own 50 ms timer, the 100 ms timer that measures hold-ups, and a write to /tmp every 2 s.
+- No signal listener any more (part 11).
+
+### Not fixed, not known (more than parts 9 and 10 list)
+
+- **A native crash and kill -9 both read NO WORD**, and so does an end by a signal as shipped. Nothing in
+  JavaScript can tell a crash from a kill. What helps is in the line: memory against its highest, the
+  processor, the longest hold-up, and how soon the next life started.
+- **If the kit's one first read of the speed gives nothing, a standing car reads "--" and NO DATA FROM
+  THE CAR until it moves.** That follows from having no reads of the app's own. Proven Gauges relies on
+  the same read; whether it ever fails on a car is not known.
+- **After a reinstall under another user id the Drift tab shows no line**, even when the life before
+  ended with no word: another user's record is shown ("as another user") and never believed that far,
+  because anybody can put one into /tmp. The Signals tab has the line.
+- **If the data folder and the folder in /tmp are both gone, the app reads like a first start** ("#1").
+- **If the platform ends apps at key-off without a word and /tmp outlives it**, every first start of a
+  day will show "The app stopped by itself last time". Not known. The "now" line says how long after the
+  life before this start came, so a night can be told from a crash. One photo after an ordinary
+  switch-off would settle it.
+- **A steering angle sent as a signed number** is still counted as slow corners from the half the app
+  can read ("15 SLOW CORNERS KEPT") without ever learning. The Signals tab shows its raw lowest and
+  highest; no decoding is guessed in this release.
+- **A wheelspin figure saved by 1.0.0 is still shown** for that old drift, and pedal figures of 1.0.0
+  stay in the saved file, unshown. The first car's data was emptied, so no car is known to hold one.
+- **The record still cannot say**: the JavaScript heap beside the resident memory, the processor share
+  over a whole life, how long a NO WORD life lived past its last note (up to 2 s).
+- **`main.js` still reads PPS_BOX_TMP from the environment** before it uses /tmp (the tests' switch).
+  Nothing on a car sets it.
+- **The two clocks.** "The record in RAM was gone, no restart" needs the head unit's uptime and wall
+  clock to agree within 20 s on the time since the life before. If the head unit sets its wall clock in
+  between (it takes the time from GPS), that reads as a restart, as before part 11. 20 s is a guess.
+- **Node.js 8.** The files parse as ES2017. That taking the last listener off puts the system's own
+  answer to a signal back was run on Node.js 24 only.
+
+### What was not done, in this part
+
+- Nothing ran on a car, a head unit or Node.js 8.
+- `kit/`, the other three apps, their tests, `proven/README.md`, `proven/tools/fakecar.js`,
+  `proven/tools/textfit.js` and `mgu-repo.json` were not touched. `proven/README.md` still describes
+  Proven Drift 1.0.0: it is shared, and the lead brings it up to date (the version, "still being tested
+  on cars", the seven settings, the Signals tab's two pages, five test files with 306, 607, 27, 68 and 44
+  checks, PPS_BOX_TMP for a preview on a PC).
+- `angle.js`, `drift.js`, `score.js`, `learn.js`, `series.js`, `feed.js`, `gpscheck.js`, `store.js`,
+  `heldlog.js`, `demo.js`, `rawstudy.js`, `fakedrift.js` and the logo files were not changed in this part.
+- The drawn car on the Drift tab is the one of 1.0.0, at part 9's size. A new drawing is separate work,
+  and this release does not answer the owner's message about it.
+- No decoding of the pedal, the steering or the wheel speeds was added.
+- The break runs of parts 9 and 10 were not made again.
+
+## 12. Version 1.0.1, after the last read
+
+One more independent read of the release (the work copy at 8321745; it changed nothing itself) found
+nothing that must be fixed before a car and asked for two small repairs. Everything else it tried held:
+as shipped, 660 s in real time on the kit's real runtime with a car like the owner's gave 3 proxies, 6
+subscriptions and 7 getter reads, all the kit's own, none of the app's; no pedal percentage anywhere; no
+wheelspin from wheel values that read 65407 standing; no position, course or heading in the log, the
+saved file or the record after 619 GPS events. All of it ran on a Mac with made-up cars: nothing here
+has been on a car, and why 1.0.0 closed by itself is still not known.
+
+### The two repairs
+
+- **An older life in the record forgot what was known of it.** A life known only from the data
+  folder's copy (the power went, or the head unit restarted) reads "lived at least 10 s (saved note, up
+  to a minute old) ... Saved note:", and the first line says the head unit was restarted. That was
+  right for the life just before. One start later the same life read "lived 10 s, NO WORD ..., Last
+  note:", as if its length and its last note were known and the unit had run on: the two marks were not
+  kept when the record was read again. Now (`box.js`: `cleanLife`, `_start`, `lines`) both stay with the
+  life, and an older life with a restart after it says "(the head unit restarted after it)". Of the
+  life just before, the first line says it, as before. At the very widest (every setting on, another
+  user's record, nine-digit life numbers) those last words are the ones cut from the line; the log has
+  the line in full.
+- **A failed subscription was tried again although its extra had been switched off.** It cannot happen
+  as shipped: no extra is on, so nothing of an extra is asked for. With an extra on, a subscription that
+  fails is tried again after 5, 15 and 60 s; if the owner switched the extra off in that time, the retry
+  still built a proxy, with no field, for an interface nothing was wanted of. It was the one path past
+  the rule "nothing of it is wanted: no proxy is built". Now (`car.js`, `_watch`) the retry first asks
+  what is wanted; if nothing, it asks nothing of the car, the log says "signal Powertrain: not tried
+  again (nothing of it is switched on any more)", and a later switch-on asks afresh. Proven Drag 1.0.2
+  had the same fault and has the same repair.
+
+### Two sentences
+
+- **"Asked to stop by the car" does not say whether the app reached its exit.** The word is written
+  first, so that a kill while saving does not read NO WORD. A process killed in the 200 ms after the
+  shutdown event therefore reads like a finished clean stop. The record in RAM holds the difference
+  (exit code 0 or none); the line does not show it. Left for a later version.
+- **The two clocks, the other way round.** "No restart" rests on the head unit's wall clock. If that
+  clock started from the same date at every boot, a real restart would read "the record in RAM was
+  gone, no restart" and the Drift tab would ask for a photo. Not known of any car; the photo after an
+  ordinary day that part 9 asks for will show which it is.
+
+### The checks
+
+| File | Before | Now | What |
+|---|---|---|---|
+| `test_drift_box.js` | 68 | 69 | new: three starts (a life of 45 s, the power lost; a life of 30 s stopped cleanly; a third), and the first life's line as an older one |
+| `test_drift_car.js` | 607 | 608 | new: "Wheel speeds" on, its first subscription failed, switched off before the retry: Powertrain is asked for once, no proxy, and afresh when switched on again. Changed on purpose: the widest starts and stops carry the new mark on one older life, and the check says which words are cut there |
+| `test_drift.js`, `test_drift_native.js`, `test_drift_real.js` | 306, 27, 44 | the same | not touched |
+
+On the code before this part the two new checks and the changed one fail.
+
+### Not done
+
+- Nothing ran on a car, a head unit or Node.js 8.
+- The last read's other notes are left as they are: "lived N s" of a NO WORD life is the age of its
+  last note; the "now" line's note is up to 2 s old; both rows of the steering wheel's angle say
+  "present, in use"; the signal listeners are off as shipped here, and since its part 13 in Proven
+  Drag 1.0.2 as well, so the two apps are alike.
+- The shared pages (`proven/README.md`, the notes at the top of `README.md` and its translations,
+  `docs/diagnostic-chinese.md`) were brought up to date after this part: version 1.0.1, "still being
+  tested on cars", five test files with 306, 608, 27, 69 and 44 checks.

@@ -1,8 +1,8 @@
 {
  "id": "pps_drift",
  "title": "Proven Drift",
- "description": "BETA, not yet tested on a car. Scores drifts by angle, speed and length and keeps the data of each drift, from the car's own motion sensors. For closed circuits and skid pans only",
- "version": "1.0.0",
+ "description": "BETA, still being tested on cars. Scores drifts by angle, speed and length and keeps the data of each drift, from the car's own motion sensors. For closed circuits and skid pans only",
+ "version": "1.0.1",
  "vendor": "Proven Performance Solutions",
  "loggingId": "PPF1",
  "iconGlyph": "gforce",
@@ -23,22 +23,23 @@
    "statusLongitudinalAccelerationMassCenter": "rs",
    "statusYawVelocityVehicle": "rs"
   },
+  "de.bmw.chassis.SteeringAngle": {
+   "_optional": "no steering check and no opposite lock, unless \"Other steering and yaw\" is switched on and XView gives the steering",
+   "ActualSteeringAngleDriver": "s",
+   "actualSteeringAngleDriverNoCRC": "s",
+   "SteeringAngleFrontAxleEffective": "s"
+  },
   "de.bmw.chassis.SpeedAcceleration": {
    "_optional": "no second source of the yaw rate",
    "YawSpeedVehicle": "s"
   },
-  "de.bmw.chassis.SteeringAngle": {
-   "_optional": "the steering check and the opposite lock then need the steering from XView",
-   "SteeringAngleFrontAxleEffective": "s",
-   "ActualSteeringAngleDriver": "s"
-  },
   "de.bmw.infotainment.drivingexcitement.XView": {
    "_optional": "no second source of the steering",
-   "statusFrontAxleSteeringAngle": "rs",
-   "statusSteeringAngleDriver": "rs"
+   "statusFrontAxleSteeringAngle": "s",
+   "statusSteeringAngleDriver": "s"
   },
   "de.bmw.powertrain.AcceleratorPedal": {
-   "_optional": "no accelerator pedal bar and no average pedal",
+   "_optional": "the accelerator pedal's raw value is not shown (study only)",
    "AngleAcceleratorPedal": "s"
   },
   "de.bmw.powertrain.Powertrain": {
@@ -47,11 +48,11 @@
   },
   "de.bmw.infotainment.vehicle.CDS": {
    "_optional": "the handbrake is not known",
-   "statusHandBrake": "rs"
+   "statusHandBrake": "s"
   },
   "de.bmw.infotainment.drivingexcitement.FES": {
    "_optional": "the DSC button state is not shown",
-   "statusDSCSwitchHMI": "rs"
+   "statusDSCSwitchHMI": "s"
   },
   "de.bmw.chassis.DrivingVector": {
    "_optional": "the car's own motion estimate is not shown (study only)",
@@ -60,8 +61,8 @@
   },
   "de.bmw.infotainment.misc.MDrive": {
    "_optional": "BMW's own drift analyser is not shown (study only)",
-   "statusDriftLast": "rs",
-   "statusDriftBest": "rs"
+   "statusDriftLast": "s",
+   "statusDriftBest": "s"
   },
   "de.bmw.infotainment.SatellitePositioning": {
    "_optional": "no GPS speed to check the car's speed against",
@@ -336,6 +337,69 @@
    ]
   },
   {
+   "key": "askCar",
+   "label": "Ask the car for values (study)",
+   "type": "bool",
+   "default": false,
+   "when": {
+    "workshop": true
+   }
+  },
+  {
+   "key": "gpsOn",
+   "label": "GPS receiver (study, off in full at next start)",
+   "type": "bool",
+   "default": false,
+   "when": {
+    "workshop": true
+   }
+  },
+  {
+   "key": "wheelsOn",
+   "label": "Wheel speeds (study, off in full at next start)",
+   "type": "bool",
+   "default": false,
+   "when": {
+    "workshop": true
+   }
+  },
+  {
+   "key": "sourcesOn",
+   "label": "Other steering and yaw (study, off in full at next start)",
+   "type": "bool",
+   "default": false,
+   "when": {
+    "workshop": true
+   }
+  },
+  {
+   "key": "pedalOn",
+   "label": "Pedal and handbrake (study, off in full at next start)",
+   "type": "bool",
+   "default": false,
+   "when": {
+    "workshop": true
+   }
+  },
+  {
+   "key": "studyOn",
+   "label": "Car estimate and analyser (study, off in full at next start)",
+   "type": "bool",
+   "default": false,
+   "when": {
+    "workshop": true
+   }
+  },
+  {
+   "key": "sigOn",
+   "label": "Note stop signals (study)",
+   "type": "bool",
+   "default": false,
+   "when": {
+    "workshop": true
+   }
+  },
+  {
    "key": "resetLearned",
    "label": "Reset what was learned",
    "type": "choice",
@@ -471,7 +535,7 @@
   }
  ],
  "config": {
-  "comment": "raw -> value * factor + offset; \"invalid\" = the car's \"no value\". Speed and acceleration scaling as in the idrive7-apps kit. The yaw rate, the steering, the pedal and the wheels have no scaling here: the app learns them (apps/pps_drift/learn.js). None of it has been measured by Proven.",
+  "comment": "raw -> value * factor + offset; \"invalid\" = the car's \"no value\". Speed and acceleration scaling as in the idrive7-apps kit. The yaw rate, the steering and the wheels have no scaling here: the app learns the first two (apps/pps_drift/learn.js) and uses the wheels as ratios only. The pedal is shown raw only. None of it has been measured by Proven.",
   "scaling": {
    "speed": {
     "factor": 0.015625,

@@ -20,7 +20,7 @@
  *
  * THE STAND-IN CAR (boot options, all optional)
  *   k            true speed = the car's speed signal x k (0.97: the car reads 3 % high). Default 1
- *   notifier     false: the speed is never notified            notifyMs 100, notifyDelay 30
+ *   notifier     false: the speed is never notified            notifyMs 100, notifyDelay 30, notifyJitter 0 (ms more, at random)
  *   getter       false: every read of the speed getter fails   getterMs 25 (the value is read 8 ms in)
  *   limit        true: the head unit gives a read up when the time limit the app asked for is over (the answer
  *                the car sends later is lost, and until then that read is still in flight AT THE CAR). As
@@ -35,6 +35,26 @@
  *   watchFail    { Vehicle2: 2 }: that many subscriptions fail first (the car's services not up yet)
  *   noEvent      the head unit takes no event subscription
  *   gpsNoise     0.004: the GPS receiver's speed flickers by that share either way from sentence to sentence
+ *   accelMs      ms between two acceleration notifications (50); the first car showed 100
+ *   nmeaMore     so many more sentences in every event of the GPS receiver (0); the first car showed about 38 in all
+ *   wheelForm    'swapped': the four wheel values arrive as on the first car, in a form nobody expected (here: an
+ *                offset count with its two bytes swapped, which reads 65407 standing still. That is ONE form that
+ *                fits the one photo there is, made up for the test; it is not a decoding of the car's value)
+ *   ripple       km/h the true speed wavers by while the car drives (0): a real car never holds a speed to the
+ *                last count, so its speed is notified now and then at a cruise too
+ *   tmpDir       the folder that stands in for the head unit's RAM disk (/tmp) for this car's record of starts and
+ *                stops (apps/pps_drag/box.js): a new empty one for every start unless given (a start "on the same
+ *                head unit" hands in the first start's car.tmpDir)
+ * car.app: the SDK's app object as the app sees it (an event emitter): car.app.emit('shutdown') is the car asking
+ *   the app to stop. car.proc: the listeners the app put on the process ('exit', 'uncaughtException', and, only with
+ *   the setting "Note stop signals" on, for the signals SIGTERM, SIGHUP and SIGINT), kept here in
+ *   car.proc.listeners and NOT put on the test's own process: car.proc.exit(code),
+ *   car.proc.uncaught(error) and car.proc.signal(name) call them. signal() hands back what the app then asked of
+ *   the process ({ removed, kill: [pid, name] | null }): the signal the app sends itself is caught here, not sent.
+ *   car.proc.during(fn): run fn (a setting switched while the app runs) with the process's listeners caught in the
+ *   same way: what the app puts on the process in it, or takes off it, is put into or taken out of car.proc.listeners.
+ * THE SETTINGS are as shipped unless `sets` says otherwise: since 1.0.2 that means every extra off and no getter
+ *   read of the app's own. bench.ALL_ON switches them all on (what 1.0.1 did).
  *   slope        percent the car stands on, + = nose up (the acceleration sensor reads g x slope)
  *   climb        metres of height gained per metre driven
  * car.service('Vehicle2', false | true): the car's service goes away / comes back (the kit's "available";
@@ -52,7 +72,7 @@
  * WHAT LEAVES THE APP is recorded in car.calls: { type: 'watch' | 'getValue' | 'on' | ... }. Anything
  * that is not a subscription, a getter read or an event subscription is in car.forbidden.
  */
-const fs = require('fs'), os = require('os'), path = require('path');
+const fs = require('fs'), os = require('os'), path = require('path'), EventEmitter = require('events');
 
 const RAW_KMH = 0.015625, G0 = 9.80665, KNOT = 1.852;
 const LAT0 = 67.9123, LON0 = 144.9631, ALT0 = 512;
@@ -65,6 +85,8 @@ const IFACE = {
     Positioning: 'de.bmw.infotainment.navigation.positioning.Positioning', VehicleModel: 'de.bmw.chassis.VehicleModel',
 };
 const OPTIONAL = ['Powertrain', 'SatellitePositioning', 'GPSData', 'Positioning', 'VehicleModel'];
+/** Every extra and the app's own getter reads switched on: what the app did before 1.0.2. */
+const ALL_ON = { askCar: true, gps: true, xWheels: true, xPos: true, xStudy: true };
 
 /** An NMEA sentence with its checksum (bad: a wrong one). */
 function sentence(body, bad) {
@@ -73,6 +95,7 @@ function sentence(body, bad) {
     if (bad) sum ^= 0x5a;
     return '$' + body + '*' + sum.toString(16).toUpperCase().padStart(2, '0');
 }
+const two = (n) => String(n).padStart(2, '0');
 /** Degrees -> NMEA ddmm.mmmm (width: digits of the degrees). */
 const dm = (deg, width) => { const d = Math.floor(Math.abs(deg)), m = (Math.abs(deg) - d) * 60; return String(d).padStart(width, '0') + m.toFixed(4).padStart(7, '0'); };
 
@@ -82,7 +105,8 @@ module.exports = function (stageArg) {
     const clock = { mono: 100000, wall: Date.UTC(2026, 10, 23, 9, 0, 0), timers: [], id: 1 };
     const dirs = [];
     const newDir = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'pps-drag-test-')); dirs.push(d); return d; };
-    process.on('exit', () => dirs.forEach((d) => { try { fs.readdirSync(d).forEach((f) => fs.unlinkSync(path.join(d, f))); fs.rmdirSync(d); } catch (e) { /* gone */ } }));
+    const wipe = (d) => { try { fs.readdirSync(d).forEach((f) => { const x = path.join(d, f); if (fs.lstatSync(x).isDirectory()) wipe(x); else fs.unlinkSync(x); }); fs.rmdirSync(d); } catch (e) { /* gone */ } };
+    process.on('exit', () => dirs.forEach(wipe));
 
     /* ---------- the clocks and the timers ---------- */
     const timer = (fn, ms, every, args) => { const t = { id: clock.id++, at: clock.mono + Math.max(0, Number(ms) || 0), every, fn: () => fn.apply(null, args) }; clock.timers.push(t); return t.id; };
@@ -144,7 +168,9 @@ module.exports = function (stageArg) {
         (o.missing || []).forEach((n) => { car.missing[n] = true; });
         // the true motion: speed from the plan, distance summed up in 5 ms steps as it is asked for
         let odoT = clock.mono, odo = 0;
-        car.vTrue = (t) => Math.max(0, Number(car.plan(t)) || 0);
+        // (ripple: above 5 km/h the speed wavers by that many km/h, slowly: two sines that never repeat within a drive)
+        const ripple = o.ripple || 0;
+        car.vTrue = (t) => { const v = Math.max(0, Number(car.plan(t)) || 0); return ripple && v > 5 ? v + ripple * (0.6 * Math.sin(t / 370) + 0.4 * Math.sin(t / 1130)) : v; };
         car.vRep = (t) => car.vTrue(t) / car.k;
         car.odo = (t) => {
             while (odoT < t) { const h = Math.min(5, t - odoT); odo += (car.vTrue(odoT) + car.vTrue(odoT + h)) / 2 / 3.6 * h / 1000; odoT += h; }
@@ -183,7 +209,9 @@ module.exports = function (stageArg) {
         car.raws = raws;
         const deliver = (name, field, value) => { const h = car.handlers[name]; if (h && h[field]) h[field](value); };
         const event = (name, ev, value) => { const fn = car.events[name + '.' + ev]; if (fn) fn(value); };
-        const wheelRaw = (kmh) => Math.max(0, Math.min(65533, Math.round(kmh * 16)));
+        // 'swapped' (made up to fit the first car's one photo, not a decoding): 0x7FFF + 64 counts per km/h, sent with its two bytes swapped
+        const swap16 = (x) => ((x & 255) << 8) | ((x >> 8) & 255);
+        const wheelRaw = (kmh) => (o.wheelForm === 'swapped' ? swap16(Math.max(0, Math.min(65535, 0x7FFF + Math.round(kmh * 64)))) : Math.max(0, Math.min(65533, Math.round(kmh * 16))));
         let alive = 0, noiseSeed = 20261123;
         car.send = {
             speed: (raw) => deliver('Vehicle2', 'statusCarSpeed2', { speedVehicleCentreOfGravity: raw }),
@@ -198,13 +226,17 @@ module.exports = function (stageArg) {
         };
         const emit = {
             notifier: (() => {
-                let sent = null;
+                let sent = null, lastAt = -Infinity, seed = 20261125;
                 return () => {
                     if (!car.on.notifier) return;
                     const raw = raws.speed(clock.mono, 'notified');
                     if (raw === sent) return;
                     sent = raw;
-                    setTimeout(() => car.send.speed(raw), car.notifyDelay);
+                    // (notifyJitter: each notification is on its way up to that many ms longer; they still arrive in the order they were sent)
+                    seed = (seed * 1103515245 + 12345) % 2147483648;
+                    const at = Math.max(clock.mono + car.notifyDelay + (o.notifyJitter || 0) * seed / 2147483648, lastAt + 0.5);
+                    lastAt = at;
+                    setTimeout(() => car.send.speed(raw), at - clock.mono);
                 };
             })(),
             accel: (() => {
@@ -244,7 +276,9 @@ module.exports = function (stageArg) {
                 const rmc = 'GPRMC,' + hms + ',' + (m === 'void' ? 'V' : 'A') + ',' + dm(p.lat, 2) + ',N,' + dm(p.lon, 3) + ',E,' + (car.vTrue(t) * wob / KNOT).toFixed(3) + ',90.0,231126,,,A';
                 const gga = 'GPGGA,' + hms + ',' + dm(p.lat, 2) + ',N,' + dm(p.lon, 3) + ',E,1,' + (m === 'few' ? '04' : '09') + ',0.9,' + p.alt.toFixed(1) + ',M,47.0,M,,';
                 const gsa = 'GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1';
-                car.send.nmea({ nmeaString: [rmc, gga, gsa].map((b) => sentence(b, m === 'bad')).join('\r\n') + '\r\n', delayCounter: 2 });
+                const more = [];
+                for (let i = 0; i < (o.nmeaMore || 0); i++) more.push('GPGSV,9,' + (i % 9 + 1) + ',36,' + two(i % 32 + 1) + ',' + two(10 + i % 70) + ',' + String(100 + i * 7 % 250) + ',' + two(20 + i % 30));
+                car.send.nmea({ nmeaString: [rmc, gga, gsa].concat(more).map((b) => sentence(b, m === 'bad')).join('\r\n') + '\r\n', delayCounter: 2 });
             },
             gps: () => {
                 if (!car.on.gps) return;
@@ -271,7 +305,7 @@ module.exports = function (stageArg) {
         /** Start the car's own senders: [period ms, phase ms]. */
         car.start = () => {
             const every = (ms, phase, fn) => setTimeout(() => { fn(); setInterval(fn, ms); }, phase);
-            every(car.notifyMs, 37, emit.notifier); every(50, 13, emit.accel); every(50, 21, emit.wheels); every(200, 55, emit.travel);
+            every(car.notifyMs, 37, emit.notifier); every(o.accelMs || 50, 13, emit.accel); every(50, 21, emit.wheels); every(200, 55, emit.travel);
             every(1000, 400, emit.nmea); every(1000, 650, emit.gps); every(333, 111, emit.nav); every(500, 77, emit.lane);
         };
 
@@ -363,10 +397,43 @@ module.exports = function (stageArg) {
         const log = {};
         ['info', 'warn', 'error', 'debug'].forEach((l) => { log[l] = function () { car.logAt.push(clock.mono); car.logs.push((l === 'info' ? '' : l.toUpperCase() + ' ') + Array.prototype.map.call(arguments, (x) => (x && x.stack) || String(x)).join(' ')); }; });
         car.dataDir = opts.dataDir || newDir();
+        // what stands in for the head unit's RAM disk: this car's own folder (apps/pps_drag/box.js keeps a copy of its record there)
+        car.tmpDir = opts.tmpDir || newDir();
+        process.env.PPS_BOX_TMP = car.tmpDir;
+        // the SDK's app object, as far as the app uses it: an event emitter ('shutdown')
+        car.app = new EventEmitter();
+        // the listeners the app puts on the process while it starts are kept for the test, not put on the test's own process
+        const procOn = process.on, procPre = process.prependListener, kept = { exit: [], uncaughtException: [], SIGTERM: [], SIGHUP: [], SIGINT: [] };
+        const keep = (orig) => function (ev, fn) { if (kept[ev]) { kept[ev].push(fn); return process; } return orig.apply(process, arguments); };
+        // (box.js exits the process itself after an uncaught error when no other listener is on it, as nothing else would: on the car
+        // the kit's own listener is there. Here two stand in for it while the app's listener runs, so the test goes on.)
+        const other = () => {}, other2 = () => {};
+        car.proc = {
+            exit: (code) => kept.exit.forEach((fn) => fn(code)), listeners: kept,
+            uncaught: (e) => { procOn.call(process, 'uncaughtException', other); procOn.call(process, 'uncaughtException', other2); try { kept.uncaughtException.forEach((fn) => fn(e)); } finally { process.removeListener('uncaughtException', other); process.removeListener('uncaughtException', other2); } },
+            // (the app takes its listener off and sends the signal to its own process: both are caught here, so that the
+            // test's own process neither loses a listener of its own nor is ended)
+            signal: (sig) => {
+                const kill = process.kill, remove = process.removeListener, out = { removed: 0, kill: null };
+                process.kill = (pid, s) => { out.kill = [pid, s]; return true; };
+                process.removeListener = function (ev, fn) { const i = kept[ev] ? kept[ev].indexOf(fn) : -1; if (i >= 0) { kept[ev].splice(i, 1); out.removed++; return process; } return remove.apply(process, arguments); };
+                try { (kept[sig] || []).slice().forEach((fn) => fn()); } finally { process.kill = kill; process.removeListener = remove; }
+                return out;
+            },
+            // (the setting "Note stop signals" switched while the app runs: the app puts its listeners on the process, or
+            // takes them off, at that moment. Caught here as at the start, so that the test's own process gets none of them)
+            during: (fn) => {
+                const on = process.on, pre = process.prependListener, remove = process.removeListener;
+                process.on = keep(procOn); process.prependListener = keep(procPre);
+                process.removeListener = function (ev, f) { const i = kept[ev] ? kept[ev].indexOf(f) : -1; if (i >= 0) { kept[ev].splice(i, 1); return process; } return remove.apply(process, arguments); };
+                try { return fn(); } finally { process.on = on; process.prependListener = pre; process.removeListener = remove; }
+            },
+        };
         const quiet = console.log; console.log = () => {};          // (the stand-in head unit says which screen it opens)
         const hu = headUnit(STAGE, { dataDir: car.dataDir, fresh: true, sets: Object.assign({ demo: 'off' }, opts.sets), image: (name, cv) => { car.picture = cv; return Promise.resolve(); }, log });
         car.hu = hu; car.settings = hu.settings;
         hu.ctx.signals = car.signals;
+        hu.ctx.app = car.app;
         hu.ui.isVisible = (n) => n === 'MAIN' && car.screen;
         hu.ui.text = (n, t) => { car.barText[n] = t; return Promise.resolve(); };
         // the frame surface: the PC's, or as where the kit runs the screen itself on iDrive 7 (text 1.165 times the size,
@@ -384,11 +451,12 @@ module.exports = function (stageArg) {
         // the app's own session (session.js), as the app holds it
         const S = require(path.join(JS, 'session')).Session, tick = S.prototype.tick;
         S.prototype.tick = function () { car.session = this; car.store = this.store; return tick.apply(this, arguments); };
-        hu.start();
+        process.on = keep(procOn); process.prependListener = keep(procPre);
+        try { hu.start(); } finally { process.on = procOn; process.prependListener = procPre; }
         car.start();
         await advance(60);
         console.log = quiet;
-        /** Open tab i (0 Run, 1 Timeslip, 2 Best, 3 Signals). */
+        /** Open page i (0 Run, 1 Timeslip, 2 Best, 3 Signals, 4 the Signals tab's second page). */
         car.page = (i) => hu.display.onTab(i);
         /** Press a button of the HMI's bar. */
         car.press = (id) => hu.handlers[id]({});
@@ -413,6 +481,8 @@ module.exports = function (stageArg) {
             const png = require('./textfit').picture(rec, require(path.join(JS, 'kit', 'canvas')), frame, car.mode === 'id7' ? 1.165 : 1.419).png();
             fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, name + '.png'), png);
         };
+        /** The picture last drawn, as one text: everything the app handed the kit for it (two frames that are the same picture give the same text). */
+        car.frameWords = () => { if (!frame || typeof frame.words !== 'function') return ''; const w = frame.words(); return Buffer.from(w.buffer, w.byteOffset, w.byteLength).toString('latin1'); };
         car.view = () => car.session.view(clock.mono);
         /** The lines of the log that match re (a line the app held back says so at its end: that note is taken off here). */
         car.logged = (re) => car.logs.map((l) => l.replace(/ \(logged \d+\.\d s later\)$/, '')).filter((l) => re.test(l));
@@ -426,5 +496,5 @@ module.exports = function (stageArg) {
     /** Everything any car's app did with its signals, and what of it was not allowed. */
     const allCalls = () => [].concat.apply([], cars.map((c) => c.calls));
     const allForbidden = () => [].concat.apply([], cars.map((c) => c.forbidden));
-    return { boot, advance, clock, mishaps, allCalls, allForbidden, cars, fonts, JS, IFACE, OPTIONAL, LAT0, LON0, metresPerDegLon };
+    return { boot, advance, clock, mishaps, allCalls, allForbidden, cars, fonts, JS, IFACE, OPTIONAL, ALL_ON, LAT0, LON0, metresPerDegLon };
 };

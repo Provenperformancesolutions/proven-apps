@@ -6,11 +6,12 @@ open-source idrive7-apps kit:
 - **Proven Gauges** 1.1.2 (`apps/pps_gauges`): five gauge sets
 - **Proven Warm-Up** 1.3.2 (`apps/pps_warmup`): tells the driver to keep below 4,000 rpm until engine oil,
   gearbox oil and coolant are up to temperature, with Proven's temperatures built in
-- **Proven Drag** 1.0.1 (`apps/pps_drag`): times standing-start runs from the car's own speed signal:
-  0-100 km/h, 60 ft, 1/8 mile and 1/4 mile, with trap speeds. **BETA, not yet on a car**
-- **Proven Drift** 1.0.0 (`apps/pps_drift`): shows the car's drift angle live on a drawn car, scores
+- **Proven Drag** 1.0.2 (`apps/pps_drag`): times standing-start runs from the car's own speed signal:
+  0-100 km/h, 60 ft, 1/8 mile and 1/4 mile, with trap speeds. For closed roads and track days only.
+  **BETA, still being tested on cars**
+- **Proven Drift** 1.0.1 (`apps/pps_drift`): shows the car's drift angle live on a drawn car, scores
   every drift and keeps its data, from the car's own motion sensors. For closed circuits and skid pans
-  only. **BETA, not yet on a car**
+  only. **BETA, still being tested on cars**
 
 > **Proven Gauges and Proven Warm-Up: no longer BETA (23 Nov 2026).** Proven installed these two apps on
 > a car from this source through the MGU Store and reports that both work. Nothing more is recorded of
@@ -18,7 +19,8 @@ open-source idrive7-apps kit:
 > any reading was compared with another tool. See "What has and has not been tested" for what was
 > checked on a PC only and what is still open.
 > That was with the font the apps had before. Since 1.1.2 and 1.3.2 they draw their text in a new
-> font, Rajdhani. The new font has been checked on a PC only: nothing has run on a car with it yet.
+> font, Rajdhani. For these two apps the new font has been checked on a PC only: no use of 1.1.2 or
+> 1.3.2 on a car is recorded.
 > As shipped, the apps only read values the car already has.
 > There is one exception, and it is switched off until a workshop chooses it: the "MHD flex" ethanol
 > reading in Gauges sends three requests to the engine unit that are not reads (see "The ethanol
@@ -26,22 +28,36 @@ open-source idrive7-apps kit:
 > warnings. Compare every reading with a tool you trust before relying on it. Proven's own code is
 > provided as is, without warranty of any kind: you install and use it at your own risk.
 
-> **Proven Drag: BETA, not yet on a car (November 2026).** The note above is not about Proven Drag.
-> Proven Drag has not been installed or run on a car or on a head unit. It was built and checked on a PC
-> only, with made-up cars. No time from it has been compared with a timeslip or a GPS timer, so its
-> times are an indication only. It only reads values the car already has, and it is for closed roads
-> and track days only. Like all of Proven's own code it is provided as is, without warranty of any
-> kind: you install and use it at your own risk. See "Proven Drag" and "What has and has not been
-> tested".
+> **Proven Drag and Proven Drift: BETA, still being tested on cars (26 Nov 2026).** The note above
+> is not about these two apps. On the first car they were on (25 Nov 2026) the MGU Store built and
+> installed Proven Drag 1.0.1 and Proven Drift 1.0.0, and both ran. But each closed by itself,
+> "generally within 30 seconds, randomly", and after the second time the platform removed the app.
+> Proven Gauges and Proven Warm-Up kept working on the same car. **The cause is not known.** Nothing
+> found on a PC makes either app's own code do that, and nothing can be debugged on the car.
+> Proven Drag 1.0.2 and Proven Drift 1.0.1 are what was made after that car. As shipped, each asks
+> of the car only what apps that run on cars also ask. Everything more is a setting that is switched
+> off. And each keeps a record of how every start of the app ended, and shows it on its Signals tab
+> under "Starts and stops", so that one phone photo tells how the app last stopped.
+> **This release is not a proven fix. The apps may still close by themselves.** Nothing of 1.0.2 or
+> 1.0.1 has been on a car. See "After installing Proven Drag 1.0.2 or Proven Drift 1.0.1" and "What
+> the first car showed".
 
-> **Proven Drift: BETA, not yet on a car (November 2026).** Proven Drift has not been installed or run
-> on a car or on a head unit either. It was built and checked on a PC only, with made-up cars. The
-> drift angle it shows is an estimate, worked out from the car's motion sensors, and no angle from it
-> has been compared with a car's. So its angles and its scores are an indication only. It only reads
-> values the car already has, it does nothing with DSC or any driving setting, and it is **for closed
-> circuits and skid pans only**. Like all of Proven's own code it is provided as is, without warranty
-> of any kind: you install and use it at your own risk. See "Proven Drift" and "What has and has not
-> been tested".
+> **Proven Drag.** Its times are an indication only. They come from the car's own speed signal, and
+> as shipped every run is UNCALIBRATED: the speed scale is only learned with "GPS speed scale"
+> switched on in Settings. One run on the first car was set beside a GPS timer by the car's owner.
+> One run says little, and it is no measure of how exact the app is. Proven Drag only reads values
+> the car already has, and it is for closed roads and track days only. Like all of Proven's own code
+> it is provided as is, without warranty of any kind: you install and use it at your own risk. See
+> "Proven Drag" and "What has and has not been tested".
+
+> **Proven Drift.** No screen of Proven Drift was photographed on the first car. Its accelerator
+> figure was reported as "jumping about" there, and the app shows no accelerator percentage any more.
+> The drift angle it shows is an estimate, worked out from the car's motion sensors, and no angle
+> from it has been compared with a car's. So its angles and its scores are an indication only. It
+> only reads values the car already has, it does nothing with DSC or any driving setting, and it is
+> **for closed circuits and skid pans only**. Like all of Proven's own code it is provided as is,
+> without warranty of any kind: you install and use it at your own risk. See "Proven Drift" and
+> "What has and has not been tested".
 
 ## Add them to your car
 
@@ -51,26 +67,132 @@ You need a BMW with an iDrive 7 (MGU) or iDrive 8 head unit and the
 1. In the Store: **Settings**, **Add source**, type **`Provenperformancesolutions/proven-apps`**.
    No token and no sign-in are needed. The source should show 4 components.
 2. Install **Proven Gauges** and **Proven Warm-Up**.
-3. Installing **Proven Drag** is optional. It is BETA: it has not been on a car, and whether the Store
-   builds and installs it has not been tried. It is for closed roads and track days only.
-4. Installing **Proven Drift** is optional too. It is BETA in the same way: not on a car yet, and
-   whether the Store builds and installs it has not been tried. It is for closed circuits and skid
-   pans only.
+3. Installing **Proven Drag** is optional. It is BETA and still being tested on cars. On the first
+   car the Store built and installed version 1.0.1, and the app then closed by itself (see the note
+   above). Whether 1.0.2 does is not known. It is for closed roads and track days only.
+4. Installing **Proven Drift** is optional too. It is BETA in the same way: the Store built and
+   installed version 1.0.0 on the first car, and it closed by itself there. Whether 1.0.1 does is not
+   known. It is for closed circuits and skid pans only.
+5. If you install either of the two, read the next section first.
 
 The GPU renderer and the controller gate the apps need come from the Store's built-in
 `cauliflowermossgrape/idrive7-apps` source, so that source must still be on the car.
 
+## After installing Proven Drag 1.0.2 or Proven Drift 1.0.1
+
+Why the two apps closed on the first car is not known, and the apps of this release may close too.
+Nothing can be debugged on a car: only phone photos of the screen come back. So each app now writes
+down how every start of it ended, and the order of things matters.
+
+1. **Leave every switch off for the first drive.** That is how the two apps are shipped. In Proven
+   Drag the switches are "GPS speed scale" in Settings and the five under Workshop settings. In
+   Proven Drift they are the seven under Workshop settings. With all of them off, each app asks of
+   the car only what apps that run on cars also ask. Proven Drag's runs then say UNCALIBRATED. That
+   is expected.
+2. **Open the app, wait a minute, open the Signals tab and photograph it.** Its first block,
+   "Starts and stops", is the record. One line is one start of the app: when it started, how long it
+   lived, how it ended and what it was doing at its last note.
+3. **If the app closes by itself, open it again in the same drive and photograph the Signals tab
+   before you switch the car off.** For the first minute the Run tab of Proven Drag and the Drift
+   tab of Proven Drift then say "The app stopped by itself last time. Please photograph the Signals
+   tab." The same drive matters. One copy of the record is kept in the head unit's memory, and that
+   copy is gone when the head unit restarts. The other copy is in the app's data folder, which the
+   platform empties after an unexpected end.
+4. **What the platform does then.** By the kit's README (section 4.3), the first time an app ends
+   unexpectedly the platform empties the app's data folder. That takes the saved runs or drifts,
+   the log and the settings with it, so every switch is off again by itself. The second time it
+   removes the app, and it has to be installed again.
+5. **If the app does not close, try the switches one at a time.** What closed it may be among what
+   is switched off. Switch one on, drive, and photograph the Signals tab again. Then the next. Each
+   start's line says what was switched on in it. In Proven Drag, "GPS speed scale" is the switch
+   that gives calibrated runs. Keep "Note stop signals" for a drive of its own, after the app has
+   stayed up without it: see "Starts and stops" under each app.
+6. **One more photo helps a great deal.** After an ordinary day, switch the car off, come back
+   later, open the app and photograph the Signals tab. It shows how the car ends the app when
+   nothing is wrong. Nobody knows that yet.
+7. **Proven Drift, the steering.** With the car standing and the engine running, photograph the
+   Signals tab with the steering wheel straight, a quarter turn left and a quarter turn right. The
+   rows "Steering wheel, chassis" and "Steering wheel, NoCRC" show the raw value now and its lowest
+   and highest.
+8. **Proven Drag, a flagged run.** Photograph its Timeslip. The DATA line says what the app saw:
+   see "DATA GAP on a car that sends its speed only when it changes".
+
+These photos are what the next release is made from.
+
 ## What changed
+
+**Proven Drag 1.0.2 and Proven Drift 1.0.1, BETA (26 November 2026)**
+
+- **Made after the first car, and not a proven fix.** On 25 Nov 2026 Proven Drag 1.0.1 and Proven
+  Drift 1.0.0 were installed on one car through the Store, and ran. Each closed by itself, "generally
+  within 30 seconds, randomly", and after the second time the platform removed the app. Proven Gauges
+  and Proven Warm-Up kept working on that car. **Why the two apps closed is not known.** Nothing
+  found on a PC makes either app's own code throw, hang or grow without bound, and nobody can attach
+  a tool to the car. So this release does two things, and promises nothing about the closing. See
+  "What the first car showed".
+- **First: as shipped, each app asks of the car only what apps that run on cars also ask.** Proven
+  Drag subscribes to two values: the car's speed and its forward acceleration. Proven Drift
+  subscribes to six: the speed, the two accelerations, the yaw rate, and the steering wheel's angle
+  under its two field names. As shipped neither app reads a value from the car itself any more.
+  Everything else the two apps did is an extra behind a setting that is off as shipped: six settings
+  in Proven Drag, seven in Proven Drift. An unexpected end empties the settings, so the app goes
+  back to that state by itself. See "Settings" and "It only reads" under each app.
+- **Second: each app keeps a record of its starts and stops**, and shows it on the Signals tab
+  under "Starts and stops": how each of the last five starts of the app ended, and what the app was
+  doing at its last note. It is there for the next phone photo. See "Starts and stops" under each
+  app, and "After installing Proven Drag 1.0.2 or Proven Drift 1.0.1".
+- **No signal listener as shipped.** The record can note a signal that ends the app (SIGTERM,
+  SIGHUP, SIGINT). But a listener changes how the app's process answers such a signal, and no app
+  known to run on a car has one. So it is behind the Workshop setting "Note stop signals", off as
+  shipped in both apps.
+- **Proven Drag: what the first car's screens showed is in it.** That car sends its speed only
+  while the speed changes. The app now takes a speed that is not sent anew as the speed the car
+  still has, and times a run from what the car sends alone. On such a car gentle pull-aways will
+  often be flagged DATA GAP: see "DATA GAP on a car that sends its speed only when it changes". The
+  wheel values of that car are in a form nobody expected. A wheel factor now has to prove itself at
+  two steady speeds 20 km/h apart before anything is worked out from the wheels.
+- **Proven Drag: runs are UNCALIBRATED as shipped.** The GPS receiver is one of the extras. No speed
+  scale is learned until "GPS speed scale" is switched on.
+- **Proven Drift: no accelerator percentage anywhere.** On the first car the figure was "jumping
+  about", so the value does not arrive in the form the app took it for. The PEDAL bar and AVERAGE
+  PEDAL are gone. The score and the flags never used the pedal. With "Pedal and handbrake" on, the
+  Signals tab's second page shows the pedal's raw values for a photo.
+- **Proven Drift: wheel values must prove themselves.** No wheel value reaches the angle, the
+  score or the learning until all four have shown, at two steady speeds 20 km/h apart, that they are
+  plain multiples of the car's speed. Until then no rear wheelspin is shown, and its place says why.
+- **Proven Drift: the steering.** The steering wheel's angle is the first source now, the one the
+  kit's own apps read. Slow, gentle corners are kept as steering moments from the start and no
+  longer thrown away until the yaw rate is learned. The Drift tab says in words how far learning is.
+  What was learned is written every 20 seconds on the move, where it was every two minutes.
+- **Both apps: the Signals tab has two pages**, and a figure that needs an extra says that it is
+  switched off where it would stand. No banner pulses with the clock any more, so a picture on
+  which nothing changed is not sent to the screen again for its own sake. When the car asks the app
+  to stop, the app writes its saved file once before it ends.
+- **Words.** The Store descriptions begin "BETA, still being tested on cars". Proven Drag's
+  Timeslip and Proven Drift's first screen and Last tab say "BETA: still being tested on cars".
+- **Checked on a PC only.** Nothing of 1.0.2 or 1.0.1 has been on a car, on a head unit or on
+  Node.js 8. Independent checks of both builds were made, and what they found is repaired in this
+  release. Proven Drag has two new test files and Proven Drift three: see "Look at them on a PC".
+- **Nothing changed in Proven Gauges, Proven Warm-Up and the kit with it.** No file in
+  `apps/pps_gauges`, `apps/pps_warmup` or `kit/` was touched. To see it for yourself (a319514 is
+  where this source stood before this release), this prints nothing:
+
+  ```
+  git diff a319514 HEAD -- apps/pps_gauges apps/pps_warmup kit
+  ```
+- What the car showed, every change, every check that was changed on purpose, and what is not
+  fixed and not known are in [CHANGES-drag.md](CHANGES-drag.md), parts 11 to 14, and
+  [CHANGES-drift.md](CHANGES-drift.md), parts 9 to 12.
 
 **Proven Drift 1.0.0, BETA (November 2026)**
 
 - **A fourth app: Proven Drift.** It shows the car's drift angle live on a car drawn from above,
   scores every drift by angle, speed and length, and keeps the data of each drift, of the session and
   the all-time bests. See "Proven Drift".
-- **It is BETA and has not been on a car.** It was built and checked on a PC only, with made-up cars.
-  The angle is an estimate, and no angle from the app has been compared with a car's. Its Store
-  description begins "BETA, not yet tested on a car", every tab of the app carries a BETA badge, and
-  its first screen says CLOSED COURSE ONLY.
+- **It was BETA and had not been on a car.** It had been built and checked on a PC only, with
+  made-up cars. The angle is an estimate, and no angle from the app had been compared with a car's.
+  Its Store description began "BETA, not yet tested on a car", every tab of the app carried a BETA
+  badge, and its first screen said CLOSED COURSE ONLY.
 - **For closed circuits and skid pans only.** It only reads values from the car. It does nothing with
   DSC, traction control, the handbrake or any driving setting, and nothing leaves the car.
 - **The car has to be learned first.** Nobody knows how a car scales the signals the angle is worked
@@ -125,12 +247,12 @@ The GPU renderer and the controller gate the apps need come from the Store's bui
   decides them. CHANGES-drift.md, part 8.
 - The source now lists four components. Installing Proven Drift is optional.
 - **Nothing changed in the other three apps with it.** No file in `apps/pps_gauges`,
-  `apps/pps_warmup`, `apps/pps_drag` or `kit/` was touched, and their tests are as they were. To see
-  it for yourself (1becffc is where this source stood before Proven Drift was added), this prints
-  nothing:
+  `apps/pps_warmup`, `apps/pps_drag` or `kit/` was touched, and their tests were as they had been.
+  To see it for yourself (1becffc is where this source stood before Proven Drift was added, a319514
+  where it stood with it), this prints nothing:
 
   ```
-  git diff 1becffc HEAD -- apps/pps_gauges apps/pps_warmup apps/pps_drag kit
+  git diff 1becffc a319514 -- apps/pps_gauges apps/pps_warmup apps/pps_drag kit
   ```
 - How the app was built, the error tables, every figure in it that is a guess, where the estimate is
   poor and what to look at on a first car are in [CHANGES-drift.md](CHANGES-drift.md).
@@ -139,9 +261,10 @@ The GPU renderer and the controller gate the apps need come from the Store's bui
 
 - **All three apps now draw their text in Rajdhani**, a free font (Copyright (c) 2014 Indian Type
   Foundry, SIL Open Font Licence 1.1). Before, they used the kit's Ubuntu font.
-- **The new look has been checked on a PC only. It has not been on a car.** Proven Gauges and Proven
-  Warm-Up have run on a car with the font before. Proven Drag has not been on a car at all, and is
-  still BETA.
+- **When it was released, the new look had been checked on a PC only and had not been on a car.**
+  Proven Gauges and Proven Warm-Up had run on a car with the font before. Proven Drag had not been on
+  a car at all. Since then Proven Drag 1.0.1 and Proven Drift 1.0.0, which draw with this font, have
+  run on one car (25 Nov 2026). Nothing is recorded of how the text read there.
 - **What stays in the car's own font**: everything the head unit draws itself. That is the Store's own
   screens, such as its settings list, the app's name in the head unit's menu, the head unit's own
   button bar and its own settings screen, and the text lines of Warm-Up's small home-screen widget.
@@ -161,13 +284,13 @@ The GPU renderer and the controller gate the apps need come from the Store's bui
   `app.json` changed. In `kit/`, the five text atlases changed, the font's licence was added, and one
   paragraph was added to the header of the Ubuntu licence file (`UFL-Ubuntu.txt`, two copies: see
   "Licence and credits"). Nothing else in `kit/` changed. This lists exactly those files (bad68cb is
-  where this source stood before the new font):
+  where this source stood before the new font, 1becffc where it stood with it):
 
   ```
-  git diff --stat bad68cb HEAD -- apps kit
+  git diff --stat bad68cb 1becffc -- apps kit
   ```
 - The three version numbers went up because the Store offers an update only when the version is
-  higher. Proven Drag's Store description is the same.
+  higher. Proven Drag's Store description stayed the same with it.
 - The sizes, what was checked and how, and what only a car can show are in
   [CHANGES-font.md](CHANGES-font.md).
 
@@ -176,11 +299,11 @@ The GPU renderer and the controller gate the apps need come from the Store's bui
 - **A third app: Proven Drag**, a timer for standing-start runs. It times 0-100 km/h (or 0-60 mph),
   60 ft, 330 ft, 1/8 mile, 1000 ft and 1/4 mile, with trap speeds, from the car's own speed signal. See
   "Proven Drag".
-- **It is BETA and has not been on a car.** It was built and checked on a PC only, with made-up cars,
-  and no time from it has been compared with a timeslip or a GPS timer. Its Store description begins
-  "BETA, not yet tested on a car", and every tab of the app carries a BETA badge.
+- **It was BETA and had not been on a car.** It had been built and checked on a PC only, with
+  made-up cars, and no time from it had been compared with a timeslip or a GPS timer. Its Store
+  description began "BETA, not yet tested on a car", and every tab of the app carried a BETA badge.
 - It only reads values from the car, and it is for closed roads and track days only.
-- The source now lists three components. Installing Proven Drag is optional.
+- The source then listed three components. Installing Proven Drag is optional.
 - **Nothing changed in Proven Gauges and Proven Warm-Up with it.** They stayed 1.1.1 and 1.3.1, and
   no file in `apps/pps_gauges`, `apps/pps_warmup` or `kit/` was touched. To see it for yourself
   (376bb5e is where this source stood before Proven Drag was added, bad68cb where it stood with it),
@@ -532,36 +655,49 @@ over CarPlay, navigation or another app**, so a driver who is not on the Warm-Up
 
 # Proven Drag
 
-**BETA. It has not been on a car.** A timer for standing-start runs: 0-100 km/h (or 0-60 mph), 60 ft,
-330 ft, 1/8 mile, 1000 ft and 1/4 mile, with a trap speed at the 1/8 and the 1/4 mile. It times a run
-from the car's own speed signal. For closed roads and track days only.
+**BETA, still being tested on cars.** A timer for standing-start runs: 0-100 km/h (or 0-60 mph),
+60 ft, 330 ft, 1/8 mile, 1000 ft and 1/4 mile, with a trap speed at the 1/8 and the 1/4 mile. It
+times a run from the car's own speed signal. For closed roads and track days only.
 
-This section says what the code does. None of it has been seen on a car, and no time from the app has
-been compared with a timeslip or a GPS timer: see "What has and has not been tested".
+This section says what the code of version 1.0.2 does. Version 1.0.1 ran on one car and closed by
+itself there: see "What the first car showed". Nothing of 1.0.2 has been seen on a car. Its times
+are an indication only: see "What has and has not been tested".
 
 ## What the driver sees
 
-Four tabs. A BETA badge sits beside them on every tab.
+Four tabs. A BETA badge sits beside them on every tab. The Signals tab has two pages: touch it
+again, or use Next page, for the second.
 
 | Tab | What is on it |
 |---|---|
 | **Run** | The speed now, the clock and the state: STOP TO ARM, READY, TIMING or RUN FINISHED. Four results, each with its ± figure and the best so far: 0-100 km/h, 60 ft, 1/8 mile and 1/4 mile, the last two with their trap speed. A strip under them: clock start, speed scale, data rate, wheelspin, start slope and flags |
-| **Timeslip** | The last run as a slip: 60 ft, 330 ft, 1/8 mile and its trap speed, 1000 ft, 1/4 mile and its trap speed, and 0-100 km/h, each time with its ±. Beside it: peak g and top speed, wheelspin, start slope, height change, the speed scale used, how the speed data arrived, and the flags. It carries the line "BETA: not yet checked against a car or a GPS timer" |
+| **Timeslip** | The last run as a slip: 60 ft, 330 ft, 1/8 mile and its trap speed, 1000 ft, 1/4 mile and its trap speed, and 0-100 km/h, each time with its ±. Beside it: peak g and top speed, wheelspin, start slope, height change, the speed scale used, how the speed data arrived, and the flags. It carries the line "BETA: still being tested on cars" |
 | **Best** | The best time per split for the clock start in use, and the last runs. "Reset best" asks twice. It clears the best times and the list of runs |
-| **Signals** | The workshop's page: every source with its state, rate and longest gap, the four wheels' raw values and learned factors, the GPS speed scale, the car's road gradient and the slope the car stands on. "Reset calibration" shows with Workshop settings on, and asks twice |
+| **Signals** | The workshop's page, in two pages. Page 1: "Starts and stops", the record of how the app started and stopped, always shown. Under it the eleven sources, each with its state, rate, longest gap and number of samples. A source whose setting is off says "switched off". Page 2: the four wheels' raw values and learned factors, the GPS speed scale, the car's road gradient and the slope the car stands on. As shipped most of page 2 says "switched off" and names the setting. "Reset calibration" is on page 2, shows with Workshop settings on, and asks twice |
 
 - **A run.** Stop the car. After one second at a standstill the Run tab says READY, with the line
   "Closed roads and track days only". Launch: the clock starts at first movement. The run ends when you
   lift (the speed falls 5 km/h under the run's top speed), at the 1/4 mile, or after 60 seconds. Splits
   reached by then are kept, and the results stay on the screen until the next launch. A roll that never
   passes 5 km/h and stops again is not a run.
-- **No speed.** While no speed arrives, the Run tab shows none and says NO SPEED FROM THE CAR. A car
-  whose speed can only be listened to sends nothing while it stands: the tab then says ARMED, NO NEW
-  SPEED, and a launch is still timed. The app cannot always tell which car it is on. Where the speed
-  has stopped arriving and the timer is still armed on the last speed it heard, the tab says NO SPEED
-  FROM THE CAR with the line "Timer armed. Closed roads and track days only" under it, and a launch can
-  still be timed. That line, and ARMED, NO NEW SPEED, can also show on a car whose launch is then not
-  timed. CHANGES-drag.md parts 8 and 9 list these cases.
+- **A speed that is not sent anew.** The first car sends its speed only while the speed changes. So
+  as shipped, a speed the car has not sent anew is taken as the speed it still has, for as long as
+  the head unit says the car's speed service is up and a value has arrived since it came up. The Run
+  tab then shows that speed and says READY on a standing car, and the data rate cell says SPEED WHEN
+  IT CHANGES. What the app cannot tell apart there: a steady speed from a speed signal that has died
+  while its service stayed up. A speed that stays on the Run tab while the car stands still means
+  the car has stopped sending it. The Signals tab then says "silent for N s" for the speed.
+- **No speed.** While no speed is known, the Run tab shows none and says NO SPEED FROM THE CAR.
+  Where the car's speed service is down and the timer is armed on the last speed the car sent, the
+  tab says ARMED, NO NEW SPEED, and a launch is still timed if the car sends it. The app cannot
+  always tell which case it is in. Where the speed has stopped arriving and the timer is still armed
+  on the last speed it heard, the tab says NO SPEED FROM THE CAR with the line "Timer armed. Closed
+  roads and track days only" under it, and a launch can still be timed. That line, and ARMED, NO NEW
+  SPEED, can also show on a car whose launch is then not timed. CHANGES-drag.md parts 8, 9 and 11
+  list these cases.
+- **After a stop by itself.** For the first minute after a start that follows an end nobody asked
+  for, the Run tab says "The app stopped by itself last time. Please photograph the Signals tab."
+  See "Starts and stops".
 - **Flags.** A run is flagged when something says its times may be off. A flagged run is shown and
   saved, but **it sets no best time**. The five flags:
   - DOWNHILL START: the car stood on a steeper downhill slope than the limit in Settings.
@@ -570,6 +706,8 @@ Four tabs. A BETA badge sits beside them on every tab.
   - DATA GAP: the speed data had a hole of 0.3 seconds or more, repeated one value for a second or
     more, or stopped before the run was over. Or the app itself was held up for 0.3 seconds or more.
     A shorter hold-up can leave such a hole too, because a sample that was stamped late is taken out.
+    On a car that sends its speed only when it changes, this flag comes up often on gentle runs: see
+    "DATA GAP on a car that sends its speed only when it changes".
   - SPEED JUMP: the speed made a step upwards that no car does. The run ends there.
   - SERIES DISAGREE: the two ways the speed arrives gave times further apart than their two ± figures
     together. The ± shown is widened to that difference.
@@ -582,12 +720,21 @@ Four tabs. A BETA badge sits beside them on every tab.
 
 - **From the car's own speed signal.** This is the car's own vehicle speed, read in steps of
   1/64 km/h. By public reports it is the stability control's speed, which the car has already corrected
-  for wheelspin. The app takes it two ways at once. It listens: the car sends the speed when it
-  changes. And it asks: it reads the speed itself, every 50 ms while the car is under 5 km/h, armed or
-  being timed, every 500 ms on the move otherwise, and every 2 seconds once the car has been parked
-  for 5 minutes with the screen hidden. Each way is timed on its own and the two are never mixed. When
-  a run is over the app takes the one whose samples were closer together, unless that one saw the
-  launch late, went silent, had a hole, repeated a value or made a jump. Both are written to the log.
+  for wheelspin.
+- **As shipped the app only listens.** The car sends the speed when it changes. The kit reads it
+  once when the car's speed service comes up, and that one read is how the app knows that a standing
+  car stands: a standing car sends nothing. The app reads nothing itself. Every run is timed from
+  the samples the car sent, and from nothing else. On the first car the speed arrived 47 to 50 times
+  a second while it changed, and not while it was constant.
+- **With "Ask the car for values" switched on** (Workshop settings) the app also reads the speed
+  itself, as 1.0.1 did without being asked: every 50 ms while the car is under 5 km/h, armed or
+  being timed, and every 500 ms on the move otherwise. It never reads while its screen is hidden,
+  before every subscription asked for is set up, or while one is being tried again. Each way is
+  timed on its own and the two are never mixed. When a run is over the app takes the one whose
+  samples were closer together, unless that one saw the launch late, went silent, had a hole,
+  repeated a value or made a jump. Both are written to the log. On the first car the app's own reads
+  were answered and added nothing. A car that never sends its speed by itself is not timed without
+  this switch.
 - **No sample carries the car's own time.** Each is stamped when it reaches the app. A delay that is
   always the same cancels out. A delay that varies goes straight into the result.
 - **Where the clock starts.** "First movement" is the moment the speed passes 0.5 km/h. On made-up
@@ -623,30 +770,106 @@ Four tabs. A BETA badge sits beside them on every tab.
     the true speed read the 0-100 km/h 33 and 41 ms long, and nothing in the samples shows that.
   - **a delay between the car and the app that varies**, as above.
 
+## DATA GAP on a car that sends its speed only when it changes
+
+The first car is such a car, and as shipped the app has nothing but what the car sends. A car that
+holds one speed to the last count (1/64 km/h) sends nothing for that time. A car whose data is lost
+on the way also sends nothing, as far as the app can see. On the samples alone the two cannot be
+told apart for certain. A wrong time shown as clean is worse than a flag too many, so the app flags
+the run.
+
+- **The rule.** When the speed has said nothing and the next sample is too far from the last for
+  "nothing changed", the app times that stretch as a hole. From 0.3 seconds the run is flagged DATA
+  GAP. That is the rule of 1.0.1. A gentler rule for the flag was tried for 1.0.2 and taken back: it
+  let a made-up run with a lost second pass as clean, with a 60 ft time that was wrong by more than
+  its ±. What is left of it only chooses the words on the Timeslip.
+- **Gentle pull-aways will often be flagged.** Whenever the speed has stood still to the last count
+  for 0.3 seconds or more and the next change is a brisk one, the run is flagged. On a made-up car
+  like the first one, of 16 gentle pull-aways that hold a speed for 0.5 or 1.5 seconds and then pull
+  or brake at once, 12 are flagged. With a speed that wavers a little it is chance: of 8 runs held
+  for 2 seconds and then lifted, 1 was flagged. On the first car four of six gentle pull-aways
+  carried the flag under 1.0.1.
+- **In 1.0.2 this comes up more often on gentle runs than in 1.0.1, not less.** In 1.0.1 the app's
+  own reads of the speed took some such runs without a flag. They are off as shipped now. With "Ask
+  the car for values" switched on the app behaves as 1.0.1 did here.
+- **A flagged run keeps its times and sets no best.** The Run tab says "flagged: sets no best"
+  under a time that would have been a best, and the Timeslip says "A flagged run sets no best time."
+- **A full-throttle run that ends in a held speed is flagged too.** In the PC tests, full-throttle
+  runs of made-up cars that were driven to the 1/4 mile or ended by a lift carried no flag. But of
+  118 made-up drives that begin with a full-throttle pull, 13 carried DATA GAP: in each the driver
+  held one speed to the last count after the pull, where a lift would have ended the run. **Lift
+  off to end a run.** The Run tab says so while it is timing: "Lift off to end the run".
+- **A run ends after 3 seconds of silence.** If nothing at all is sent for 3 seconds while a run is
+  timed, the run ends there with DATA GAP and keeps the splits it has. That is so whether the car
+  held one speed to the last count for 3 seconds or its signal was lost.
+- **The Timeslip's words.** Its DATA line says what the app saw, and a photo of it tells which case
+  it looked like:
+  - "hole N ms": a hole that does not look like a steady speed.
+  - "app held up N ms": the app itself was held up, whatever the car sent meanwhile.
+  - "nothing notified for N s (may be a steady speed)": the samples after the silence look like a
+    speed that stood still and then moved on. Under one second the length is given in ms. Lost data
+    can look the same, so it is said as a possibility and the flag stands.
+  - "nothing notified for 3 s (steady speed or signal lost)": the run ended on a silence.
+
+  The FLAGS line says DATA GAP in every one of these cases.
+- **Not solved.** What could tell a steady speed from lost data is not built: the car's own
+  acceleration through the silence, or the app's own reads. Whether the first car's speed ever sits
+  still to the last count for seconds is not known. All figures here are from made-up cars on a PC.
+
 ## What the GPS is used for, and what not
 
 - **It does not time the run.** The head unit's GPS is far too slow for that: by public reports it
   gives 1 to 3 positions a second. Proven has not measured that.
-- **It is used to correct the speed scale.** The biggest error in a time taken from the car's own
-  speed is the scale of that speed, which moves with tyre size and wear. At a steady speed the GPS can
-  say how far off it is. While the car holds a steady speed above 60 km/h, and the receiver, where it
-  says so, has a fix on 6 or more satellites, the app compares the receiver's speed with the car's, at
-  most once a second. After 60 comparisons that agree, which is a minute of steady driving at the
-  least, it has a factor. Every speed of the next run is multiplied by it. Where the receiver's speed
-  does not arrive, the app works the factor out from positions instead: straight stretches of 1000 m
-  or more that begin above 60 km/h, stay above 50 km/h and have the same speed at both ends within
-  3 km/h. It needs three of them that agree. A factor is accepted only between 0.90 and 1.10. It is
-  saved and used again after a restart, until "Reset calibration" clears it. Each run says which scale
-  it used: "GPS x0.987", "MANUAL +1.25 %" or "UNCALIBRATED". No factor has been learned on a car yet.
-- **It gives the height change.** The Timeslip shows how far the road rose or fell over the 1/8 and
-  the 1/4 mile, marked "GPS height, ±1 m at best". No time is corrected for it.
+- **As shipped it is not used at all.** The GPS receiver is an extra, and it is off. The app does
+  not listen to the receiver, no speed scale is learned, and every run says UNCALIBRATED: its times
+  are worked out from the speed as the car reports it. The Run tab then says GPS SCALE IS OFF IN
+  SETTINGS under UNCALIBRATED. The switch is "GPS speed scale" in Settings. A factor that is already
+  in the saved file keeps being used with the switch off.
+- **With "GPS speed scale" on, it is used to correct the speed scale.** The biggest error in a time
+  taken from the car's own speed is the scale of that speed, which moves with tyre size and wear. At
+  a steady speed the GPS can say how far off it is. While the car holds a steady speed above
+  60 km/h, and the receiver, where it says so, has a fix on 6 or more satellites, the app compares
+  the receiver's speed with the car's, at most once a second. After 60 comparisons that agree, which
+  is a minute of steady driving at the least, it has a factor. That minute has to come in one start
+  of the app: comparisons in progress are not saved. Every speed of the next run is multiplied by
+  the factor. A factor is accepted only between 0.90 and 1.10. It is saved and used again after a
+  restart, until "Reset calibration" clears it. Each run says which scale it used: "GPS x0.987",
+  "MANUAL +1.25 %" or "UNCALIBRATED". On the first car, with 1.0.1, a factor was learned in about
+  five minutes: x0.988. That is one car's figure for its own speed signal.
+- **With "Positions, study" on** (Workshop settings) the app can work the factor out from positions,
+  where the receiver's speed does not arrive: straight stretches of 1000 m or more that begin above
+  60 km/h, stay above 50 km/h and have the same speed at both ends within 3 km/h. It needs three of
+  them that agree.
+- **It gives the height change**, with one of those two settings on. The Timeslip shows how far the
+  road rose or fell over the 1/8 and the 1/4 mile, marked "GPS height, ±1 m at best". No time is
+  corrected for it. With both off the Timeslip says "not known (GPS is switched off in Settings)".
 
 ## What the four wheel speeds are used for
 
-Not for timing. Their scale is not known, so the app learns it: at a steady speed above 30 km/h it
-compares each wheel's raw value with the car's speed, and a factor counts after 20 such moments. A
-wheel whose values do not fit a plain scale (they spread by more than 3 %) is not used. With all four
-factors known, the app looks at the first 3 seconds of a run:
+Not for timing, and as shipped for nothing: the wheel speeds are an extra, and the app only asks
+the car for them with "Wheel speeds, study" switched on (Workshop settings).
+
+Their scale is not known, so the app learns it: at a steady speed above 30 km/h it compares each
+wheel's raw value with the car's speed. A factor counts after 20 such moments, and since 1.0.2 only
+once they come from steady speeds at least 20 km/h apart. The moments are kept per stretch of
+10 km/h, and every stretch has to agree with the whole. A wheel whose values do not fit a plain
+scale (they spread by more than 3 %) is not used.
+
+That second condition is what the first car taught. All four of its wheel values read 65407 with
+the car standing, and the factors never settled. Moments taken at one speed agree with each other
+whatever form a value has. So on a made-up car with wheel values of such a form, 1.0.1 called all
+four factors learned after 14 seconds at one steady speed, and the launch after it got a wheelspin
+figure and the flag SPEED READ HIGH AT LAUNCH, both made of nothing. With the new rule nothing is
+called learned on that made-up car, and the wheelspin stays the estimate. A car whose wheel values
+are plain multiples of its speed now needs two steady speeds 20 km/h apart before its wheels are
+used. Wheel factors saved by 1.0.0 or 1.0.1 are not read and are learned again. The first car's
+wheel values are not decoded, and no decoding is guessed in this release.
+
+With "Wheel speeds, study" on, the Signals tab's second page shows for each wheel the raw value
+now, the lowest and the highest since the app started, and the raw value at the last steady speed
+above 30 km/h with that speed, in decimal and hexadecimal. That table is there for one photo.
+
+With all four factors known, the app looks at the first 3 seconds of a run:
 
 - **Wheelspin**: how much faster the fastest wheel turns than the slowest, as a percent. The app
   reports the peak, the seconds above 10 % and which axle led.
@@ -654,8 +877,10 @@ factors known, the app looks at the first 3 seconds of a run:
   for more than 0.3 seconds, the run is flagged SPEED READ HIGH AT LAUNCH. No time is changed for it.
 
 Without wheel speeds the wheelspin is worked out from the car's acceleration and marked as an
-estimate, and there is no cross-check. The car's wheel-travel counters are shown raw on the Signals
-tab for study and are used for nothing.
+estimate, and there is no cross-check. That is how the app is shipped. On the first car's photos
+the wheelspin figure was that estimate too, because the wheel factors never settled. The car's
+wheel-travel counters are shown raw on the Signals tab's second page for study, with "Wheel travel,
+gradient, study" switched on, and are used for nothing.
 
 ## The start slope and the downhill flag
 
@@ -669,7 +894,8 @@ Two limits are known from the PC. A car held on the brake against the engine squ
 that reads as nose up and can hide a downhill start. And a sensor whose value does not change at all
 from the drive through the stop gives no start slope ("not known"), so nothing is flagged.
 
-The car's own road gradient is shown on the Signals tab for study only. It is never used in a result.
+The car's own road gradient is shown on the Signals tab's second page for study only, with "Wheel
+travel, gradient, study" switched on. It is never used in a result.
 
 ## Settings
 
@@ -678,28 +904,130 @@ The car's own road gradient is shown on the Signals tab for study only. It is ne
 | Speed unit | km/h, mph. With mph the speed split is 0-60 mph | km/h |
 | Clock starts | Slip, Everything from first movement, Everything after the first foot | Slip |
 | Downhill start limit | 1 %, 2 %, Off | 1 % |
-| Workshop settings | On, off. On shows the two settings below and the "Reset calibration" button | Off |
-| Speed scale | GPS (calibrates while driving), Off (1.000), Manual | GPS |
-| Manual speed scale | -4.00 % to +4.00 % in steps of 0.25 %, shown when Speed scale is Manual. Plus means the car reads low | 0.00 % |
+| GPS speed scale (off takes full effect after a restart) | On, off. An extra. On: the app listens to the GPS receiver's sentences and learns the speed scale from them. Off: no new speed scale is learned, so runs are UNCALIBRATED unless a factor is in the saved file, and there is no height from the receiver | **Off** |
+| Workshop settings | On, off. On shows the seven settings below and the "Reset calibration" button | Off |
+| Speed scale | Which factor a run uses: GPS factor (if one is learned), Off (1.000), Manual | GPS factor |
+| Manual speed scale (+: the car reads low) | -4.00 % to +4.00 % in steps of 0.25 %, shown when Speed scale is Manual | 0.00 % |
+| Ask the car for values (study) | On, off. An extra. On: the app reads the speed itself on a schedule, and the acceleration when the car has not sent it for 2 seconds while the speed changes, as 1.0.1 did. Off: the app reads nothing itself. A car that never sends its speed by itself is then not timed | **Off** |
+| Wheel speeds, study (off takes full effect after a restart) | On, off. An extra. On: the app asks for the four wheel speeds. Off: wheelspin is the estimate from the acceleration, there is no cross-check of the speed at the launch and no raw wheel table | **Off** |
+| Positions, study (off takes full effect after a restart) | On, off. An extra. On: the app asks for the raw GPS position and height and for the navigation's position. Off: no speed scale from positions, no second source of height | **Off** |
+| Wheel travel, gradient, study (off takes full effect after a restart) | On, off. An extra. On: the app asks for the wheel-travel counters and the car's road gradient. Off: two study lines on the Signals tab say "switched off". Nothing in any result changes | **Off** |
+| Note stop signals, study (while on, an app that hangs is not ended by one) | On, off. An extra that asks nothing of the car. On: the record of starts and stops listens for the signals that end a process and says which one ended the app. Off: such an end reads NO WORD. See "Starts and stops" | **Off** |
 | Colour theme | Proven, Proven Red, Proven Blue, and the kit's four | Proven |
 | Screen layout | Full screen, Standard | Full screen |
 | Renderer | GPU 60 fps, Software | GPU 60 fps |
 | Demo data | Auto, Always, Never | Never |
 
-The speed scale stays as it was set when Workshop settings is switched off again.
+The names in the first column are the labels as the settings list shows them.
+
+**The six extras.** "GPS speed scale" is shown to everybody. The other five are Workshop settings.
+All six are off as shipped, and off is also what the app goes back to when the platform has emptied
+its data, because the settings are in that folder.
+
+- An extra that is off is not subscribed at all. No connection to the car is built for a group of
+  signals whose every value is off.
+- Switched on, an extra is subscribed at once. Switched off, its values are dropped at once and the
+  Signals tab says "switched off". The subscription itself stays until the app is next started,
+  which is what "(off takes full effect after a restart)" in four of the labels means. Ending a
+  subscription would be a call to the car that neither this app nor the kit has ever made on a car,
+  so it is not made.
+- "Ask the car for values" and "Note stop signals" take effect at once both ways.
+- The extra values are asked for without a first read by the kit. With an extra on, a value that
+  rarely changes shows when the car next sends it, not at once.
+- The speed scale and every switch stay as they were set when Workshop settings is switched off
+  again. The five switches are then hidden, and only "Starts and stops" shows what is on.
+
+## Starts and stops
+
+New in 1.0.2. On the first car the app closed by itself and nothing was left to say how: the log is
+in the app's data folder, and the platform empties that folder after an unexpected end. So the app
+now keeps a small record of its own and shows it on a screen that can be photographed.
+
+- **What is kept.** The last 5 lives of the app. A life is one start of its process. For each: its
+  number, when it started by the head unit's clock, how long it lived, how it ended, and its last
+  note. The note is refreshed every 2 seconds: memory now and highest, processor share now and
+  highest, the longest hold-up of the app's own 50 ms tick, frames drawn a second and what drew them
+  (the GPU renderer or software), values a second from the car, the app's own reads asked and
+  answered, the tab that was showing, the state (idle, armed or timing), how far the set-up of the
+  subscriptions had got, and which extras were switched on.
+- **Where it is shown.** The Signals tab's first page begins with "Starts and stops". It is always
+  shown, not only with Workshop settings on. This life comes first, then the life before it in two
+  lines (how it ended, and its last note), then the older ones. Seven rows at most, and a line that
+  says where the record is kept. The same lines go to the log at every start. And for the first
+  minute after a start that follows a stop by itself, the Run tab says "The app stopped by itself
+  last time. Please photograph the Signals tab."
+- **What a line means.** A line of an earlier life reads, for example, "#3 at 25.11. 14:17 lived
+  1 min, NO WORD (killed or crashed)." The words for the end:
+
+  | On the screen | What it means |
+  |---|---|
+  | asked to stop by the car | The platform asked the app to stop, and the app heard it. A clean stop |
+  | THE APP'S OWN ERROR at (file and line) (exit code 1): (the error's first line) | An error in the app's or the kit's JavaScript that nothing caught. The error is not swallowed: the kit still logs it and ends the app |
+  | ended with exit code N and no word before it | The process ended itself some other way |
+  | ENDED BY THE SIGNAL SIGTERM (sent to the app from outside), or SIGHUP, SIGINT | Something outside the app ended it with that signal. Only with "Note stop signals" on |
+  | NO WORD (killed or crashed) | None of the above was written. The process was killed outright, ended by a signal (as shipped the app listens for none), or crashed in native code. Nothing in JavaScript can tell these apart |
+  | no word, and the head unit has restarted since (power off also ends the app without a word) | Switching the car off is not a crash, and this line is not counted as a stop by itself |
+  | The saved data was emptied after #N | The data folder's copy of the record was gone at this start: the platform emptied the app's data folder, so it counted that end as unexpected |
+
+  "Stopped by itself" means: no word, the app's own error, a signal alone, or an exit code other
+  than 0 with nothing before it.
+- **Where it is kept.** Two copies of one small text of about 3 KB.
+  - `box.json` in the app's data folder. Written at the start, at every end the app hears of, and
+    at most once a minute while no run is being timed. It outlives a restart of the head unit. It
+    is gone when the platform empties the data folder.
+  - `/tmp/pps-box-pps_drag-<user id>/box.json`. `/tmp` is memory on the head unit: the kit keeps
+    its drawn frames there. Written at the start, every 2 seconds and at every end the app hears of.
+    It outlives the app's process and the platform's wipe of the data folder. It does not outlive a
+    restart of the head unit.
+
+  At a start both are read and the newer one counts. Where only the data folder's copy is left, a
+  life reads "lived at least ..." and its note is headed "Saved note", because that copy can be up
+  to a minute older than the life's end. Where the app has no record of its own at all, the record
+  of another user id in `/tmp` is read and said to be one, and never written: an app that was
+  installed again may run as another user.
+- **What is not in it.** No position, no course and no heading, and nothing else of the car's
+  data. It holds numbers the process knows about itself, names of tabs and of groups of signals, and
+  the first line of an error.
+- **`/tmp` is everybody's.** Any process on the head unit can write there. The folder is used only
+  if it is a real folder of the app's own user. A file is read through a handle that follows no link
+  and does not wait on a pipe, 64 KB at most, and every field is cleaned before it reaches a screen.
+  If `/tmp` cannot be used, the app runs on with the data folder's copy alone and the Signals tab
+  says so. Whether an app may write to `/tmp` on a car is only known from the kit doing it for its
+  frames.
+- **"Note stop signals".** As shipped the app puts no listener on its process for any signal, as
+  the kit, Proven Gauges and Proven Warm-Up put none. A signal then ends the app at once, and the
+  record says NO WORD for it, as for a kill. With the setting on, the record listens for SIGTERM,
+  SIGHUP and SIGINT, writes down which one came, takes its listener off and sends the same signal to
+  the app's own process, which then ends by it. The price is in the setting's name: a listener is
+  only called when the app's own code next comes round, so while the setting is on an app that
+  hangs is not ended by such a signal. Whether the platform ever sends a signal is not known. Switch
+  it on only after the app has stayed up without it, on a drive of its own. A stop by itself puts
+  it back to off.
+- **What a photo still cannot tell.** An app that froze and was killed later shows the note from
+  before the freeze. The memory figure is the whole process's, not the JavaScript heap alone. If
+  the head unit has to be restarted before a crashed app opens again, the copy in memory is gone,
+  and the platform has emptied the other. So photograph the Signals tab in the same drive, before
+  the car is switched off.
 
 ## What is saved and what is logged
 
 - **Saved** (`pps_drag.json` in the app's data folder): the best times per clock start, the last 30
   runs, the four wheel factors and the GPS speed factor. A run is kept as its times with their ±, trap
-  speeds, flags, the speed scale used, wheelspin, start slope, height changes and figures on how the
-  speed data arrived. Each run and each best time is kept with its date and time by the head unit's
-  clock, and so is the GPS speed factor. Every line of the log carries the time it was written. A demo
-  run is never saved. If the file cannot be written, the Timeslip and Best tabs say NOT SAVED.
-- **Logged** (`pps_drag.log` in the same folder), so that a first car can be read afterwards: the
-  first 10 raw values of every source, how often each source sends, which signals the head unit does
-  not have, each learned factor, and after each run a line for each of the two ways the speed arrived,
-  with every result and how the launch was placed.
+  speeds, flags, the speed scale used, wheelspin, start slope, height changes, figures on how the
+  speed data arrived and which extras were switched on. Each run and each best time is kept with its
+  date and time by the head unit's clock, and so is the GPS speed factor. Every line of the log
+  carries the time it was written. A demo run is never saved. If the file cannot be written, the
+  Timeslip and Best tabs say NOT SAVED. When the car asks the app to stop, the app writes this file
+  once before it ends. Every pull-away from a standstill is timed and saved, so 30 gentle
+  pull-aways push the real runs out of the list of last runs. The best times stay.
+- **The record of starts and stops**: `box.json` in the same folder and a second copy in `/tmp`.
+  See "Starts and stops".
+- **Logged** (`pps_drag.log` in the same folder), so that a car can be read afterwards: the lines
+  of "Starts and stops" at every start, the first 10 raw values of every source, how often each
+  source sends, which signals the head unit does not have, each learned factor, and after each run a
+  line for the way the speed arrived (for each of the two ways, with "Ask the car for values" on),
+  with every result and how the launch was placed. **The log is in the data folder, so the platform
+  empties it with that folder after an unexpected end.** No log came back from the first car.
 - **Never saved and never logged: a position, a course or a heading.** That means no latitude, no
   longitude, no raw GPS sentence and no place text. Latitude and longitude are held in memory only
   while a straight stretch is measured for the speed scale.
@@ -721,54 +1049,105 @@ The speed scale stays as it was set when Workshop settings is switched off again
 
 ## It only reads
 
-Proven Drag only reads values the car already has. It subscribes to signals, reads two of them on a
-schedule (the speed, and the acceleration when the car has not sent it for 2 seconds while the speed
-changes), and listens to one event (the GPS receiver's sentences). It sets no value, calls no method
-and does not use the head unit's diagnostic link, so it sends no request to any control unit.
+Proven Drag only reads values the car already has. It sets no value, calls no method and does not
+use the head unit's diagnostic link, so it sends no request to any control unit.
 
-It asks the head unit for seven groups of signals. Two are needed: the one with the car's speed and
-the one with its acceleration. Five are optional: the wheel speeds, the GPS receiver's sentences, the
-raw GPS position and height, the navigation's position, and the car's road gradient. The app is built
-to work with less where an optional one is missing, and its log then says what is missing and what
-that costs.
+**As shipped it asks the car for two values, and for nothing else.** It subscribes to
+`Vehicle2.statusCarSpeed2`, the car's speed, and to
+`CDS2.statusLongitudinalAccelerationMassCenter`, its forward acceleration. Both are asked for the
+way the kit's own Drag Timer asks for them. Proven Gauges asks for both in that way and Proven
+Warm-Up for the speed, on the car where those two run. Asked for like this, the kit reads each of
+the two once itself when the car's service comes up: every app that asks this way has that read.
+The app makes no read of its own, with its screen shown or hidden.
+
+Counted at a stand-in for the head unit's native binding, under the kit's own signals code
+(`test_drag_native.js`), over a made-up drive of 521 seconds with a launch, town and motorway
+speeds, the screen hidden twice and six minutes parked:
+
+| | 1.0.1 | 1.0.2 as shipped |
+|---|---|---|
+| Connections to a group of signals (proxies) built | 7 | 2 |
+| Values and events subscribed | 10 | 2 |
+| Reads of a value | 7007 | 2, or 4 where the head unit says "available" twice. They are the kit's own, none is the app's |
+
+**Everything else is an extra behind a setting that is off as shipped**: the app's own reads of the
+speed and the acceleration ("Ask the car for values"), the GPS receiver's sentences, which are one
+event ("GPS speed scale"), the wheel speeds, the raw GPS position and height with the navigation's
+position, and the wheel-travel counters with the car's road gradient. See "Settings".
+
+The app's manifest still names seven groups of signals, or the switches could not work. Two are
+needed: the one with the car's speed and the one with its acceleration. Five are optional: the wheel
+speeds, the GPS receiver's sentences, the raw GPS position and height, the navigation's position,
+and the car's road gradient. As shipped no connection is built for any of the five. The app is
+built to work with less where an optional one is missing, and its log then says what is missing and
+what that costs.
+
+**If 1.0.2 as shipped still closes, the cause is in what is left.** That is the two subscriptions,
+which the kit's own Drag Timer, Proven Gauges and Proven Warm-Up have too, the drawing, or the
+platform. And four things Proven Drag still has as shipped that Proven Gauges and Proven Warm-Up
+do not:
+
+1. The manifest names five groups of signals that no running Proven app asks for, and the two
+   wheel-travel values. What the installer and the platform do with a manifest entry that is never
+   used is not known.
+2. The app's own 50 ms timer, which runs whether its screen is shown or hidden.
+3. The record's file writes: a small file to `/tmp` every 2 seconds, and to the data folder at the
+   start, at an end and at most once a minute.
+4. Two listeners on the app's process, for its exit and for an error nothing caught. Not for a
+   signal.
 
 # Proven Drift
 
-**BETA. It has not been on a car.** It shows the car's drift angle live on a drawn car, scores every
-drift, and keeps the data of each drift, of the session and the all-time bests. It works from the car's
-own motion sensors. **For closed circuits and skid pans only.**
+**BETA, still being tested on cars.** It shows the car's drift angle live on a drawn car, scores
+every drift, and keeps the data of each drift, of the session and the all-time bests. It works from
+the car's own motion sensors. **For closed circuits and skid pans only.**
 
-This section says what the code does. None of it has been seen on a car, and no angle from the app has
-been compared with anything outside a PC: see "What has and has not been tested". The drift angle is
-an estimate everywhere, and the app says so on its screens.
+This section says what the code of version 1.0.1 does. Version 1.0.0 ran on one car and closed by
+itself there, and no screen of it was photographed: see "What the first car showed". Nothing of
+1.0.1 has been seen on a car, and no angle from the app has been compared with anything outside a
+PC: see "What has and has not been tested". The drift angle is an estimate everywhere, and the app
+says so on its screens.
 
 ## What the driver sees
 
 The first screen, each time the app is first opened after a start of the head unit: the logo, CLOSED
-COURSE ONLY, "For closed circuits and skid pans only", and that the app is BETA. Then five tabs. A BETA
-badge sits beside them on every tab. Nothing on any tab needs a touch while driving.
+COURSE ONLY, "For closed circuits and skid pans only", and "BETA: still being tested on cars. The
+drift angle shown is an estimate." Then five tabs. A BETA badge sits beside them on every tab.
+Nothing on any tab needs a touch while driving. The Signals tab has two pages: touch it again, or
+use Next page, for the second.
 
 | Tab | What is on it |
 |---|---|
-| **Drift** | A car drawn from above, turned by the drift angle against an arrow that shows the way it travels. The angle as a big number with LEFT or RIGHT and its ± figure. The speed. The score of the running drift counting up, its multiplier and its time. Three small bars: opposite lock, pedal and rear wheelspin, each where the car gives it. A banner. A strip with the session's score, number of drifts, best score, biggest angle, the data rate, and whether the car is learned. The session's figures take in flagged drifts, so BEST THIS SESSION can show a drift that the Best tab does not hold. Under the drawn car, a line while no drift can set a best for want of a steering check |
-| **Last** | The last drift: score and grade, peak and average angle with the side, the ± of the angle, time, distance, switches and multiplier, entry, average and lowest speed, peak sideways g, peak yaw rate, most opposite lock, average pedal, peak rear wheelspin, whether the handbrake was on at the start, smoothness, the data rate, and the GPS speed against the car's. Beside it the angle and the speed over the seconds of the drift, and each flag in a sentence. It carries the line "BETA: not yet tested on a car. The angle is an estimate from the car's motion sensors." |
+| **Drift** | A car drawn from above, turned by the drift angle against an arrow that shows the way it travels. The angle as a big number with LEFT or RIGHT and its ± figure. The speed. The score of the running drift counting up, its multiplier and its time. Two small bars: opposite lock and rear wheelspin. There is no pedal bar. As shipped the rear wheelspin bar says "switched off in Settings". A banner. A strip with the session's score, number of drifts, best score, biggest angle, the data rate, and whether the car is learned. The session's figures take in flagged drifts, so BEST THIS SESSION can show a drift that the Best tab does not hold. Under the drawn car, up to three lines: how far learning is, and a line while no drift can set a best for want of a steering check |
+| **Last** | The last drift: score and grade, peak and average angle with the side, the ± of the angle, time, distance, switches and multiplier, entry, average and lowest speed, peak sideways g, peak yaw rate, most opposite lock, peak rear wheelspin, whether the handbrake was on at the start, smoothness, the data rate, and the GPS speed against the car's. There is no pedal figure. As shipped the rear wheelspin, the handbrake and the GPS speed say "switched off". Beside it the angle and the speed over the seconds of the drift, and each flag in a sentence. It carries the line "BETA: still being tested on cars. The angle is an estimate from the car's motion sensors." |
 | **Session** | Every drift since the app was started: total score, number of drifts, best score, biggest angle, longest drift by time and by distance, and the list of the drifts with score, grade, peak angle, time, distance and flags |
 | **Best** | The four all-time bests (best score, biggest angle, longest by time, longest by distance) with their dates, and the saved list of drifts |
-| **Signals** | The workshop's page, made so that one photo of it tells what a car gives: all 19 sources, each with its state (present, not on this unit, not answering, subscribing, no data yet), how often it sends now and at most, its number of samples and its raw value. What was learned about the car. The raw values that are shown for study only. The GPS check |
+| **Signals** | The workshop's page, in two pages, made so that one photo of the first tells how the app last stopped and what a car gives. Page 1: "Starts and stops", the record of how the app started and stopped, always shown. Under it 13 of the 20 sources. Each has its state (present, not on this unit, not answering, subscribing, no data yet, "arrives, not readable", switched off), how often it sends now and at most, its number of samples and its raw value. The steering and yaw rows also have the lowest and highest raw value since the app started. Beside them what was learned about the car and what is still missing. Page 2: what is switched on in Workshop settings, the other 7 sources, the raw values that are shown for study only, the GPS check, and the pedal's and the wheels' raw values with their settings on |
 
 - **The banner** says one of: LEARNING THE CAR, READY, DRIFT, SWITCH, SPIN, DRIFT ENDED (with the
   score and the grade, and NEW BEST or the flags), TOO SLOW, GO STRAIGHT FOR A MOMENT, NO YAW RATE FROM
   THE CAR, NO DATA FROM THE CAR, DATA LOST. While the car is ready or drifting, the line beside it
-  reads "For closed circuits and skid pans only".
+  reads "For closed circuits and skid pans only". On a car that sends next to no motion data (fewer
+  than five values of the sideways acceleration or of the yaw rate after 10 seconds on the move),
+  LEARNING THE CAR says "Almost no motion data arrives from the car. Please photograph the Signals
+  tab." And for the first minute after a start that follows a stop by itself, the line beside the
+  banner says "The app stopped by itself last time. Please photograph the Signals tab." See "Starts
+  and stops".
 - **GO STRAIGHT FOR A MOMENT** shows while no drift can start: after a spin, after the angle was lost,
   and after what the app had learned about the car changed. The angle starts again from a straight
   (0.7 seconds of it), or from the car coming under 10 km/h.
-- **The line under the drawn car** shows while the app cannot use the steering, and says why:
-  STEERING CHECK OFF, NO STEERING FROM THE CAR, STEERING SILENT OR STUCK or STEERING NOT LEARNED YET,
-  each followed by "NO BEST IS SET". Drifts are still scored then. Where the steering can be used and
-  simply does not say that the car oversteers, no line shows: the drift is flagged when it ends. On
-  the PC, STEERING SILENT OR STUCK also came up while the steering worked: where its value sat still
-  to the last count in a slow, tight drift (see "Known from the PC and not solved").
+- **The lines under the drawn car**, three at most. While the yaw rate is not learned, one says how
+  far it is: "YAW RATE: 12 OF 20 CORNERS, 3 MORE TO THE LEFT". While the steering is not learned,
+  one says how far that is, "STEERING: 9 OF 14 SLOW CORNERS, 2 MORE TO THE RIGHT", and one under it
+  says at what speeds it learns: "NO BEST IS SET UNTIL THEN. IT LEARNS AT 12 TO 60 KM/H". Once a
+  count has reached what is needed it is said without "OF", for example "STEERING: 18 SLOW CORNERS
+  KEPT (YAW RATE FIRST)": the app has enough slow corners and waits for the yaw rate. Where the app
+  cannot use the steering for another reason, one line says why: STEERING CHECK OFF, NO STEERING
+  FROM THE CAR or STEERING SILENT OR STUCK, each followed by "NO BEST IS SET". Drifts are still
+  scored then. Where the steering can be used and simply does not say that the car oversteers, no
+  line shows: the drift is flagged when it ends. On the PC, STEERING SILENT OR STUCK also came up
+  while the steering worked: where its value sat still to the last count in a slow, tight drift (see
+  "Known from the PC and not solved").
 - **LEFT and RIGHT.** LEFT means the nose points to the left of the way the car travels, as in a drift
   through a left-hand corner.
 - **Flags.** A drift is flagged when something says its figures may be off. A flagged drift is shown
@@ -788,9 +1167,11 @@ badge sits beside them on every tab. Nothing on any tab needs a touch while driv
     best.**
   - DATA GAP: samples of the yaw rate, the sideways acceleration or the speed were missing for 0.35 s
     or more, or the app itself was held up for 0.3 s or more, during the drift or in the 3 seconds
-    before it. Or the angle was lost while the drift ran: the speed stopped arriving for 1.5 s, or the
-    yaw rate or the sideways acceleration for 2.5 s (the drift goes on from the last values for that
-    long, and ends there), or what the app had learned about the car changed under the drift.
+    before it. Or the angle was lost while the drift ran: the yaw rate or the sideways acceleration
+    stopped arriving for 2.5 s (the drift goes on from the last values for that long, and ends
+    there), or what the app had learned about the car changed under the drift. Or, only with "Ask
+    the car for values" on, the speed the app reads itself stopped arriving for 1.5 s. As shipped a
+    speed that the car does not send anew counts as unchanged, however long.
   - LOW DATA RATE: the yaw rate or the sideways acceleration came less than 8 times a second.
   - SPIN: the angle passed 100 degrees, or the car all but stopped while still sideways. The drift
     keeps half its points.
@@ -847,11 +1228,12 @@ report it. The app works it out from three things the car does report: its speed
 
 ## Learning the car
 
-Nobody at Proven knows how the car scales its yaw rate, its steering, its accelerator pedal or its
-wheel speeds. So the app does not guess: it learns them from ordinary driving, shows what it learned
-on the Signals tab, and saves it between drives. "Ordinary driving" here means corners taken without
-sliding, on the same closed ground, before the first drift. The app learns whenever it is running and
-the car takes such a corner.
+Nobody at Proven knows how the car scales its yaw rate or its steering. So the app does not guess:
+it learns them from ordinary driving, shows what it learned on the Signals tab, and saves it between
+drives. "Ordinary driving" here means corners taken without sliding, on the same closed ground,
+before the first drift. The app learns whenever it is running and the car takes such a corner. The
+accelerator pedal and the wheel speeds are not learned like that: on the first car neither arrived
+in the form the app took it for. See "The accelerator pedal and the wheel values".
 
 - **The yaw rate** is learned from steady corners without sliding, at 30 to 110 km/h with a moderate
   sideways acceleration, held for a second. One such second is a "moment". Left and right corners are
@@ -880,15 +1262,41 @@ the car takes such a corner.
   each way. Faster or harder corners teach the yaw rate and not the steering: after 3.5 minutes of
   ordinary corners at 44 to 100 km/h the made-up car had the yaw rate learned and no steering moment.
   **Until the steering is "learned" no drift sets a best** (the flag NO STEERING CHECK), so a first
-  drive needs slow corners both ways as well, for example a slow figure of eight on the pan. The line
-  under the drawn car says STEERING NOT LEARNED YET until then.
-- **The pedal** is shown as a share of the largest value seen so far. **The wheels**: the usual ratio
-  of rear to front wheel speed, which wheelspin is then read against. Two signs are checked on the
-  way: which way the car counts a left turn, and that a positive forward acceleration is speeding up.
-- **Two sources carry the yaw rate and four the steering.** As shipped the app takes the first that
-  delivers. If the first choice has delivered nothing 10 seconds after the car was first heard, the
-  next one that has delivered takes its place. Each source is learned on its own. A workshop can set
-  either source by hand.
+  drive needs slow corners both ways as well, for example a slow figure of eight on the pan. The
+  lines under the drawn car say how far it is until then.
+- **Slow corners count from the start.** Since 1.0.1 a slow, gentle corner is kept as a steering
+  moment also before the yaw rate is learned. 1.0.0 threw those corners away until then, and on a
+  PC it usually did not learn the steering in 20 minutes of mixed road even on the stand-in car. The
+  steering's scale is still worked out together with the yaw rate's, so nothing is used earlier than
+  before. No other learning limit changed. The first car's owner wrote that the steering "is
+  calibrating from 20 min of normal driving". That sentence reads both ways, and no screen of the
+  app was photographed, so whether that car's steering was learned is not known.
+- **The steering wheel's angle may arrive in a form this version does not read.** The app uses a
+  steering or yaw value only where it is a plain count from 0 to 65535, and guesses no other
+  decoding. If a car sends the angle as a signed number, the steering will not learn, every drift
+  carries NO STEERING CHECK and none is a best. The Signals tab shows the value as it came, with its
+  lowest and highest since the app started, so that a photo with the car standing shows its form.
+- **The pedal** is not learned and not used. **The wheels**, only with "Wheel speeds" switched on
+  and once their values have proven themselves: the usual ratio of rear to front wheel speed, which
+  wheelspin is then read against. Two signs are checked on the way: which way the car counts a left
+  turn, and that a positive forward acceleration is speeding up. Without proven wheel values the
+  first of the two stays assumed, and the Signals tab says ASSUMED.
+- **Which source.** As shipped the app asks for one source of each. The yaw rate is CDS2's. The
+  steering is the steering wheel's angle, under the two field names the kit's own apps subscribe
+  to: whichever delivers first is used, the other is counted and shown. 1.0.0 took the front wheels'
+  own angle first, which no app of the kit reads. That angle, a second source of the yaw rate and
+  two more steering sources are an extra now: "Other steering and yaw". With it on and the source on
+  Auto, if the first choice has delivered nothing 10 seconds after the car was first heard, the
+  first one that has delivered 20 usable values takes its place. Each source is learned on its own.
+  A workshop can set either source by hand. A source set by hand that belongs to the extra is not
+  used while the extra is off, and the Signals tab says so.
+- **A steering wheel's angle is a plain multiple of the front wheels' only where the steering
+  ratio is fixed.** On another car its moments spread wider and the steering may not reach
+  "learned". The front wheels' own angle, set by hand with "Other steering and yaw" on, is then
+  1.0.0's way.
+- **What was learned is written to the saved file** 10 seconds after something was first learned,
+  when the car next stands, and every 20 seconds on the move (1.0.0: every two minutes). Never while
+  a drift runs or may be beginning. An app that is stopped loses 20 seconds of learning at most.
 - "Reset what was learned" in Settings (Workshop settings) forgets all of it.
 
 ## What a drift is, and how it is scored
@@ -936,11 +1344,18 @@ the car takes such a corner.
 | Slowest speed that counts | 15, 20, 30 or 40 km/h | 20 km/h |
 | Chassis | 3 / 4 Series, M3, M4 (2.85 m); 2 Series Coupe, M2 (2.74 m); 5 Series, M5 (2.98 m); 8 Series, M8, two doors (2.82 m); Z4 (2.47 m); Other | 3 / 4 Series |
 | Wheelbase | 2.30 m to 3.30 m in steps of 5 cm, shown when Chassis is Other | 2.85 m |
-| Workshop settings | On, off. On shows the six settings below | Off |
-| Yaw rate from | Auto, CDS2, Chassis | Auto |
-| Steering from | Auto, Front wheels (chassis), Front wheels (XView), Steering wheel (chassis), Steering wheel (XView) | Auto |
+| Workshop settings | On, off. On shows the thirteen settings below | Off |
+| Yaw rate from | Auto, CDS2, Chassis. Chassis needs "Other steering and yaw" on | Auto |
+| Steering from | Auto, Front wheels (chassis), Front wheels (XView), Steering wheel (chassis), Steering wheel (XView). All but Steering wheel (chassis) need "Other steering and yaw" on | Auto |
 | Steering check | On, off. Off: the angle is worked out without the steering, no opposite lock is shown, and every drift is flagged NO STEERING CHECK and sets no best | On |
 | Forward acceleration | Use, Leave out. Leave out is for a car that turns out to work its forward acceleration out from its speed: see "Known from the PC and not solved" | Use |
+| Ask the car for values (study) | On, off. An extra. On: the app reads the speed itself, 2 to 10 times a second, and the yaw rate and the two accelerations where the car sends them fewer than 8 times a second. Off: the app reads nothing itself and works from what the car sends | **Off** |
+| GPS receiver (study, off in full at next start) | On, off. An extra. On: the app listens to the GPS receiver's sentences. Off: no GPS check of the car's speed | **Off** |
+| Wheel speeds (study, off in full at next start) | On, off. An extra. On: the app asks for the four wheel speeds, and uses them only once they have proven themselves. Off: no rear wheelspin, learning cannot check that the wheels grip, and which way is left stays assumed | **Off** |
+| Other steering and yaw (study, off in full at next start) | On, off. An extra. On: the app also asks for the front wheels' own angle, two more steering angles and a second yaw rate. Off: the steering is the steering wheel's angle and the yaw rate is CDS2's | **Off** |
+| Pedal and handbrake (study, off in full at next start) | On, off. An extra. On: the app asks for the accelerator pedal, shown raw only, and for the handbrake. Off: the pedal's raw value is not shown and "handbrake at the start" is not known. Neither enters a flag or the score | **Off** |
+| Car estimate and analyser (study, off in full at next start) | On, off. An extra. On: the app asks for the car's own motion estimate, the two results of BMW's own drift analyser and the DSC button's state, and shows them raw. Off: no raw study values | **Off** |
+| Note stop signals (study) | On, off. An extra that asks nothing of the car. On: the record of starts and stops listens for the signals that end a process, and while it is on an app that hangs is not ended by one. Off: an end by a signal reads NO WORD. See "Starts and stops" | **Off** |
 | Reset what was learned | No, Confirm, Reset now | No |
 | Reset bests | No, Confirm, Reset now. It clears the four bests and the saved list | No |
 | Colour theme | Proven, Proven Red, Proven Blue, and the kit's four | Proven |
@@ -948,13 +1363,142 @@ the car takes such a corner.
 | Renderer | GPU 60 fps, Software | GPU 60 fps |
 | Demo data | Auto, Always, Never | Never |
 
+- The names in the first column are the labels as the settings list shows them.
+- **The seven extras** are all Workshop settings and all off as shipped. Off is also what the app
+  goes back to when the platform has emptied its data, because the settings are in that folder.
+  - An extra that is off is not subscribed at all, and no connection to the car is built for a group
+    of signals none of whose values is wanted.
+  - Switched on, an extra is subscribed at once. Switched off, its values are no longer used from
+    that moment and its rows say "switched off". The subscription itself ends with the next start of
+    the app, which is what "off in full at next start" in five of the labels means. The kit has no
+    call that ends one subscription, and shutting a connection down is something no app here has
+    done on a car.
+  - "Ask the car for values" and "Note stop signals" take effect at once both ways. Even with "Ask
+    the car for values" on, the app never reads while its screen is hidden, before every
+    subscription wanted is set up, or while one is being tried again.
+  - The extra values are asked for without a first read by the kit. A value that rarely changes,
+    such as the handbrake, says "no data yet" until the car next sends it.
+  - The DSC button's state is in "Car estimate and analyser" and is not named in the label. The app
+    shows it raw and does nothing with DSC.
 - The chassis only matters for the steering check. The wheelbases are the makers' published figures.
   Half the car's weight is taken to be on the front axle for every one of them.
 - **A reset always takes two steps.** The setting has three values: No, "Confirm: choose Reset now",
   and Reset now. The reset happens when "Reset now" is chosen while the setting stands at Confirm.
   Chosen straight from No, "Reset now" only puts it at Confirm. After 30 seconds, or when Workshop
-  settings is switched off, it is back at No. This has been tried on a PC only: no settings screen
-  of a head unit has shown it.
+  settings is switched off, it is back at No. This has been tried on a PC only: no use of it on a
+  head unit is recorded.
+
+## The accelerator pedal and the wheel values
+
+Two things the first car showed are in this section. Neither value is decoded, and no decoding is
+guessed in this release.
+
+- **No accelerator percentage anywhere.** 1.0.0 showed a PEDAL bar on the Drift tab and AVERAGE
+  PEDAL on the Last tab: the raw value's share between the smallest and the largest value seen so
+  far. On the first car that figure was "jumping about". So the value does not arrive in the form
+  the app took it for, and its form is not known. In 1.0.1 no pedal percentage is shown, logged or
+  newly saved. The pedal never reaches the part of the app that works out the angle and the score.
+- **The score, the flags and the angle never used the pedal.** On a PC the same drive with "Pedal
+  and handbrake" on and off gave the same drift to the last figure.
+- **The pedal raw, for two photos.** With "Pedal and handbrake" on, the Signals tab's second page
+  shows the pedal's raw value now, the lowest and the highest since the app started, each in
+  decimal and in hexadecimal, how many different values were seen and how many arrive a second. Two
+  photos of that page, one with the foot off and one with the foot on the floor, are what a later
+  version needs to read the value's form.
+- **Wheel values must prove themselves.** On the first car all four wheel values read 65407 with
+  the car standing, and they are no plain multiple of the car's speed. The app only ever uses ratios
+  of the wheel values: rear over front for the rear wheelspin and for learning's check that the
+  wheels grip, right over left for which way is left. Values in another form still give ratios, and
+  steady ones at one speed. So with "Wheel speeds" on, no wheel value is used until all four have
+  proven themselves:
+  - a steady moment is one in which the speed is 30 km/h or more and has moved by less than 1 km/h
+    over the last second, the car goes straight and no drift runs or may be beginning. In it the
+    raw value over the speed is one ratio of that wheel, taken five times a second;
+  - the ratios are kept per stretch of 10 km/h, and a stretch counts with 5 of them;
+  - proven means: every wheel has stretches that count at speeds 20 km/h apart or more, and the
+    middle ratio of each is within 3 % of the middle of them all.
+- **Until then, and whenever that stops holding, the app has no wheels at all.** No rear wheelspin
+  is shown, scored or saved, and nothing is learned from the wheels. The place of the figure says
+  why: "wheel values not proven yet", "wheel values in an unknown form" or "no wheel values from the
+  car" on the Drift tab, "wheels not proven" on the Last tab. The proof is made again at every start
+  of the app. It needs two steady speeds on a straight, above 30 km/h and 20 km/h apart. On a skid
+  pan that may never come: then there is no rear wheelspin.
+- **The wheels raw, for a photo.** With "Wheel speeds" on, the Signals tab's second page shows for
+  each wheel the raw value now, the lowest and the highest since the app started, and the raw value
+  at the last steady speed above 30 km/h with that speed.
+- **Old saved files.** A file saved by 1.0.0 still loads. Its pedal figures stay in the file and
+  are not shown. A rear wheelspin figure saved by 1.0.0 is still shown for that old drift, proven or
+  not, and what 1.0.0 learned from the wheels stays until "Reset what was learned". The first car's
+  data was emptied by the platform, so no car is known to hold such a file.
+
+## Starts and stops
+
+New in 1.0.1, for the same reason as in Proven Drag: on the first car the app closed by itself, the
+platform emptied its data folder with the log in it, and nothing was left to say how it had ended.
+
+- **What is kept.** The last five lives of the app. A life is one start of its process. For each:
+  its number, when it started, how long it lived, how it ended, which of the seven extras were on in
+  it, and a last note. The note is refreshed every 2 seconds: memory now and the most, processor
+  share now and the most, the longest hold-up of the app in the last 10 seconds and in the life,
+  frames handed to the screen a second and whether the GPU renderer or software shows them, values
+  from the car a second, the app's own reads answered and asked, what was showing, the app's state
+  (learning, ready, in a drift, no data, demo data), and how far the set-up of the subscriptions had
+  got.
+- **Where it is shown.** The Signals tab's first page opens with the block "STARTS AND STOPS OF
+  PROVEN DRIFT 1.0.1, NEWEST FIRST". It is always shown. One line per life, this life and the one
+  before it on up to two lines, eight lines at most. Each line keeps its number, how the life ended
+  and what was switched on. Of the last note as much is shown as the line has room for. The same
+  lines go to the log in full at each start. And for the first minute after a start that follows a
+  stop by itself, the Drift tab says "The app stopped by itself last time. Please photograph the
+  Signals tab." The minute runs from when the page first shows.
+- **What a line means.** A line of an earlier life reads, for example, "#4 25.11. 14:17:38 lived
+  8 s, NO WORD (killed, crashed or power lost), Last note: memory 122 MB, ..., on: GPS". The words
+  for the end:
+
+  | On the screen | What it means |
+  |---|---|
+  | asked to stop by the car | The platform asked the app to stop, and the app heard it. A clean stop. The last note's memory and processor say whether a limit was near |
+  | THE APP'S OWN ERROR (exit code 1): (the error's first line, with its file and line) | An error in the app's or the kit's JavaScript that nothing caught. The error is not swallowed: the kit still logs it and ends the app |
+  | EXIT CODE N AND NO WORD BEFORE IT | The process ended itself some other way |
+  | ENDED BY THE SIGNAL SIGTERM (sent from outside the app), or SIGHUP, SIGINT | Something outside the app ended it with that signal. Only with "Note stop signals" on |
+  | asked to stop by the car (the signal SIGTERM came first) | A clean stop that began with a signal. Only with "Note stop signals" on |
+  | NO WORD (killed, crashed or power lost) | None of the above was written. The process was killed outright, ended by a signal (as shipped the app listens for none), crashed in native code, or the power went. Nothing in JavaScript can tell these apart. The last note says what the app was doing up to 2 seconds before |
+  | The saved data was emptied after #N | The platform emptied the app's data folder: it counted that end as unexpected |
+
+  The line of this life says how it relates to the one before: "(started 0 s after #4's last
+  note)", "(the head unit was restarted since #4)", or "(the record in RAM was gone, no restart
+  since #4)". After a restart of the head unit the app does not say that it stopped by itself:
+  switching the car off is not a crash.
+- **Where it is kept.** In two small files.
+  - `pps_drift_box.json` in the app's data folder. Written at the start, once more when the life is
+    10 seconds old, at a clean stop, and at most once a minute, each only while no drift runs. It
+    outlives a restart of the head unit. It is gone when the platform empties the data folder.
+  - `/tmp/pps-box-pps_drift-<user id>/box.json`. `/tmp` is memory on the head unit: the kit keeps
+    its drawn frames there. Written at the start, every 2 seconds, whenever a setting or a
+    subscription changes, and at every kind of end the app hears of. It outlives the app's process
+    and the platform's wipe of the data folder. It does not outlive a restart of the head unit.
+
+  At a start both are read and the newer one is taken. Where a life is known from the data folder's
+  copy alone, its line reads "lived at least 10 s (saved note, up to a minute old)".
+- **What is not in it.** No position, no course and no heading: none ever reaches that file. It
+  holds numbers the process knows about itself, words from fixed lists, names of groups of signals,
+  and the first line of an error.
+- **`/tmp` is everybody's.** The same care is taken as in Proven Drag: the folder is used only if
+  it is a real folder of the app's own user, a file is read without following a link or waiting on a
+  pipe, 64 KB at most, and every field is cleaned before it reaches a screen. If `/tmp` cannot be
+  used, the first line says "(no record in RAM: data folder only)", and a wipe of the data folder
+  then takes the record with it.
+- **"Note stop signals".** As shipped the app listens for no signal, as 1.0.0 listened for none,
+  and an end by a signal reads NO WORD. With the setting on, the record notes SIGTERM, SIGHUP and
+  SIGINT, and the line lists "on: signals". The price is the one named under Proven Drag: while it
+  is on, an app that is held up ends later than it would have, and one that hangs for good is not
+  ended by the signal at all. When to switch it on: if a photo reads NO WORD and the last note
+  beside it shows no high memory, processor or hold-up, switching it on for the next try tells a
+  stop by a signal from a kill or a crash. A stop by itself puts it back to off.
+- **Not known.** How the platform ends apps when the car is switched off. If it ends them without a
+  word and `/tmp` outlives that, every first start of a day will say that the app stopped by itself.
+  The line of this life says how long after the life before it started, so a night can be told from
+  a crash. One photo after an ordinary switch-off would settle it.
 
 ## What is saved and what is logged
 
@@ -962,22 +1506,30 @@ the car takes such a corner.
   (the newest 5 with their trace of angle and speed), and what was learned about the car. A drift is
   kept as the figures the Last tab shows, with its date and time by the head unit's clock. A demo
   drift is never saved. The file is written a second after a drift has ended, and never while one
-  runs. What was learned is also written when the car next stands, and every two minutes at most
-  while it is still being learned. If the file cannot be written, the Last, Best and Signals tabs say
-  NOT SAVED.
-- **Logged** (`pps_drift.log` in the same folder), so that a first car can be read afterwards: the
-  first 10 raw values of every source, how often each source sends, which signals the head unit does
-  not have, what was learned and when, which source is in use, and one line for every drift with all
-  its figures and the share of its time that the steering backed it.
+  runs. What was learned is also written when the car next stands, and every 20 seconds at most on
+  the move (1.0.0: every two minutes). When the car asks the app to stop, the app writes the file
+  once before it ends. If the file cannot be written, the Last, Best and Signals tabs say NOT SAVED.
+- **The record of starts and stops**: `pps_drift_box.json` in the same folder and a second copy in
+  `/tmp`. See "Starts and stops".
+- **Logged** (`pps_drift.log` in the same folder), so that a car can be read afterwards: the lines
+  of "Starts and stops" at each start, what is switched on in Workshop settings, the first 10 raw
+  values of every source, how often each source sends, which signals the head unit does not have,
+  what was learned and when, which source is in use, and one line for every drift with all its
+  figures and the share of its time that the steering backed it. No pedal figure is in that line any
+  more. **The log is in the data folder, so the platform empties it with that folder after an
+  unexpected end.** No log came back from the first car.
 - **Never saved and never logged: a position, a course or a heading.** The app's logic never sees
-  one. The only place they pass is the GPS receiver's sentences, and of those the app reads two
-  things: whether the fix is valid, and the speed. The log holds, for the first 10 sentences, which
-  kinds of sentence came, how many passed their checksum, and that speed.
+  one. The only place they pass is the GPS receiver's sentences, which the app only listens to with
+  "GPS receiver" switched on. Of those the app reads two things: whether the fix is valid, and the
+  speed. The log holds, for the first 10 sentences, which kinds of sentence came, how many passed
+  their checksum, and that speed.
 - **Nothing leaves the car.** The app has no network code. It shares and uploads nothing.
 
 ## What the GPS is used for
 
-For one cross-check, shown on the Signals tab, and for nothing else. The angle is worked out with the
+As shipped, for nothing: the GPS receiver is an extra, and the app only listens to it with "GPS
+receiver" switched on (Workshop settings). With it on, for one cross-check, shown on the Signals
+tab's second page, and for nothing else. The angle is worked out with the
 car's speed, and nobody knows what speed a car reports while it is sideways: its true speed over the
 ground, or the speed along its own length, which is smaller. The GPS receiver's speed is the true
 one. So the app keeps the receiver's speed over the car's speed twice: while the car goes straight,
@@ -987,28 +1539,75 @@ speed along its length, and the angles the app shows are off. No angle and no sc
 
 ## It only reads
 
-Proven Drift only reads values the car already has. It subscribes to signals, reads the speed on a
-schedule (10 times a second on the move, twice a second standing, every 2 seconds once the car has
-been parked for 5 minutes with the screen hidden), and listens to one event (the GPS receiver's
-sentences). Where a car does not send its yaw rate or its accelerations at least 8 times a
-second, the app reads those three as well, one read at a time. It sets no value, calls no method and
-does not use the head unit's diagnostic link, so it sends no request to any control unit.
+Proven Drift only reads values the car already has. It sets no value, calls no method and does not
+use the head unit's diagnostic link, so it sends no request to any control unit.
 
-**It does nothing with DSC, traction control, the handbrake or any driving setting.** It reads the
-DSC button's state and shows it raw on the Signals tab, and it reads whether the handbrake is on.
-That is all. No text of the app tells the driver to switch anything off.
+**As shipped it asks the car for six values, and for nothing else.** Each is asked for exactly as
+apps of the kit ask for it:
 
-It asks the head unit for twelve groups of signals. Two are needed: the one with the car's speed, and
-the one with the yaw rate and the two accelerations. Ten are optional: a second source of the yaw
-rate, two sources of the steering, the accelerator pedal, the four wheel speeds, the handbrake, the
-DSC button, the car's own motion estimate, BMW's own drift analyser of some M cars, and the GPS
-receiver's sentences. The app is built to work with less where an optional one is missing, and its
-log then says what is missing and what that costs.
+| Value | The kit also reads it once when the car's service comes up | Asked for the same way by |
+|---|---|---|
+| `Vehicle2.statusCarSpeed2`, the speed | yes | 12 apps of the kit, Proven Gauges and Proven Warm-Up |
+| `CDS2.statusLateralAccelerationMassCenter`, the sideways acceleration | yes | the kit's M Vitals, G-Force, Live Data, Engine Config (`apps/live_adjustments`) and Redline, and Proven Gauges |
+| `CDS2.statusLongitudinalAccelerationMassCenter`, the forward acceleration | yes | eight apps of the kit, the same five among them, and Proven Gauges |
+| `CDS2.statusYawVelocityVehicle`, the yaw rate | yes | the kit's Live Data and Engine Config |
+| `SteeringAngle.ActualSteeringAngleDriver`, the steering wheel's angle | no | the kit's Live Data and Engine Config |
+| `SteeringAngle.actualSteeringAngleDriverNoCRC`, the same angle under its second name | no | the kit's Live Data and Engine Config |
 
-Three of those are **for study only**: the car's own motion estimate, the two results of BMW's own
-drift analyser, and the DSC button's state. Nobody at Proven knows what they hold. The app shows them
-raw on the Signals tab and in the log, so that one photo from a first car tells what they are. They
-enter no angle and no score. Of BMW's drift analyser the app asks for its two result values only.
+The speed and the two accelerations are known to arrive on the first car: Proven Gauges asks for
+them the same way and runs there. Whether the kit's Live Data or Engine Config have run on that car
+is not known, so the yaw rate and the steering wheel's angle have not been seen there.
+
+As shipped the app builds three connections to the car (1.0.0 built twelve) and reads no value
+itself, with its screen shown or hidden. The four reads the table marks are the kit's own. They are
+how the app knows that a standing car stands: a standing car sends nothing. 1.0.0 had the kit read
+ten values that way.
+
+**Everything else is an extra behind a Workshop setting that is off as shipped**: the app's own
+reads of the speed, the yaw rate and the accelerations ("Ask the car for values"), the GPS
+receiver's sentences, which are one event ("GPS receiver"), the four wheel speeds, the other
+steering and yaw sources, the accelerator pedal with the handbrake, and the study values. See
+"Settings".
+
+**It does nothing with DSC, traction control, the handbrake or any driving setting.** With "Car
+estimate and analyser" on it reads the DSC button's state and shows it raw on the Signals tab, and
+with "Pedal and handbrake" on it reads whether the handbrake is on. That is all. No text of the app
+tells the driver to switch anything off.
+
+The app's manifest still names twelve groups of signals, or the switches could not work. Two are
+needed: the one with the car's speed, and the one with the yaw rate and the two accelerations. Ten
+are optional: a second source of the yaw rate, two sources of the steering, the accelerator pedal,
+the four wheel speeds, the handbrake, the DSC button, the car's own motion estimate, BMW's own drift
+analyser of some M cars, and the GPS receiver's sentences. The app is built to work with less where
+an optional one is missing, and its log then says what is missing and what that costs.
+
+Three of those are **for study only**, and all three are in the extra "Car estimate and analyser":
+the car's own motion estimate, the two results of BMW's own drift analyser, and the DSC button's
+state. Nobody at Proven knows what they hold. With the extra on, the app shows them raw on the
+Signals tab's second page and in the log, so that one photo tells what they are. They enter no angle
+and no score. Of BMW's drift analyser the app asks for its two result values only.
+
+**What works differently without reads of its own.** As shipped the app is on the speed the car
+sends, where silence means "no change". So:
+
+- A speed that goes silent is not noticed: the last speed stands.
+- If the kit's one first read of the speed gives nothing, a standing car reads "--" and NO DATA
+  FROM THE CAR until it moves.
+- A yaw rate and a sideways acceleration that stop arriving are noticed after 2.5 seconds while a
+  drift runs or may be beginning: the drift ends, flagged DATA GAP. On a straight they are not
+  noticed: a sensor that has died and one whose value holds still look alike, the banner stays
+  READY, and a drift driven then is not counted. With "Ask the car for values" on it is noticed on
+  a straight within about 3 seconds, as in 1.0.0.
+- A car that does not send its yaw rate, its accelerations or its speed by itself needs "Ask the
+  car for values". As shipped nothing is learned on such a car.
+
+**If 1.0.1 as shipped still closes, the cause is in what is left.** What it still does that Proven
+Gauges and Proven Warm-Up do not: the subscription to the yaw rate, with the kit's own first read
+of it. The connection to the steering angle, with its two subscriptions. A manifest that names
+twelve groups of signals. The Drift tab, which is another picture about nine times a second while
+the car moves, as in 1.0.0. The app's own 50 ms timer and a 100 ms timer that measures hold-ups.
+And the record's file writes: to `/tmp` every 2 seconds, and to the data folder at the start, at 10
+seconds and at most once a minute.
 
 # How this source is set up
 
@@ -1030,9 +1629,10 @@ repository, is the reference for building apps.
   the tests. `fakecar.js` and `warmup_bench.js` are the stand-in cars the tests run Gauges and Warm-Up
   on. For Proven Drag, `dragsim.js` is a run with known answers and `fakedrag.js` is the stand-in car
   and head unit. For Proven Drift, `driftsim.js` is a made-up car whose true drift angle is known and
-  `fakedrift.js` is the stand-in car and head unit. `bake_proven_fonts.py` makes the text atlases.
-  `textfit.js` holds the rules for where a text may stand, for `test_fonts.js`, `test_drag_car.js`
-  and `test_drift_car.js`.
+  `fakedrift.js` is the stand-in car and head unit. `test_drag_life_host.js` is not a test by itself:
+  it is one start of the built app for `test_drag_life.js`. `bake_proven_fonts.py` makes the text
+  atlases. `textfit.js` holds the rules for where a text may stand, for `test_fonts.js`,
+  `test_drag_car.js` and `test_drift_car.js`.
 
 ## The font
 
@@ -1063,8 +1663,10 @@ writes the same files. After a bake, build the four apps and run every test belo
 
 ## Look at them on a PC (no car, no SDK)
 
-Needs Python 3 and Node.js 14 or newer. The Proven Drag commands and `test_fonts.js` were run on
-Node.js 24 only.
+Needs Python 3 and Node.js 14 or newer. The Proven Drag and Proven Drift commands and `test_fonts.js`
+were run on Node.js 24 only, on a Mac. The two lines that begin with `PPS_BOX_TMP=` are written for
+a shell that takes a variable in front of a command (sh, bash, zsh). In another shell, set
+`PPS_BOX_TMP` to a folder of your own first.
 
 ```
 python3 kit/tools/build.py --preview-only pps_gauges
@@ -1082,20 +1684,36 @@ node proven/tools/test_warmup.js dist/pps_warmup
 node proven/tools/test_fonts.js dist/pps_warmup pictures-warmup-sizes
 
 python3 kit/tools/build.py --preview-only pps_drag
-node kit/tools/preview.js dist/pps_drag preview-drag render wait=2 render wait=4 render wait=12 render BTN_PAGE BTN_PAGE BTN_PAGE
+PPS_BOX_TMP=preview-drag node kit/tools/preview.js dist/pps_drag preview-drag render wait=2 render wait=4 render wait=12 render BTN_PAGE BTN_PAGE BTN_PAGE BTN_PAGE
 node proven/tools/test_drag.js dist/pps_drag
 node proven/tools/test_drag_car.js dist/pps_drag pictures-drag
+node proven/tools/test_drag_native.js dist/pps_drag
+node proven/tools/test_drag_life.js dist/pps_drag
 node proven/tools/test_fonts.js dist/pps_drag
 
 python3 kit/tools/build.py --preview-only pps_drift
-node kit/tools/preview.js dist/pps_drift preview-drift render wait=3.2 render wait=3 render wait=4.5 render wait=5 render wait=12.5 render BTN_PAGE BTN_PAGE BTN_PAGE BTN_PAGE
+PPS_BOX_TMP=preview-drift node kit/tools/preview.js dist/pps_drift preview-drift render wait=3.2 render wait=3 render wait=4.5 render wait=5 render wait=12.5 render BTN_PAGE BTN_PAGE BTN_PAGE BTN_PAGE BTN_PAGE
 node proven/tools/test_drift.js dist/pps_drift
 node proven/tools/test_drift_car.js dist/pps_drift pictures-drift
+node proven/tools/test_drift_native.js dist/pps_drift
+node proven/tools/test_drift_box.js dist/pps_drift
+node proven/tools/test_drift_real.js dist/pps_drift
 ```
 
-The checks as they stand: Gauges 133, 121, 55, 128, 50 and 44 in the order above (531), Warm-Up 350
-and 94 (444), Proven Drag 408, 312 and 14 (734), Proven Drift 303 and 418 (721). Each file ends with
-its count and "ALL OK".
+The checks as they stand (26 Nov 2026): Gauges 133, 121, 55, 128, 50 and 44 in the order above
+(531), Warm-Up 350 and 94 (444), Proven Drag 473, 457, 27, 38 and 14 (1009), Proven Drift 306, 608,
+27, 69 and 44 (1054). Each file ends with its count and "ALL OK". `test_drag_native.js` and
+`test_drag_life.js` are new with Proven Drag 1.0.2. `test_drift_native.js`, `test_drift_box.js` and
+`test_drift_real.js` are new with Proven Drift 1.0.1. `test_drag_life.js` and `test_drift_real.js`
+run in real time and take two to three minutes each.
+
+**`PPS_BOX_TMP` and the preview.** Proven Drag and Proven Drift keep one copy of their record of
+starts and stops in `/tmp`, as on the head unit. Run on a PC without `PPS_BOX_TMP`, the preview
+writes that record to the PC's own `/tmp`. With `PPS_BOX_TMP` set to a folder, here the preview's
+own output folder, it goes there. The tests keep the record in folders of their own. A second
+preview into the same folder finds the record of the first and lists it under "Starts and stops",
+as a life that ended with exit code 0 (Proven Drag's words are "ended with exit code 0", Proven
+Drift's "exit code 0"): that is how the preview itself ends.
 
 `preview.js` writes PNGs of what the app draws from its demo drive (it switches demo data on). Gauges
 shows its start-up logo first, so the early pictures are the logo and the last one is the gauge set;
@@ -1110,34 +1728,72 @@ too with `sizes` as its third argument. The kit's live emulator
 (`node kit/tools/emu.js pps_gauges`, kit README section 6.4) shows an app moving, but it runs the full
 build, which needs BMW's app SDK from your own head unit (kit README section 3.1).
 
-Proven Drag's demo is one made-up launch. Its eight pictures are, in order: the first frame, the
-start-up logo, the Run tab at READY, while TIMING and at RUN FINISHED, then the Timeslip, Best and
-Signals tabs. No car answers in the preview, so its Signals tab says "not answering" for every source.
-`test_drag.js` tests the timing logic alone and prints its error tables. `test_drag_car.js` runs the
-built app on the stand-in car; with a folder as its second argument it saves a picture of every state
-it draws (169 pictures), among them the Signals tab with data. `apps/pps_drag/app.json` is written by
+Proven Drag's demo is one made-up launch. Its nine pictures are, in order: the first frame, the
+start-up logo, the Run tab at READY, while TIMING and at RUN FINISHED, then the Timeslip, the Best
+tab and the two pages of the Signals tab. The fourth press of Next page in the command is for the
+second Signals page. No car answers in the preview, so its Signals tab says "not answering" for the
+two sources that are on and "switched off" for the other nine. The five test files:
+
+- `test_drag.js` tests the timing logic alone and the record of starts and stops alone, and prints
+  its error tables.
+- `test_drag_car.js` runs the built app on the stand-in car, as shipped and with every extra
+  switched on. With a folder as its second argument it saves a picture of every state it draws (320
+  pictures), among them the Signals pages with data.
+- `test_drag_native.js` counts what the app and the kit ask of the head unit's native binding. The
+  built app runs under the kit's real signals code, on a stand-in for the binding.
+- `test_drag_life.js` runs the built app on the kit's real runtime, each start a process of its own,
+  with stand-ins for BMW's software only. It ends those processes the ways a process can end: asked
+  to stop, an error of the app's own, a kill, a signal. It empties the data folder as the platform
+  does. Then it reads what the next start says about each on the Signals tab.
+- `test_fonts.js` checks the font's atlases in the built app, and the header and the list of
+  settings as the kit draws them for this app.
+
+`test_drag_native.js` and `test_drag_life.js` copy the built app with `fs.cpSync`, which Node.js 14
+does not have. `apps/pps_drag/app.json` is written by
 `python3 proven/tools/make_drag_appjson.py .` and is not edited by hand.
 
 Proven Drift's demo is a made-up drive of 34 seconds that goes round again: a drift to the left that
-switches to the right, a straight, a drift to the right. Its eleven pictures are, in order: the first
+switches to the right, a straight, a drift to the right. Its twelve pictures are, in order: the first
 frame (the Drift tab before anything has arrived), the first screen (CLOSED COURSE ONLY), the Drift
 tab at READY, in a DRIFT, after the SWITCH, at DRIFT ENDED and after the second drift, then the Last,
-Session, Best and Signals tabs. Every demo drift carries the DEMO flag, so the Best tab shows no best. No car
-answers in the preview, so its Signals tab says "not answering" for every source. `test_drift.js`
-tests the engine alone and prints its error tables; it takes about 30 seconds. `test_drift_car.js`
-runs the built app on the stand-in car; with a folder as its second argument it saves a picture of
-every state it draws, among them the Signals tab with data, and with `sizes` as its third argument
-each state as it is drawn for iDrive 7 and iDrive 8 too. `test_fonts.js` does not know Proven Drift:
-the header and the list of settings the kit draws for it are checked in `test_drift_car.js`.
-`apps/pps_drift/app.json` is written by `python3 proven/tools/make_drift_appjson.py .` and is not
-edited by hand, and `apps/pps_drift/icon.png` by
+Session and Best tabs and the two pages of the Signals tab. The fifth press of Next page in the
+command is for the second Signals page. Every demo drift carries the DEMO flag, so the Best tab
+shows no best. No car answers in the preview, so its Signals tab says "not answering" for the six
+core sources and "switched off" for the others (the DSC button's row says "not read"). The five
+test files:
+
+- `test_drift.js` tests the engine alone and prints its error tables. It takes about 30 seconds.
+  Without an argument it runs on `apps/pps_drift`, with no build.
+- `test_drift_car.js` runs the built app on the stand-in car, as shipped and with every extra
+  switched on. It takes about a minute. With a folder as its second argument it saves a picture of
+  every state it draws (417 pictures), among them the Signals pages with data, and with `sizes` as
+  its third argument each state as it is drawn for iDrive 7 and iDrive 8 too.
+- `test_drift_native.js` counts, call by call, what the app and the kit ask of the head unit's
+  native binding. The built app runs under the kit's real signals code, on a stand-in for the
+  binding. It writes a folder `someipInterfaces` into `dist/pps_drift`: build again for a clean
+  copy of the built app.
+- `test_drift_box.js` tests the record of starts and stops on its own: what it writes and where,
+  what it makes of what it finds at a start, and what it does with a file it did not write.
+- `test_drift_real.js` runs the built app on the kit's real runtime, fourteen starts, each a process
+  of its own, with stand-ins for BMW's software only. It ends them the ways a process can end and
+  checks what the next start then shows on the Signals tab.
+
+`test_fonts.js` does not know Proven Drift: the header and the list of settings the kit draws for
+it are checked in `test_drift_car.js`. `apps/pps_drift/app.json` is written by
+`python3 proven/tools/make_drift_appjson.py .` and is not edited by hand, and
+`apps/pps_drift/icon.png` by
 `node proven/tools/make_drift_icon.js apps/pps_gauges/icon.png apps/pps_drift/icon.png`.
+
+None of these tests can show what a real head unit does. The stand-ins for BMW's software and for
+the native binding do what the tests tell them, and Node.js on a PC is not the head unit's
+Node.js 8.
 
 # What has and has not been tested
 
-This section has three parts. Proven Gauges and Proven Warm-Up have been installed and run on a car.
-Proven Drag and Proven Drift have not: each was checked on a PC only, and their parts come second and
-third.
+This section has four parts. Proven Gauges and Proven Warm-Up have been installed and run on a car.
+Proven Drag 1.0.1 and Proven Drift 1.0.0 were installed on one car and ran there, and closed by
+themselves: the second part says what that car showed. Proven Drag 1.0.2 and Proven Drift 1.0.1
+have not been on a car. Each was checked on a PC only, and their parts come third and fourth.
 
 ## Proven Gauges and Proven Warm-Up
 
@@ -1203,8 +1859,10 @@ Checked on earlier versions only (1.2.x and 1.0.x, with the font before), not re
 
 Still open:
 
-- **the new font on a car.** Nothing has run on a car with it. The car's GPU renderer has never been
-  handed its atlases, and how the text reads at arm's length on the real screen is not known. The
+- **the new font on a car.** No use of these two apps with it on a car is recorded. Proven Drag
+  1.0.1 and Proven Drift 1.0.0 draw with it, and they ran on one car (25 Nov 2026). Nothing is
+  recorded of how their text read there, and whether that car drew them with the GPU renderer or in
+  software is not known. So how the text reads at arm's length on the real screen is not known. The
   digits of the big figures are about a fifth lower than in the font before.
   [CHANGES-font.md](CHANGES-font.md), part 6, has the list.
 - **anything not named above as done on the car.** Which gauge sets, settings, states and warnings were
@@ -1231,9 +1889,9 @@ Still open:
 - the power figure on a tuned car: the engine unit's torque figure is not verified there.
 - **the screen texts on a head unit.** All of them were drawn on a PC with the kit's software drawing
   code and fitted their places. The apps have been used on a car, with the font before, but which
-  texts and states were seen there is not recorded. In the new font no text has been seen on a head
-  unit. Count these as not yet seen there in either font: the warnings, "not answering", and the
-  small widget's text lines, which the head unit draws itself.
+  texts and states were seen there is not recorded. In the new font no text of these two apps is
+  recorded as seen on a head unit. Count these as not yet seen there in either font: the warnings,
+  "not answering", and the small widget's text lines, which the head unit draws itself.
 - the timing of Warm-Up's full-screen announcement (15 seconds, once in 10 minutes), the guarded timers,
   and Gauges' Thermal line and start-up logo timing are not covered by a test that ships here.
 - **the home-screen widget after a head-unit restart, without opening the app.** If the widget stays
@@ -1245,28 +1903,107 @@ Still open:
   recorded here, so neither is confirmed on a car. For iDrive 8 the PC evidence is only the build step
   and the placement figures above.
 
-## Proven Drag: on a PC only
+## What the first car showed (25 Nov 2026)
 
-**Nothing in this part was done on a car.** Proven Drag has not been installed or run on a car or on a
-head unit. Everything below ran on a PC (Node.js 24), and every car in it is made up. The figures say
-what the app's arithmetic does with the samples a made-up car sends. They do not say what a car
-sends, and they are not a statement of how exact the app is on a car.
+One car with the curved display (iDrive 8 screens). Its owner installed Proven Drag 1.0.1 and Proven
+Drift 1.0.0 on it from this source, through the MGU Store. What is known of that comes from the
+owner's words and from ten phone photos of Proven Drag's screens. There is no photo of Proven Drift.
+There is no log: the log is in the app's data folder, and the platform emptied that folder. Nobody
+could attach a tool to the car. It is the first car these two apps were on, and it is one car.
 
-Tested on a PC (November 2026, all checks passed):
+What happened:
 
-- **734 checks in three files.** `test_drag.js` (408): the timing logic alone against runs with known
-  answers (`dragsim.js`). It covers the launch instant, every split and trap speed, the three clock
-  starts and mph, the ± figure, holes, lone wrong samples, samples stamped late, readings that are too
-  high for a moment, clean launches of quick cars, the choice between the two ways the speed arrives,
-  the speed scale from GPS speed and from positions, wheel factors and wheelspin, and the start slope.
-  Two of its checks say NOT SOLVED: they pin the figures of cases that are known and left open (see
-  the list below). `test_drag_car.js` (312): the built app on a stand-in car and head
-  unit (`fakedrag.js`). It covers a car that only sends its speed, one that only answers when asked
-  and one that does both; every optional group of signals missing in turn and all together; values
-  that are nonsense; a downhill start; the saved file read back, damaged, from a newer version and not
-  writable; demo runs never saved; and the head unit's clock set back in the middle of a run.
-  `test_fonts.js` (14): the new font's atlases in the built app, and the header and the list of
-  settings as the kit draws them for this app.
+- **The Store built and installed both apps, and both ran.** So for those two versions, on that
+  car, the install is no longer open.
+- **Both apps closed by themselves**, "generally within 30 seconds, randomly", and after the second
+  time the app could not be opened again. That is what the kit's README (section 4.3) says the
+  platform does with an app that ends unexpectedly: the first time it empties the app's data folder,
+  the second time it removes the app. So these were unexpected ends of the app's process, not stops
+  the platform asked for. One life of Proven Drag was at least 191 seconds old when it was
+  photographed, so the ends do not come at a fixed time after the start.
+- **Proven Gauges and Proven Warm-Up ran on the same car without trouble.**
+- **Why the two apps closed is not known.** Seven separate looks on a PC found nothing in either
+  app's own JavaScript that throws out of the app, hangs it or grows without bound. What only these
+  two apps did to the car, and the two working ones do not: reads of values on a fast schedule of
+  their own, the GPS receiver's event, the wheel speeds, and in Proven Drift several chassis values
+  that no app of the kit reads. None of these is proven to be the cause. What is left cannot be seen
+  on a PC: the head unit's native binding, the platform's limits, the drawing on the head unit.
+
+What that car's screens showed of its signals, read off Proven Drag's Signals tab:
+
+- **The speed** is sent 47 to 50 times a second while it changes, and not while it is constant.
+  Every run in the photos was timed from the speed the car sent. The app's own reads of the speed,
+  20 a second, were answered and added nothing on this car.
+- **The forward acceleration** arrives 10 times a second.
+- **The GPS receiver** reports once a second, with about 38 sentences each time and 12 satellites.
+  The speed scale was learned in about five minutes: x0.988. So that car's speed signal reads 1.2 %
+  above its GPS speed.
+- **The wheel speeds are not decoded right.** All four read 65407 with the car standing, and the
+  factors never settled: their ratios spread by 98 to 274 %. The wheelspin figure on those screens
+  was the estimate from the acceleration, not from the wheels.
+- **Four of six gentle pull-aways carried DATA GAP.**
+
+What else is known from the owner's words:
+
+- **One run was set beside a GPS drag timer.** CHANGES-drag.md, part 11, has the figures. That run
+  was almost certainly timed UNCALIBRATED, because the speed scale was learned later. One run says
+  little. It is not a measure of how exact the app is, and nothing in this release changes how a
+  time is worked out.
+- **Proven Drift's accelerator figure was "jumping about".** Only Proven Drift showed the pedal.
+- **Proven Drift's steering**: "is calibrating from 20 min of normal driving". The sentence reads
+  both ways: it did learn, or it was still not learned.
+
+What that car did not show: any screen of Proven Drift, its yaw rate and its steering angle, whether
+it draws the apps with the GPU renderer or in software, and how it ends an app when the car is
+switched off. And nothing of versions 1.0.2 and 1.0.1.
+
+## Proven Drag 1.0.2: on a PC only
+
+**Nothing in this part was done on a car.** Version 1.0.1 ran on one car: the part above says what
+is known of that. Version 1.0.2 has not been installed or run on a car or on a head unit. Everything
+below ran on a PC (a Mac, Node.js 24), and every car in it is made up. The figures say what the
+app's arithmetic does with the samples a made-up car sends. They do not say what a car sends, and
+they are not a statement of how exact the app is on a car.
+
+The figures below speak of a speed that is "sent" by the car and of one that is "asked for" by the
+app. As shipped, 1.0.2 does not ask. Every figure for a speed that is asked for holds only with "Ask
+the car for values" switched on.
+
+Tested on a PC (26 November 2026, all checks passed):
+
+- **1009 checks in five files** (1.0.1: 734 in three). `test_drag.js` (473): the timing logic alone
+  against runs with known answers (`dragsim.js`). It covers the launch instant, every split and trap
+  speed, the three clock starts and mph, the ± figure, holes, lone wrong samples, samples stamped
+  late, readings that are too high for a moment, clean launches of quick cars, the choice between
+  the two ways the speed arrives, the speed scale from GPS speed and from positions, wheel factors
+  and wheelspin, and the start slope. New in 1.0.2: DATA GAP on a car that sends its speed only when
+  it changes, wheel values that are no plain multiple of the speed, and the record of starts and
+  stops on its own, with files it did not write. Two of its checks say NOT SOLVED: they pin the
+  figures of cases that are known and left open (see the list below). `test_drag_car.js` (457): the
+  built app on a stand-in car and head unit (`fakedrag.js`). It covers a car that only sends its
+  speed, one that only answers when asked and one that does both; every optional group of signals
+  missing in turn and all together; values that are nonsense; a downhill start; the saved file read
+  back, damaged, from a newer version and not writable; demo runs never saved; and the head unit's
+  clock set back in the middle of a run. Those parts now start the app with every extra switched
+  on, because what they test is behind the extras. The parts that are new in 1.0.2 start it as
+  shipped: the two subscriptions and nothing else, a car like the first one timed from what it sends
+  alone, each extra switched on and off, the wheel values of a car like the first one, the record on
+  the Signals tab and the line on the Run tab, and DATA GAP. One check there says NOT SOLVED: a
+  gentle pull-away that then holds one speed to the last count is ended after 3 seconds.
+  `test_drag_native.js` (27, new): what the app and the kit ask of the head unit's native binding,
+  counted at a stand-in for it. `test_drag_life.js` (38, new): real processes of the built app on
+  the kit's real runtime, ended in every way a process can end, and what the next start says of
+  each. `test_fonts.js` (14): the font's atlases in the built app, and the header and the list of
+  settings as the kit draws them for this app, 16 settings now.
+- **Can the new tests fail.** Run on the published 1.0.1, 16 of the 22 checks `test_drag_native.js`
+  had at first fail, and 9 of the 10 that `test_drag_life.js` gets to. The repairs that followed
+  each have a check that failed on the build before them. CHANGES-drag.md, parts 11 to 14, lists
+  every check that was changed on purpose.
+- **A made-up car like the first one.** Its speed has a send slot every 21 ms, each sample is 12 to
+  18 ms on its way, and nothing is sent while the speed is constant. As shipped, six full-throttle
+  runs to the 1/4 mile of three made-up cars were all timed from the speed sent, and none carried a
+  flag. Gentle runs on that car are in "DATA GAP on a car that sends its speed only when it
+  changes". That is arithmetic on made-up samples, as everything here.
 - **The made-up cars.** The error tables of `test_drag.js` use 240 cars that do 0-100 km/h in 3.8 to
   9.6 s, with the acceleration building up over 0 to 0.3 s and 2 to 4 gear changes each. Each is
   launched at a random moment between two samples. Their speed signal reads every speed from 0 up, is
@@ -1325,30 +2062,38 @@ Tested on a PC (November 2026, all checks passed):
   launches of each of 15 made-up cars for seven ways a car might send its speed. No run ended on a
   jump, had a hole of 0.3 s or repeated a value for a second. SERIES DISAGREE came up in 4 of 3,000
   launches where an answer took 60 ± 20 ms, and in none of the other 18,000.
-- **The speed scale.** On the stand-in car, a car that reads 3 % high at a steady speed gave no factor
-  after 50 seconds and the factor 0.9700 after 70 seconds. From positions alone, three straight
-  kilometres at a steady 100 km/h on a car that reads 3 % low gave 1.0299.
-- **Read only.** In all 66 starts of the app in `test_drag_car.js`, with 26,009 calls to the stand-in
-  car's signals, nothing left the app but subscriptions, reads of the two values and the one event
-  subscription. The app's own files hold no call that sets a value or calls a method, and load nothing
-  of the kit's diagnostics.
-- **No position.** The stand-in cars sent 17,893 positions. In the 7,433 log lines and 69 files the
-  app wrote, not one number is a latitude or longitude a car sent, in degrees, in the receiver's form
-  or raw. The same search does find a position that is put there on purpose. One drive is also
-  searched for the car's course and heading, and neither is found.
-- **The screens.** 507 frames in 52 states were drawn with the kit's software drawing code at the PC,
-  iDrive 7 and iDrive 8 text sizes, in the new font, checking that every letter has a glyph and that
-  no text lies on another, leaves the page or crosses the edge of the panel it stands in. Some of the
-  pictures were looked at by eye, the rest by those rules only.
-- **The level of JavaScript.** All 16 files of the app parse at the level the head unit runs
+- **The speed scale**, with the GPS extras switched on. On the stand-in car, a car that reads 3 %
+  high at a steady speed gave no factor after 50 seconds and the factor 0.9700 after 70 seconds.
+  From positions alone, three straight kilometres at a steady 100 km/h on a car that reads 3 % low
+  gave 1.0299.
+- **Read only.** In all 140 starts of the app in `test_drag_car.js`, with 18,369 calls to the
+  stand-in car's signals, nothing left the app but subscriptions and, in the starts with the extras
+  on, reads of the two values and the one event subscription. The app's own files hold no call that
+  sets a value or calls a method, and load nothing of the kit's diagnostics.
+- **What is asked as shipped.** At the stand-in for the native binding, over a drive of 521
+  seconds: two connections built, two values subscribed, and two reads, both the kit's own. No
+  write, no method call, and no connection shut down. See "It only reads".
+- **No position.** The stand-in cars sent 29,998 positions. In the 10,375 log lines and 407 files
+  the app wrote, the record of starts and stops among them, not one number is a latitude or
+  longitude a car sent, in degrees, in the receiver's form or raw. The same search does find a
+  position that is put there on purpose. One drive is also searched for the car's course and
+  heading, and neither is found.
+- **The screens.** 960 frames in 92 states were drawn with the kit's software drawing code at the PC,
+  iDrive 7 and iDrive 8 text sizes, checking that every letter has a glyph and that no text lies on
+  another, leaves the page or crosses the edge of the panel it stands in. Some of the pictures were
+  looked at by eye, the rest by those rules only.
+- **The level of JavaScript.** All 17 files of the app parse at the level the head unit runs
   (Node.js 8). They were not run on Node.js 8.
-- **The signals asked for.** The built app was held against the signal list of one iDrive 7 head unit,
-  which is not in this repository. That unit has all seven groups and every signal the app asks for.
-  It is one car.
-- The app was built with the kit's offline preview build, which is not installable. The checks of
-  Gauges and Warm-Up were run again in the same copy and pass (531 and 444).
+- **The signals asked for.** The built app of 1.0.1 was held against the signal list of one iDrive 7
+  head unit, which is not in this repository. That unit has all seven groups and every signal the
+  app asks for. It is one car. That check was not made again for 1.0.2: its manifest names the same
+  groups and the same signals, and asks the kit to read fewer of them.
+- The app was built with the kit's offline preview build, which is not installable. Proven Gauges
+  and Proven Warm-Up build to the same files as before this release, and their checks were run
+  again in the same copy and pass (531 and 444).
 
-Two independent reviews and four rounds of checks after them, all on a PC:
+Before the first car, for 1.0.0: two independent reviews and four rounds of checks after them, all
+on a PC:
 
 - Two reviewers each wrote their own made-up cars and probes, one for the numbers and one for the car
   side and the words. Both said "fix first". Together they found 4 points that had to be fixed and 15
@@ -1384,8 +2129,36 @@ Two independent reviews and four rounds of checks after them, all on a PC:
   stamped late. That sentence and three smaller ones were corrected. No code was changed after it.
 - The full account is in [CHANGES-drag.md](CHANGES-drag.md), parts 7 to 10.
 
+After the first car, for 1.0.2, all on a PC:
+
+- Two independent checks were made of the first build of 1.0.2. Both said: good after the repairs
+  they listed. Most of those were in the record of starts and stops: it could say the wrong thing
+  for up to 2 seconds after a switch, after a power loss, and for a file planted in `/tmp`. Each was
+  first made to happen on that build, then repaired, with a check that failed on it.
+- One more independent read of the repaired build found two things the repair had added that cost
+  more than they gave. A gentler rule for DATA GAP let a lost second pass as clean, so the flag goes
+  by the length of the hole again. And the listeners for stop signals changed how a held-up app
+  answers a signal, so they are behind a setting that is off.
+- A check of those two changes found both carried out, and one fault of words: the Timeslip's DATA
+  line could hide a hole or a hold-up behind the "may be a steady speed" words. That line is filled
+  by its width now, and the hole and the hold-up come first.
+- The full account is in [CHANGES-drag.md](CHANGES-drag.md), parts 11 to 14.
+
 Known from the PC and not solved:
 
+- **DATA GAP on gentle runs** on a car that sends its speed only when it changes. It is flagged on
+  purpose wherever the app cannot tell a steady speed from lost data. See "DATA GAP on a car that
+  sends its speed only when it changes".
+- **A speed signal that has died outside a run reads as the last speed**, for as long as the head
+  unit says the car's speed service is up. The Signals tab says "silent for N s". Inside a run it
+  ends the run after 3 seconds, flagged.
+- **If the kit's one first read of the speed gets no answer**, the app does not know that the car
+  stands until it has moved once, and the first launch after opening the app is not timed.
+- **A subscription that is tried again** builds a new connection, and the old one is never shut
+  down. Where the first try had in fact worked, every value is handled twice. That can only happen
+  in the first 80 seconds. Shutting a connection down is a call nobody has made on a car.
+- **As shipped the record cannot tell an end by a signal from a kill or a crash in native code.**
+  All three read NO WORD.
 - A speed signal that starts late, is smoothed or arrives with a delay that varies: see "How it times
   a run". None of it is corrected, and the ± does not cover it.
 - A gentle start (brake released first, then throttle) on a speed that is sent only every 200 ms and
@@ -1451,13 +2224,26 @@ Known from the PC and not solved:
 
 Not tested, and not known until a car has shown it:
 
-- **The install.** No installable package was built: that needs BMW's app SDK from a head unit. So
-  whether the Store builds and installs Proven Drag is not known. One thing in it has no precedent in
-  the kit: the app asks for the GPS receiver's sentences as an event alone, and the head unit's build
-  step has to accept that.
-- **How often the speed signal arrives.** Whether the car sends it at all, how often, how long an
+- **Why 1.0.1 closed by itself, and whether 1.0.2 still does.** Nothing here is proven to end the
+  closing.
+- **The install of 1.0.2.** On the first car the Store built and installed 1.0.1, with the one
+  thing in it that has no precedent in the kit: the app asks for the GPS receiver's sentences as an
+  event alone. For 1.0.2 no installable package was built: that needs BMW's app SDK from a head
+  unit. Its manifest names the same groups of signals. As shipped five of them are never used, and
+  what the installer and the platform do with a manifest entry that is never used is not known.
+- **The record of starts and stops on a head unit.** Its two places, its write every 2 seconds and
+  the write at a clean stop were only run on a PC. Whether an app may write to `/tmp` on a car is
+  only known from the kit doing it for its frames. The kit ends the app about 200 ms after the
+  platform asks it to stop: how long the app's write takes on the head unit's storage is not known.
+  A write that is cut off leaves the old file whole.
+- **How the platform ends an app.** Whether it counts a stop for memory or processor load as
+  unexpected, whether it stops an app that is not in front, how it ends apps when the car is
+  switched off, and whether it ever sends a signal: not known. The record is there to show it.
+- **How often the speed signal arrives on another car.** On the first car it is sent 47 to 50 times
+  a second while it changes, and the app's own reads were answered. Not known there: how long an
   answer takes when the app asks (about 25 ms is assumed, from public reports), how often one takes
-  far longer, and whether asking 20 times a second troubles the head unit. Answers that now and then
+  far longer, and whether asking 20 times a second troubles the head unit. It is one of the things
+  only Proven Drag and Proven Drift did on that car. Answers that now and then
   take far longer lose launches once an answer usually takes 50 ms or more. On made-up cars on a PC,
   with the speed asked for alone and one answer in twenty taking 3 to 6 times as long, launches that
   gave no run, of 4,200: none where an answer usually takes up to 40 ms, 1 at 50 ms, up to 10 at 60
@@ -1474,43 +2260,67 @@ Not tested, and not known until a car has shown it:
   (a file write, a frame drawn in software, memory being tidied) is not known.
 - **Whether the speed signal reads from 0 or cuts in late.** If it reads 0 until the car does 1 km/h
   or more, times from first movement read short, and that is not corrected.
-- **Whether the wheel speeds arrive at all**, under the names the app expects, and how they are
-  scaled. The app takes them as plain multiples of speed and learns the factor. If wheel speeds and
-  vehicle speed do not reach the app equally late, SPEED READ HIGH AT LAUNCH can come up on every
-  launch, and then no run sets a best time.
-- **Whether GPS sentences arrive at all**, which ones, and how old the GPS speed is when it arrives.
-  Whether the raw GPS height is read correctly: its scaling is reported from one car.
-- **The acceleration sensor**: whether it keeps sending while the car stands, whether plus really is
-  nose up, and how high the wheelspin estimate reads on a clean launch.
-- **The settings screen.** No build that has one was made. Where the kit runs the screen itself it
-  draws the list of settings, and that list was drawn on a PC in the new font. Elsewhere the head unit
-  draws its own settings screen, and none was built.
-- **The screens on a head unit.** All were drawn on a PC with the kit's software drawing code, now in
-  the new font. There is no picture from the GPU renderer, none from the kit's live emulator and none
-  from a car.
-- **Both iDrive generations.** Neither iDrive 7 nor iDrive 8 has run the app. For both, the only PC
-  evidence is the screens drawn at the kit's own text sizes for them. Proven has measured neither on a
-  car, and the kit marks its iDrive 8 screen figures "Not measured on a car yet".
-- **Node.js 8.** The head unit's JavaScript has run none of this.
+- **How the wheel speeds are coded.** On the first car they arrive in a form nobody expected: all
+  four read 65407 with the car standing, and they are no plain multiple of the speed. No decoding
+  is guessed. On a car whose wheel values are plain
+  multiples: if wheel speeds and vehicle speed do not reach the app equally late, SPEED READ HIGH AT
+  LAUNCH can come up on every launch, and then no run sets a best time.
+- **The GPS on another car.** On the first car the receiver's sentences arrive, once a second. How
+  old the GPS speed is when it arrives is not known. Whether the raw GPS height is read correctly:
+  its scaling is reported from one car.
+- **The acceleration sensor**: on the first car it arrives 10 times a second. Whether plus really
+  is nose up, and how high the wheelspin estimate reads on a clean launch, is not known.
+- **The settings screen.** Nothing is recorded of it from the first car. The six new settings have
+  not been on a head unit. Where the kit runs the screen itself it draws the list of settings, and
+  that list was drawn on a PC. Elsewhere the head unit draws its own settings screen, with six more
+  rows and long names in it now, and that was not looked at.
+- **The screens of 1.0.2 on a head unit.** Ten phone photos of 1.0.1's screens came back from the
+  first car. Every screen of 1.0.2 was drawn on a PC with the kit's software drawing code. There is
+  no picture of it from the GPU renderer, none from the kit's live emulator and none from a car.
+  Whether the first car draws the app with the GPU renderer or in software is not known: the record
+  of starts and stops says it from the first start on.
+- **Both iDrive generations.** 1.0.1 ran on one car with the curved display (iDrive 8 screens). No
+  iDrive 7 car has run the app, and 1.0.2 has run on neither. The PC evidence for both is the
+  screens drawn at the kit's own text sizes for them. The kit marks its iDrive 8 screen figures "Not
+  measured on a car yet".
+- **Node.js 8.** The head unit's JavaScript ran 1.0.1. It has run nothing of 1.0.2.
 
-**No time from this app has been compared with a timeslip or a GPS timer. Until one has been, its
-times are an indication only.** What to look at on a first car, and in which order, is in
-[CHANGES-drag.md](CHANGES-drag.md), part 5.
+**One run of 1.0.1 was set beside a GPS drag timer by the first car's owner. One run says little,
+and it is no measure of how exact the app is. No time from 1.0.2 has been compared with anything.
+The app's times are an indication only.** What to do on the next car is in "After installing
+Proven Drag 1.0.2 or Proven Drift 1.0.1" and in [CHANGES-drag.md](CHANGES-drag.md), part 11. The
+longer list of what a car has to show, written before the first car, is in part 5.
 
-## Proven Drift: on a PC only
+## Proven Drift 1.0.1: on a PC only
 
-**Nothing in this part was done on a car.** Proven Drift has not been installed or run on a car or on a
-head unit. Everything below ran on a PC (Node.js 24), and every car in it is made up. The figures say
-what the app's arithmetic does with the samples a made-up car sends. They do not say what a car
-sends, and they are not a statement of how exact the app is on a car. **The drift angle the app shows
-is an estimate, and no angle from it has been compared with a car's.**
+**Nothing in this part was done on a car.** Version 1.0.0 ran on one car, and no screen of it was
+photographed: the second part above says what is known of that. Version 1.0.1 has not been installed
+or run on a car or on a head unit. Everything below ran on a PC (a Mac, Node.js 24), and every car
+in it is made up. The figures say what the app's arithmetic does with the samples a made-up car
+sends. They do not say what a car sends, and they are not a statement of how exact the app is on a
+car. **The drift angle the app shows is an estimate, and no angle from it has been compared with a
+car's.**
 
-Tested on a PC (November 2026, all checks passed):
+Tested on a PC (26 November 2026, all checks passed):
 
-- **721 checks in two files.** `test_drift.js` (303): the engine alone, which is the angle, what is
-  learned, when a drift starts and ends, and the score, against a made-up car whose true drift angle
-  is known at every moment (`driftsim.js`). It prints its error tables. `test_drift_car.js` (418): the
-  built app on a stand-in car and head unit (`fakedrift.js`). It covers a first drive from "not
+- **1054 checks in five files** (1.0.0: 721 in two). `test_drift.js` (306): the engine alone, which
+  is the angle, what is learned, when a drift starts and ends, and the score, against a made-up car
+  whose true drift angle is known at every moment (`driftsim.js`). It prints its error tables. Three
+  checks are new, for steering moments kept from the start. No check of it was changed, and the
+  files that work out the angle, the drifts and the score are byte for byte those of 1.0.0.
+  `test_drift_native.js` (27, new): what the app and the kit ask of the head unit's native binding,
+  counted call by call at a stand-in for it. `test_drift_box.js` (69, new): the record of starts
+  and stops on its own, and what it does with a file it did not write: a planted record, a link, a
+  pipe, another user's folder. `test_drift_real.js` (44, new): fourteen starts of the built app on
+  the kit's real runtime, each a process of its own, ended in every way a process can end, and what
+  the next start then shows. `test_drift_car.js` (608): the
+  built app on a stand-in car and head unit (`fakedrift.js`). Its parts from 1.0.0 now start the
+  app with every extra and the app's own reads switched on and the front wheels' angle set by hand,
+  so that each still tests what it tested. Its parts marked "(1.0.1)" start the app as shipped: the
+  core signals only, a car like the first one, cars that send too little, no pedal percentage,
+  wheel values in an unknown form, each extra switched on and off, the record on the Signals tab,
+  frames that only go to the screen when something changed, and the changes to learning. The parts
+  from 1.0.0 cover a first drive from "not
   learned" to the first drift; switches, a spin, a handbrake entry and a long circle; the driving
   that must score nothing; each of the ten optional groups of signals missing in turn and all
   together; the yaw rate from its second source; no yaw rate at all; a speed that is only sent, only
@@ -1522,8 +2332,22 @@ Tested on a PC (November 2026, all checks passed):
   driven in circles before its first drift; a car whose forward acceleration reads more than its
   speed gains; the saved file read back, damaged, from a newer version and not writable; every
   setting; demo drifts never saved; and the head unit's clock set back in the middle of a drift.
-- **Every tab was drawn in 93 states** at the PC's text size and at the kit's sizes for iDrive 7
-  and iDrive 8 (702 frames), with the rules of `textfit.js`: every letter has its picture in the
+- **Can the new tests fail.** For the first build of 1.0.1 the built app was broken in 23 ways,
+  and for its second part in 13 ways, one at a time in a scratch copy. Each break makes at least one
+  check fail now. Three were not noticed at first: the test was changed for each, and one of them
+  led to a real fault that was fixed. The repairs that followed were not broken one by one: their
+  checks were shown to fail on the build before them. CHANGES-drift.md, parts 9 to 12, lists every
+  check that was changed on purpose.
+- **What is asked as shipped.** At the stand-in for the native binding, in ten minutes of stop and
+  go: three connections built, six values subscribed, 15 set-up calls where 1.0.0 made 54, and not
+  one read of the app's own. The kit read four values once at the start, and three of them once
+  more when their service came back. No write, no method call, and no connection shut down.
+- **A made-up car like the first one.** Its speed is sent about 47 times a second while it changes
+  and not at all while it holds, its yaw rate and accelerations 10 times a second. As shipped, the
+  car was learned and five kinds of drift were read from what it sends, with no flag and not one
+  read of the app's own. Those are a made-up car's figures, and no promise for a real one.
+- **Every tab was drawn in 159 states** at the PC's text size and at the kit's sizes for iDrive 7
+  and iDrive 8 (1245 frames), with the rules of `textfit.js`: every letter has its picture in the
   font, no text lies on another, none leaves the page, none crosses the edge of its panel. Among the
   states is every tab with the longest values it can show, in km/h and in mph. The first runs of
   these rules found lines on the Signals tab that ran out of their panel; they were shortened. The
@@ -1589,12 +2413,40 @@ Tested on a PC (November 2026, all checks passed):
   and 8 did not). CHANGES-drift.md lists them.
 - `apps/pps_drift/*.js` was parsed as ES2017, the level the head unit's Node.js 8 runs, and scanned
   for newer library calls. It was not run on Node.js 8.
-- The four apps were built with the kit's build step, and Proven Drift's manifest was checked against
+- The four apps were built with the kit's build step. The manifest of 1.0.0 was checked against
   the interface catalogue of one head unit (an M8 on iDrive 7): every interface, field and access it
-  asks for is in that catalogue.
+  asked for is in that catalogue. That check was not made again for 1.0.1. Its manifest names the
+  same twelve groups, asks the kit to read fewer values, and adds one: the steering wheel's angle
+  under its second field name, which the kit's own Live Data and Engine Config subscribe to.
+- Proven Gauges and Proven Warm-Up build to the same files as before this release.
 
-Known from the PC and not solved (CHANGES-drift.md has the figures):
+Known from the PC and not solved (CHANGES-drift.md has the figures). The first six points are new
+with 1.0.1:
 
+- **The steering wheel's angle may arrive in a form this version does not read.** The kit's own
+  apps read it as a signed number in an unsigned field, as their best guess. If a car sends it so,
+  the steering will not learn, every drift carries NO STEERING CHECK and none is a best. The app
+  still counts slow corners from the half of the values it can read, for example "15 SLOW CORNERS
+  KEPT", without ever learning. That is on purpose: no decoding is guessed before a photo shows the
+  form.
+- **A steering wheel's angle is a plain multiple of the front wheels' only where the steering ratio
+  is fixed.** On another car the steering may not reach "learned".
+- **The wheel proof needs two steady speeds on a straight**, above 30 km/h and 20 km/h apart, a
+  second or two each, at every start of the app. On a skid pan that may never come. After the proof
+  the app still has to learn the usual ratio of rear to front before a wheelspin shows.
+- **The record has limits.** With five lives, two of them on two lines and several "saved data was
+  emptied" lines, the oldest life can fall off the eight lines: the log has every line. "Asked to
+  stop by the car" does not say whether the app reached its exit: the word is written first, so a
+  process killed right after it reads like a finished clean stop. After the app is installed again
+  under another user id, the Drift tab shows no line, even when the life before ended with no word.
+  If the data folder and the folder in `/tmp` are both gone, the app reads like a first start.
+- **"No restart" rests on the head unit's two clocks.** Where the record in `/tmp` is gone, the app
+  takes it that the head unit ran on only if its uptime and its wall clock have grown by the same,
+  within 20 seconds. 20 seconds is a guess. A head unit that sets its wall clock in between reads as
+  restarted, and one whose wall clock started from the same date at every start would read as not
+  restarted.
+- **The Signals pages are up to a second old.** They take what they show every 0.9 seconds, so
+  that the page that is photographed is not a new picture with every value the car sends.
 - **The angle reads high by the car's body roll.** The sideways acceleration sensor tilts with the
   body. On a made-up car with 4.2 degrees of roll per g every peak read 4 to 10 % high; with 6
   degrees per g the angle was up to 6 degrees off. Nothing learned from ordinary driving takes that
@@ -1664,12 +2516,16 @@ Known from the PC and not solved (CHANGES-drift.md has the figures):
   as a spin that was none. The workshop setting "Forward acceleration: Leave out" is for such a car:
   the same drift was then within 2.7 degrees with steering and 3.1 without. With that setting and
   without steering nothing but the sum is left. Whether any car does this is not known.
-- **A yaw rate or a sideways acceleration that stops arriving is noticed after 2.5 seconds on the
-  move**, not sooner: the app reads those values itself only once the car has sent too few for 2
-  seconds, so a reading that holds still and one that has died look the same until then. For those
-  2.5 seconds a drift goes on from the last values; then it ends, flagged DATA GAP, and sets no
-  best. On the yaw rate's second source, which the app cannot read itself, a dead signal is only
-  noticed when the sideways acceleration next moves.
+- **A yaw rate or a sideways acceleration that stops arriving is noticed after 2.5 seconds, and as
+  shipped only in a drift.** While a drift runs or may be beginning, a car that slides does not hold
+  both still to the last count, so silence there is a source that has died. For those 2.5 seconds
+  the drift goes on from the last values; then it ends, flagged DATA GAP, and sets no best. On a
+  straight, as shipped, it is not noticed at all: a sensor that has died and one whose value holds
+  still look alike, the banner stays READY, and a drift driven then is not counted. With "Ask the
+  car for values" on, the app reads those values itself once the car has sent too few for 2
+  seconds, and a dead source is noticed on the move after 2.5 seconds, as in 1.0.0. On the yaw
+  rate's second source, which the app cannot read itself, a dead signal is only noticed when the
+  sideways acceleration next moves.
 - **A yaw rate whose zero has moved** by 1 to 2 degrees a second no longer lets the angle run away on
   a straight, but the zero stays off until the car stands or goes straight with less than 1 degree
   a second showing. A jump of 3 degrees a second or more on a car without steering: the angle shown
@@ -1677,8 +2533,9 @@ Known from the PC and not solved (CHANGES-drift.md has the figures):
   reviewer's car; 832 with a jump of 8), flagged NO STEERING CHECK and SPIN, so it sets no best. For
   a while nothing was counted there; since a drift without steering may start on the sum again, it
   is. With steering nothing was counted in those runs.
-- **A speed that stops arriving is only noticed on a car whose speed can be read.** On a car that
-  only sends its speed, a speed that has died looks like a speed that holds still.
+- **A speed that stops arriving is not noticed as shipped.** The app is then on the speed the car
+  sends, and a speed that has died looks like a speed that holds still: the last speed stands. It
+  is only noticed with "Ask the car for values" on, on a car whose speed can be read.
 - **A steering signal that stops arriving looks like a steering wheel held still** until the car has
   both gone straight and turned with nothing from it for 2 seconds. From then on it is not used, and
   drifts are flagged NO STEERING CHECK (drifts of 30 and 13 degrees were then read within a degree
@@ -1837,7 +2694,8 @@ Known from the PC and not solved (CHANGES-drift.md has the figures):
 - **A lone speed reading of 0 after a long silence can be taken as real.** With a speed that had not
   changed for seconds, under 45 km/h and only sent on change, one such value ended a drift of the
   made-up car as a SPIN that was none. With the speed arriving ten times a second or more, as it
-  does where the app can read it itself, such a value was dropped in every run of the test.
+  does where the app reads it itself, such a value was dropped in every run of the test. As shipped
+  the app does not read the speed itself, and the first car sends its speed only when it changes.
 - **A car with neither wheel speeds nor a forward acceleration can learn from slides.** Drifted in
   steady circles both ways on a wet pan before anything was learned, the made-up car counted as
   "learned" with its scale 8.5 % low. An ordinary drive after it put that right.
@@ -1873,23 +2731,39 @@ Known from the PC and not solved (CHANGES-drift.md has the figures):
 
 Not tested, and not known until a car has shown it:
 
-- **The install.** No installable package was built: that needs BMW's app SDK from a head unit. So
-  whether the Store builds and installs Proven Drift is not known. The manifest was checked against
-  one head unit's catalogue only. A head unit that lacks an optional group of signals should get the
-  app without it; that path is the kit's and was not run.
-- **Whether the signals arrive at all**, under the names the app expects, how often, and in what raw
-  units. The names are from one head unit's catalogue. Proven has measured none of them.
+- **Why 1.0.0 closed by itself, and whether 1.0.1 still does.** Nothing here is proven to end the
+  closing.
+- **The install of 1.0.1.** On the first car the Store built and installed 1.0.0. For 1.0.1 no
+  installable package was built: that needs BMW's app SDK from a head unit. Its manifest names the
+  same twelve groups of signals and one value more. As shipped nine of the groups are never used,
+  and what the installer and the platform do with a manifest entry that is never used is not known.
+  The manifest of 1.0.0 was checked against one head unit's catalogue only. A head unit that lacks
+  an optional group of signals should get the app without it; that path is the kit's and was not
+  run.
+- **The record of starts and stops on a head unit.** It was only run on a PC. Whether an app may
+  write to `/tmp` on a car is known from the kit's own notes only. The kit ends the app 200 ms after
+  the platform asks it to stop: whether the app's writes fit into that on a head unit is not known.
+  The record in `/tmp` is written first.
+- **How the platform ends an app**: whether for memory or processor load, whether with a signal,
+  and what it does when the car is switched off. Memory and processor in the record are what the
+  process can see of itself. How the platform counts against its limits is not known.
+- **Whether the signals arrive**, under the names the app expects, how often, and in what raw
+  units. The names are from one head unit's catalogue. On the first car the speed and the forward
+  acceleration arrive: Proven Drag's screens showed them. Its yaw rate and its steering angle have
+  not been seen. Its accelerator pedal and its wheel speeds arrive in forms that are not known.
 - **Whether the angle is right.** Only a drift filmed from outside or from above, set against the
   angle shown, can say.
-- **Whether learning comes to "learned" on a car**, and how long that takes.
+- **Whether learning comes to "learned" on a car**, and how long that takes. The first car's owner
+  wrote one sentence on it, and it reads both ways.
 - **Whether the car's forward acceleration is a sensor's reading.** If the car works it out from its
   speed, every held drift runs away (see above), and "Forward acceleration" has to be set to "Leave
   out". The tell-tale: the angle climbs past 90 degrees in a drift that is held steady, and the
   forward acceleration reads the same standing on a slope as on the flat.
 - **Whether a car's sensors flicker.** The app takes a yaw rate that has said nothing for 2.5 seconds
-  on the move as dead. On a car whose readings hold still to the last count for longer than that,
-  and whose values the app cannot read itself, or can only read slower than half a second, it would
-  say NO YAW RATE FROM THE CAR while nothing is wrong.
+  as dead: as shipped while a drift runs or may be beginning, and with "Ask the car for values" on
+  whenever the car moves. On a car whose readings hold still to the last count for longer than that,
+  and whose values the app does not or cannot read itself, or can only read slower than half a
+  second, it would say NO YAW RATE FROM THE CAR while nothing is wrong.
 - **Whether the car gives a steering angle the app can learn.** Without one no drift becomes a best
   (see above).
 - **Whether the steering arrives on a schedule or only when it changes, and how fine its counts
@@ -1915,20 +2789,33 @@ Not tested, and not known until a car has shown it:
   the app up. A steady delay of 0.1 s between yaw rate and sideways acceleration cost 2.5 degrees on
   the made-up car.
 - **Whether reading the speed 10 times a second troubles the head unit**, and, on a car that does not
-  send them, reading the yaw rate and the accelerations about 25 times a second together.
-- **What the handbrake's signal reads.** The app takes its two states as the kit's own Live Data app
-  reads them. An electric parking brake may read otherwise, or not at all.
-- **The settings screen**, and with it the two resets. No build that has one was made. Where the kit
-  runs the screen itself it draws the list of settings, and that list was drawn on a PC.
-- **The screens on a head unit.** All were drawn on a PC with the kit's software drawing code. There
-  is no picture from the GPU renderer, none from the kit's live emulator and none from a car. The
-  drawn car turns smoothly on a PC; whether it does at the head unit's frame rate is not known.
-- **Both iDrive generations.** Neither iDrive 7 nor iDrive 8 has run the app.
-- **Node.js 8.** The head unit's JavaScript has run none of this. How long the head unit takes for
-  the app's arithmetic is not known: on the PC the whole app with its stand-in car ran 130 times
-  faster than real time.
+  send them, reading the yaw rate and the accelerations about 25 times a second together. 1.0.0 did
+  both without being asked, and it is one of the things only Proven Drag and Proven Drift did on the
+  first car. In 1.0.1 it only happens with "Ask the car for values" on.
+- **The forms of the pedal, the wheel values and the steering wheel's angle.** Photos of the
+  Signals tab with their settings on are what a later version needs.
+- **What the handbrake's signal reads**, with "Pedal and handbrake" on. The app takes its two states
+  as the kit's own Live Data app reads them. An electric parking brake may read otherwise, or not at
+  all.
+- **The settings screen**, and with it the two resets. Nothing is recorded of it from the first
+  car. Where the kit runs the screen itself it draws the list of settings, and that list was drawn
+  on a PC. Elsewhere the head unit draws its own settings screen, with seven more rows and long
+  names in it now, and that was not looked at.
+- **The screens on a head unit.** No screen of Proven Drift was photographed on the first car. All
+  were drawn on a PC with the kit's software drawing code. There is no picture from the GPU
+  renderer, none from the kit's live emulator and none from a car. The drawn car turns smoothly on a
+  PC; whether it does at the head unit's frame rate is not known.
+- **Both iDrive generations.** 1.0.0 ran on one car with the curved display (iDrive 8 screens), and
+  nothing is recorded of its screens there. No iDrive 7 car has run the app, and 1.0.1 has run on
+  neither.
+- **Node.js 8.** The head unit's JavaScript ran 1.0.0. It has run nothing of 1.0.1. How long the
+  head unit takes for the app's arithmetic is not known: on the PC the whole app with its stand-in
+  car ran 130 times faster than real time.
 
-**What a first car must show** is listed in [CHANGES-drift.md](CHANGES-drift.md). In short, all of it
+**What the next car must show.** First the photos of "After installing Proven Drag 1.0.2 or Proven
+Drift 1.0.1": the Signals tab after a minute, the Signals tab right after any stop of the app, and
+the steering's rows with the wheel straight and a quarter turn each way. The longer list, written
+before the first car, is in [CHANGES-drift.md](CHANGES-drift.md). In short, all of it
 on closed ground: a photo of the Signals tab standing, one after ten minutes of ordinary corners on
 flat ground with slow ones among them (the steering is learned from slow corners only), one after a
 drift on a skid pan, the log file, and one drift filmed from outside. And of the steering in

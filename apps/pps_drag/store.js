@@ -72,8 +72,17 @@ function cleanHeight(x) {
 function cleanSum(x) {
     if (!isObj(x)) return {};
     const out = Object.assign({}, x);
-    ['vmax', 'peakG', 'samples', 'medianGap', 'longestGap', 'launchGap', 'firstKmh', 'dropped', 'merged', 'holeMs', 'frozenMs', 'stallMs', 'roundTrip', 'length', 'dist', 'lowSeen', 'afterCreep'].forEach((k) => { if (k in out && !isNum(out[k])) delete out[k]; });
+    ['vmax', 'peakG', 'samples', 'medianGap', 'longestGap', 'launchGap', 'firstKmh', 'dropped', 'merged', 'holeMs', 'lostMs', 'frozenMs', 'stallMs', 'roundTrip', 'length', 'dist', 'lowSeen', 'afterCreep'].forEach((k) => { if (k in out && !isNum(out[k])) delete out[k]; });
     if ('renderer' in out && typeof out.renderer !== 'string') delete out.renderer;
+    if ('noReads' in out && out.noReads !== true) delete out.noReads;
+    return out;
+}
+
+/** Which extras were switched on for a run: { ask, gps, wheels, pos, study } of true / false, or null (a run from before 1.0.2). */
+function cleanExt(x) {
+    if (!isObj(x)) return null;
+    const out = {};
+    ['ask', 'gps', 'wheels', 'pos', 'study'].forEach((k) => { out[k] = x[k] === true; });
     return out;
 }
 
@@ -87,7 +96,7 @@ function cleanRun(r) {
         results, date: isNum(r.date) ? r.date : null, unit: r.unit === 'mph' ? 'mph' : 'kmh', demo: r.demo === true,
         series: r.series === 'polled' ? 'polled' : 'notified',
         flags: Array.isArray(r.flags) ? r.flags.filter((f) => typeof f === 'string').map((f) => f.slice(0, 32)).slice(0, KEEP_FLAGS) : [],
-        scaleLabel: str(r.scaleLabel, 24) || 'UNCALIBRATED',
+        scaleLabel: str(r.scaleLabel, 24) || 'UNCALIBRATED', scaleSource: str(r.scaleSource, 12) || '', ext: cleanExt(r.ext),
         spin: cleanSpin(r.spin),
         slope: isObj(r.slope) && isNum(r.slope.pct) ? { pct: r.slope.pct, ms: numOr(r.slope.ms, 0), n: numOr(r.slope.n, 0) } : null,
         height: cleanHeight(r.height),

@@ -22,6 +22,16 @@
  * pass while the engine does what the README says it does in a case that is known and left open, and they pin
  * the figure the README quotes, so that the text is looked at again if the figure moves.
  *
+ * The part whose name begins with "1.0.2, DATA GAP" tests how a silence on a series that only sends when its value
+ * changes is judged, through the engine (run.js) and through the app's own rule (session.js): it is flagged by its
+ * length, as in 1.0.1, whether notifications were lost or the speed only stood still; what the samples after it look
+ * like chooses the words and nothing else; no time and no +- depends on it. Its last check pins the run with a lost
+ * second that the last read of 1.0.2 found (CHANGES-drag.md part 13).
+ * The part whose name begins with "1.0.2:" tests the record of starts and stops (box.js) on its own, with a process
+ * and folders of the test's own: what it keeps, when it writes, what it says after each kind of end, and what it
+ * makes of a file somebody else put where it keeps its copy in RAM. The wheel part and the last part carry the
+ * checks that 1.0.2 changed or added (a wheel factor must be learned across speeds; what the manifest asks for).
+ *
  * What this cannot show: how a real car sends its speed. Every sampler here is an assumption (dragsim.js).
  *
  * PPS_TEST_ALL=1 in the environment: a failed check does not stop the run; they are listed at the end.
@@ -29,6 +39,7 @@
 const fs = require('fs'), path = require('path');
 const sim = require('./dragsim');
 const { checker } = require('./fakecar');
+const { rng } = sim;
 
 if (!process.argv[2]) { console.error('usage: node proven/tools/test_drag.js dist/pps_drag'); process.exit(2); }
 const JS = path.join(path.resolve(process.argv[2]), 'source', 'javascript');
@@ -1821,17 +1832,36 @@ const nmea = (body) => { let x = 0; for (let i = 0; i < body.length; i++) x ^= b
         steady(1.5, 80);
         ok(w.kmh(Wheels.rawWheels(ev(5000, 5000, 5000, 5000))) === null && w.status().all === false, 'no wheel speed in km/h before the factors are learned');
         steady(3, 80);
+        ok(w.kmh(Wheels.rawWheels(ev(5000, 5000, 5000, 5000))) === null && learned.length === 0 && w.status().all === false && w.status().wheels.fl.why === 'span' && w.status().wheels.fl.n >= 20 && w.status().wheels.fl.spread < 0.001,
+            'CHANGED IN 1.0.2. After ' + w.status().wheels.fl.n + ' steady moments at 80 km/h alone the factor does NOT count yet: ratios taken at one speed agree with each other whatever form the raw value has ("one speed" on the Signals tab). WAS: learned after 20 moments at one speed');
+        steady(3, 55);
         let k4 = w.kmh(Wheels.rawWheels(ev(5000, 5000, 5000, 5000)));
-        ok(k4 && Math.abs(k4.fl - 5000 * F) < 0.05 && learned.length === 4 && w.status().all === true, 'after 20 steady moments at 80 km/h: factor ' + w.status().wheels.fl.f.toFixed(5) + ' km/h per count on all four (true ' + F + '), said once per wheel');
+        ok(k4 && Math.abs(k4.fl - 5000 * F) < 0.05 && learned.length === 4 && w.status().all === true, 'after steady moments at 80 and at 55 km/h (20 km/h apart or more): factor ' + w.status().wheels.fl.f.toFixed(5) + ' km/h per count on all four (true ' + F + '), said once per wheel');
         const n0 = w.status().wheels.fl.n;
         for (let i = 1; i < 30; i++, t += 100) { w.speed(t, 80 + i); w.wheels(t + 2, Wheels.rawWheels(ev(1, 1, 1, 1))); }
         ok(w.status().wheels.fl.n === n0, 'while the speed changes nothing is learned');
         steady(4, 25);
         ok(w.status().wheels.fl.n === n0, 'nor under 30 km/h');
         const saved = JSON.parse(JSON.stringify(w.export()));
-        ok(Math.abs(saved.rl.f - F) < 0.0001 && saved.rl.n >= 20, 'the factors go into the saved file');
+        ok(Math.abs(saved.rl.f - F) < 0.0001 && saved.rl.n >= 20 && saved.rl.hi - saved.rl.lo >= 20, 'the factors go into the saved file, each with the slowest and the fastest steady speed it was learned at (' + saved.rl.lo + ' and ' + saved.rl.hi + ' km/h)');
         const w2 = new Wheels.WheelFactors({ saved });
         ok(w2.kmh(Wheels.rawWheels(ev(5000, 5000, 5000, 5000))) && w2.status().wheels.fl.saved === true, 'and are used from the first moment after a restart');
+        const old = {};
+        Object.keys(saved).forEach((k) => { old[k] = { f: saved[k].f, n: saved[k].n }; });
+        const w2b = new Wheels.WheelFactors({ saved: old });
+        ok(w2b.kmh(Wheels.rawWheels(ev(5000, 5000, 5000, 5000))) === null && w2b.status().all === false, 'NEW IN 1.0.2. A saved factor that does not say it was learned across speeds (a file written by 1.0.0 or 1.0.1) is not used: it may have been learned at one speed, which shows nothing');
+        // the hole that was there: a raw value that is NOT a plain multiple, the car holding one speed
+        const w2c = new Wheels.WheelFactors({});
+        const swap = (x) => ((x & 255) << 8) | ((x >> 8) & 255), odd = (kmh) => swap(0x7FFF + Math.round(kmh * 64));
+        t = 0;
+        for (let i = 0; i < 140; i++, t += 100) { if (i % 5 === 0) w2c.speed(t, 50 + (i % 10 ? 0.02 : 0)); const c = odd(50); w2c.wheels(t + 2, Wheels.rawWheels(ev(c, c, c, c))); }
+        ok(w2c.status().wheels.fl.n >= 100 && w2c.status().wheels.fl.spread < 0.03 && w2c.kmh(Wheels.rawWheels(ev(odd(50), odd(50), odd(50), odd(50)))) === null && Object.keys(w2c.export()).length === 0,
+            'NEW IN 1.0.2. Wheel values that are no plain multiple of the speed (here an offset count with its bytes swapped, which reads 65407 standing, as the first car\'s do), the car holding 50 km/h for 14 s: ' + w2c.status().wheels.fl.n +
+            ' ratios that agree to ' + (w2c.status().wheels.fl.spread * 100).toFixed(1) + ' %, and still no wheel speed is worked out and nothing is saved. WAS: all four factors "learned", wheel speeds in km/h made of nothing, and saved');
+        for (let i = 0; i < 140; i++, t += 100) { if (i % 5 === 0) w2c.speed(t, 80 + (i % 10 ? 0.02 : 0)); const c = odd(80); w2c.wheels(t + 2, Wheels.rawWheels(ev(c, c, c, c))); }
+        for (let i = 0; i < 600; i++, t += 100) { if (i % 5 === 0) w2c.speed(t, 81 + (i % 10 ? 0.02 : 0)); const c = odd(81); w2c.wheels(t + 2, Wheels.rawWheels(ev(c, c, c, c))); }
+        ok(w2c.status().wheels.fl.spread > 0.03 && w2c.status().wheels.fl.why === 'spread' && w2c.kmh(Wheels.rawWheels(ev(odd(80), odd(80), odd(80), odd(80)))) === null,
+            '  then 80 km/h, and a minute at 81: the ratios of the 50 km/h stretch are kept beside them (' + (w2c.status().wheels.fl.spread * 100).toFixed(0) + ' % spread), so the wheel stays unused however long the car then holds one speed');
         ok(w2.kmh(Wheels.rawWheels(ev(5000, 65535, 5000, 5000))) === null, 'a wheel with "no value": no wheel speeds from that event');
         // a raw value that is not a plain multiple of the speed
         const w3 = new Wheels.WheelFactors({});
@@ -2027,20 +2057,567 @@ const nmea = (body) => { let x = 0; for (let i = 0; i < body.length; i++) x ^= b
         ok(threw === null, 'GPS, wheel and slope helpers fed 3000 rounds of nonsense in every argument: nothing throws, nothing but numbers in the saved file, no factor outside 0.90 to 1.10' + (threw ? '. PROBLEM: ' + threw : ''));
     });
 
+    /* ================= 1.0.2: DATA GAP on a car that notifies its speed only when it changes ================= */
+    await ok.part('1.0.2, DATA GAP on a car that notifies its speed only when it changes: flagged by the hole\'s length as in 1.0.1; what the samples after a silence look like is for the words only', async () => {
+        // The cars here send their speed in slots, a slot only when the value (in counts of 1/64 km/h) differs from the last
+        // one sent: nothing while the speed is constant. The first car's slot was about 21 ms; 50 and 100 ms stand for cars
+        // that send more slowly. Nothing here is measured on a car.
+        // WHAT THIS PART HOLDS SINCE THE LAST READ OF 1.0.2 (CHANGES-drag.md part 13). The repair before it let the samples
+        // after a silence take the DATA GAP flag away ("steady speed, no gap"), and a run with a lost second then showed a
+        // wrong time with no flag. Now the flag goes by the hole's length again (session.js, as in 1.0.1 and the first
+        // build of 1.0.2), and the judging (run.js, summary.lostMs) only chooses the words. The checks that held "a held
+        // speed is not flagged" hold "a held speed is flagged, sets no best, and the words say it may be a steady speed".
+        const Q = 1 / 64;
+        /** legs: [[seconds, km/h at its end]], straight lines between -> km/h at ms after the start */
+        const plan = (legs) => (ms) => { let x = ms / 1000, v = 0; if (x <= 0) return 0; for (const l of legs) { if (x <= l[0]) return v + (l[1] - v) * x / l[0]; x -= l[0]; v = l[1]; } return v; };
+        /** The on-change series of a speed: slots every `spacing` ms (each longer or shorter by up to `uneven` of it), each stamp up to `jitter` ms late. */
+        const series = (v, o) => {
+            o = Object.assign({ spacing: 21, phase: 3, jitter: 0, uneven: 0, until: 30000, rand: rng(7) }, o);
+            const out = [];
+            let last = null, lastT = -Infinity, ms = -3000 + o.phase;
+            while (ms <= o.until) {
+                const val = Math.round(Math.max(0, v(ms)) / Q) * Q;
+                if (last === null || val !== last) { let t = C0 + ms + (o.jitter ? o.rand() * o.jitter : 0); if (t <= lastT) t = lastT + 0.01; lastT = t; out.push({ t, v: val }); last = val; }
+                ms += o.spacing * (1 + (o.uneven ? (o.rand() * 2 - 1) * o.uneven : 0));
+            }
+            return out;
+        };
+        const lose = (smp, from, ms) => smp.filter((p) => p.t < C0 + from || p.t > C0 + from + ms);
+        const run = (smp, E) => { const e = new (E || RunEngine)({ onChange: true, series: 'notified' }); return sim.drive(e, smp) || e.summary(); };
+        /**
+         * What the APP makes of a series: session.js and store.js of the built app, as shipped (the notified series alone,
+         * nothing read by the app itself), each sample handed over at its own time between the app's 50 ms ticks.
+         * -> { flags, best: the splits it set a best for, sum: the run's summary as kept, words: the log line of the run } | null
+         */
+        const { Session } = require(path.join(JS, 'session')), { Store } = require(path.join(JS, 'store'));
+        const SET = { start: 'slip', speedUnit: 'kmh', scale: 'gps', scaleManual: 0, slopeLimit: '1', demo: 'off' };
+        const judged = (smp) => {
+            let now = smp[0].t - 1000, i = 0;
+            const lines = [];
+            const s = new Session({ now: () => now, wall: () => 0, log: { info: (x) => lines.push(String(x)), warn() {}, error() {} }, settings: { get: (k) => SET[k] }, store: new Store({ dir: null }) });
+            s.feedNow = { held: true, polling: false };
+            const end = smp[smp.length - 1].t + 5000;
+            for (let tick = Math.ceil(now / 50) * 50 + 7; tick <= end; tick += 50) {
+                while (i < smp.length && smp[i].t <= tick) { now = smp[i].t; s.speed('notified', now, smp[i].v); i++; }
+                now = tick;
+                s.tick(now, {});
+            }
+            return s.shown ? { flags: s.shown.flags, best: Object.keys(s.newBest), sum: s.shown.sum, results: s.shown.results, words: lines.filter((l) => /^run, notified /.test(l))[0] || '' } : null;
+        };
+        /** Flagged for the hole and for nothing else: DATA GAP alone, the run ended by a lift or at the line (not "silent"), no best set. */
+        const gapOnly = (j) => !!j && j.flags.join() === 'DATA GAP' && j.best.length === 0 && j.sum.ended !== 'silent' && j.sum.stallMs === 0 && j.sum.frozenMs < 1000;
+        const MAYBE = /HOLE of \d+ ms \(MAY BE A STEADY SPEED: the samples after it look like a speed that stood still and then moved on; lost notifications can look the same/;
+        const GAP = 300;                    // (what the app flags from: session.js GAP_FLAG_MS)
+        const full = new sim.Truth({ a0: 8, vTop: 70, ramp: 0.15, shifts: [{ v: 60 / 3.6, dur: 0.15, cut: 0.9 }, { v: 100 / 3.6, dur: 0.15, cut: 0.9 }] });
+        const vFull = (ms) => full.vAt(ms / 1000) * 3.6, gentle = plan([[12, 65], [6, 80], [5, 40]]);
+        const SLOTS = [21, 50, 100], HOLES = [300, 400, 1000];
+
+        // 0. the same runs with nothing lost and nothing held: no flag, and a best is set (so the flags below are the hole's)
+        const clean = [judged(series(vFull, { until: 16000 })), judged(series(gentle, { until: 23000 }))];
+        ok(clean.every((j) => j && j.flags.length === 0 && j.best.length > 0 && j.sum.holeMs < GAP), 'through the app\'s own rule (session.js, as shipped: the notified series alone): a full-throttle run and a gentle pull-away with every notification there carry no flag and set a best (' +
+            clean.map((j) => j.best.join(' ')).join('; ') + ')');
+
+        // 1. a true hole while the speed is changing: flagged, and the words do not say "may be a steady speed"
+        let n = 0, seen = 0, short = [];
+        for (const sp of SLOTS) for (const hole of HOLES) {
+            for (const at of [1500, 4000, 9000]) { const smp = lose(series(vFull, { spacing: sp, until: 16000 }), at, hole + sp), r = run(smp), j = judged(smp); n++; if (r.lostMs >= GAP && r.lostMs === r.holeMs && r.holeMs >= hole && gapOnly(j) && !MAYBE.test(j.words)) seen++; else short.push('full throttle, slot ' + sp + ', ' + hole + ' ms from ' + at); }
+            for (const at of [3000, 8000, 14000]) { const smp = lose(series(gentle, { spacing: sp, until: 23000 }), at, hole + sp), r = run(smp), j = judged(smp); n++; if (r.lostMs >= GAP && r.lostMs === r.holeMs && r.holeMs >= hole && gapOnly(j) && !MAYBE.test(j.words)) seen++; else short.push('gentle, slot ' + sp + ', ' + hole + ' ms from ' + at); }
+        }
+        ok(seen === n && n === 54, 'notifications lost for 0.3, 0.4 and 1 s while the speed changes, at full throttle and in a gentle pull-away (1.5 and 0.7 m/s2), with slots of 21, 50 and 100 ms, at ' + n + ' chosen places (not every place a hole can fall): ' + seen + ' of ' + n +
+            ' are flagged DATA GAP by the app and set no best, and the samples after none of them look like a steady speed (lostMs = holeMs: the log says "HOLE of ..." and no more)' + (short.length ? '. NOT: ' + short.join('; ') : ''));
+
+        // 2. the speed stood still to the last count and then moved on: nothing is missing, and the app cannot know that
+        const HELD = [
+            ['creeps to 50.2 km/h, holds it, then pulls at once at 2 m/s2', (h) => plan([[6, 50], [3, 50.2], [h, 50.2], [2.8, 70], [3, 40]])],
+            ['creeps to 50.2 km/h, holds it, then is braked at once at 2 m/s2', (h) => plan([[6, 50], [3, 50.2], [h, 50.2], [2.5, 32], [2, 20]])],
+            ['creeps to 50.2 km/h, holds it, then is floored (6 m/s2 at once)', (h) => plan([[6, 50], [3, 50.2], [h, 50.2], [2, 93], [3, 60]])],
+        ];
+        // (where the first slot after the hold falls decides how big the first step is, so each case is run with the slots
+        // at five different places)
+        let cases = 0, wasHole = 0, flagged = 0, maybe = 0, under = 0, underClean = 0, one = null, oneJ = null;
+        const still = [];
+        for (const hold of [0.3, 0.6, 1.5, 2.8]) for (const c of HELD) for (const phase of [1, 5, 9, 13, 17]) {
+            const smp = series(c[1](hold), { spacing: 21, phase }), r = run(smp), j = judged(smp);
+            cases++;
+            if (r.holeMs >= GAP) {
+                wasHole++;
+                if (hold === 1.5 && !one) { one = r; oneJ = j; }
+                if (gapOnly(j)) flagged++; else still.push(c[0] + ' (' + hold + ' s, slots at ' + phase + ' ms): flags [' + (j ? j.flags.join(', ') : 'no run') + '], best [' + (j ? j.best.join(' ') : '') + ']');
+                if (r.lostMs < GAP && j && MAYBE.test(j.words)) maybe++;
+            } else { under++; if (j && j.flags.length === 0 && j.best.length > 0) underClean++; }
+        }
+        ok(cases === 60 && wasHole >= 30 && flagged === wasHole && maybe === wasHole && under === cases - wasHole && underClean === under,
+            'CHANGED ON PURPOSE (was: "none of the 60 runs has a hole that counts"). A car like the first one (21 ms slots) holds its speed to the last count for 0.3 to 2.8 s and then pulls, is braked or is floored at once, ' + cases + ' runs: in ' + wasHole +
+            ' of them the stretch is timed as a hole of 0.3 s or more, and each of those ' + flagged + ' is flagged DATA GAP and sets no best, exactly as in 1.0.1, although no notification was missing. For all ' + maybe +
+            ' the engine says the samples after it look like a steady speed (lostMs under 0.3 s), and the log line says "MAY BE A STEADY SPEED". The other ' + under + ' (the stretch came out shorter than 0.3 s) carry no flag and set a best, as before' +
+            (still.length ? '. NOT: ' + still.join('; ') : ''));
+        ok(one && one.holeMs >= 1500 && one.holeMs <= 1650 && one.lostMs === 0 && gapOnly(oneJ) && oneJ.sum.holeMs === one.holeMs && oneJ.sum.lostMs === 0,
+            'CHANGED ON PURPOSE (was: "it does not count as one"). One of them, held for 1.5 s: holeMs ' + (one && one.holeMs) + ' ms (the stretch is timed as a hole, and the flag goes by this), lostMs ' + (one && one.lostMs) + ' ms (the samples after it look like a steady speed: for the words only). Flags: ' +
+            (oneJ ? oneJ.flags.join(', ') : 'no run') + ', no best');
+
+        // 3. both: the speed stood still, and then notifications were lost while it moved
+        let both = 0, bn = 0;
+        for (const sp of SLOTS) for (const hole of HOLES) {
+            for (const legs of [[[8, 57], [1, 57], [3, 78.6], [3, 40]], [[8, 57], [1, 57], [5, 30]]]) { const smp = lose(series(plan(legs), { spacing: sp }), 9000, hole + sp), r = run(smp), j = judged(smp); bn++; if (r.lostMs >= GAP + 1000 - 2 * sp && gapOnly(j) && !MAYBE.test(j.words)) both++; }
+        }
+        ok(both === bn && bn === 18, 'a speed held for 1 s, and then the first 0.3, 0.4 or 1 s of the pull (or of the lift) lost: ' + both + ' of ' + bn + ' are flagged DATA GAP and set no best, the standstill before it included, and none is said to look like a steady speed');
+
+        // 4. a car with uneven slots and late stamps
+        let u = 0, un = 0, uc = 0, timed = 0, taken = 0;
+        for (let seed = 1; seed <= 12; seed++) {
+            const o = () => ({ spacing: 21, uneven: 0.3, jitter: 8, rand: rng(seed) });
+            for (const smp of [lose(series(vFull, Object.assign(o(), { until: 16000 })), 4000, 421), lose(series(gentle, Object.assign(o(), { until: 23000 })), 8000, 321)]) { un++; if (run(smp).lostMs >= GAP && gapOnly(judged(smp))) u++; }
+            const smp = series(HELD[0][1](1.5), o()), r = run(smp), j = judged(smp);
+            // (with stamps this uneven the step after the hold now and then still fits "nothing changed" by the pace before it:
+            // then the engine takes the speed as unchanged, there is no hole, and no flag, as in 1.0.1)
+            if (r.holeMs >= GAP) { timed++; if (r.lostMs < GAP && gapOnly(j) && MAYBE.test(j.words)) uc++; } else if (j && j.flags.length === 0 && j.best.length > 0) taken++;
+        }
+        ok(u === un && timed >= 10 && uc === timed && taken === 12 - timed, 'CHANGED ON PURPOSE (was: the held speed "is none in 12 of 12"). Slots of 21 ms that are up to 30 % longer or shorter, each stamp up to 8 ms late, 12 drives each: a true hole of 0.4 s at full throttle and of 0.3 s in a gentle pull-away is flagged in ' + u + ' of ' + un +
+            ' and does not look like a steady speed. The speed held 1.5 s and then pulled is timed as a hole in ' + timed + ' of 12: each of those ' + uc + ' is flagged, sets no best and is said to look like a steady speed. In the other ' + taken +
+            ' the engine took the speed as unchanged across the hold (the step after it fitted the pace before it): no hole, no flag, a best, as in 1.0.1');
+
+        // 5. what the samples after it must show to LOOK like a steady speed: the speed moving about as much per slot as it stepped across the silence
+        const e5 = (after) => {
+            // 0 to 40 km/h in steps of 0.25 km/h every 20 ms, silence for 0.6 s, then a step of 0.5 km/h, then `after` km/h per slot
+            const smp = [];
+            let t = C0 - 2000, v = 0;
+            for (; t < C0; t += 20) smp.push({ t, v: 0 });
+            for (; v < 40; t += 20) { v += 0.25; smp.push({ t, v }); }
+            for (let k = 0; k < 40; k++, t += 20) { v += 0.01; smp.push({ t, v: Math.round(v / Q) * Q }); }      // (it eases off: next to nothing per slot)
+            t += 600; v += 0.5; smp.push({ t, v });
+            for (let k = 0; k < 30; k++) { t += 20; v += after; smp.push({ t, v }); }
+            const e = new RunEngine({ onChange: true });
+            sim.drive(e, smp);
+            return e.summary();
+        };
+        const fast = e5(0.4), slow = e5(0.02), edge = e5(0.31), below = e5(0.30);
+        ok(fast.holeMs >= 600 && fast.lostMs === 0 && slow.lostMs === slow.holeMs && slow.holeMs >= 600 && edge.lostMs === 0 && below.lostMs >= 600 && edge.holeMs >= 600 && below.holeMs >= 600,
+            'the measure, for the words: a step of 0.5 km/h after 0.6 s of silence, a hole of ' + fast.holeMs + ' ms in every case (flagged in every case). The speed then moves 0.4 km/h a slot: it looks like a steady speed (1.5 times that, plus 1/32 km/h, covers the step: lostMs 0). 0.02 km/h a slot: it does not (lostMs ' + slow.lostMs +
+            ' ms: it jumped far more across the silence than it moves afterwards). The line between them: 0.31 km/h a slot does, 0.30 does not. The same 1.5 and 1/32 the engine has always used with the pace BEFORE a silence');
+        // ... and a run that ends before a sample could say so does not look like one
+        {
+            const smp = [];
+            let t = C0 - 2000, v = 0;
+            for (; t < C0; t += 20) smp.push({ t, v: 0 });
+            for (; v < 40; t += 20) { v += 0.25; smp.push({ t, v }); }
+            for (let k = 0; k < 40; k++, t += 20) { v += 0.01; smp.push({ t, v: Math.round(v / Q) * Q }); }
+            t += 600; v += 0.5; smp.push({ t, v });
+            const e = new RunEngine({ onChange: true });
+            sim.drive(e, smp, { until: t + 100 });
+            const mid = e.summary();
+            e.silent();
+            ok(mid.lostMs === mid.holeMs && mid.holeMs >= 600 && e.summary().lostMs >= 600 && e.summary().ended === 'silent', 'a run that ends right after such a step, before any sample has followed it: the words do not say "may be a steady speed" (lostMs ' + mid.lostMs + ' ms = holeMs)');
+        }
+
+        // 6. the judging touches nothing but that one figure: with it taken out, every time and every +- is the same
+        class AsBefore extends RunEngine { _judge() { const a = this.run.acc, d = a.doubt; if (d) { if (d.ms > a.lostMs) a.lostMs = d.ms; a.doubt = null; } } }
+        const rand = rng(20261125);
+        let drives = 0, differ = 0, above = 0, lower = 0, holes = 0, looks = 0;
+        for (let k = 0; k < 300; k++) {
+            const sp = rand.pick([20, 21, 33, 50, 100]), o = { spacing: sp, phase: rand() * sp, jitter: rand.pick([0, 0, 4, 12]), uneven: rand.pick([0, 0, 0.2]), rand: rng(1000 + k) };
+            const legs = [];
+            let v = 0;
+            for (let j = 0; j < 7; j++) { if (rand() < 0.35) legs.push([rand.between(0.2, 3.5), v]); else { v = Math.max(8, v + rand.between(-6, 30)); legs.push([rand.between(1, 6), v]); } }
+            legs.push([4, Math.max(0, v - 30)]);
+            let smp = series(plan(legs), o);
+            for (let h = 0; h < 2; h++) if (rand() < 0.5) smp = lose(smp, rand.between(1000, 20000), rand.pick([150, 300, 400, 700, 1000, 2500]));
+            if (rand() < 0.3) { const from = C0 + rand.between(1000, 15000), ms = rand.pick([120, 300, 600]); let q = 0; smp = smp.map((p) => (p.t >= from && p.t < from + ms ? { t: from + ms + (q += 0.05), v: p.v } : p)); }
+            const a = run(smp), b = run(smp, AsBefore);
+            if (!a || !b) { if (!!a !== !!b) differ++; continue; }
+            drives++;
+            if (JSON.stringify(a.results) !== JSON.stringify(b.results) || a.holeMs !== b.holeMs || a.ended !== b.ended || a.dist !== b.dist || a.samples !== b.samples || b.lostMs !== b.holeMs) differ++;
+            if (a.lostMs > a.holeMs) above++;
+            if (b.holeMs >= GAP) { holes++; if (a.lostMs < GAP) looks++; }
+            if (b.holeMs < GAP && a.lostMs >= GAP) lower++;
+        }
+        ok(drives >= 280 && differ === 0 && above === 0 && lower === 0 && holes > 100 && looks > 10 && looks < holes / 2,
+            '300 made-up drives (speeds held and changed at random, notifications lost, the app held up, late stamps), each through the engine and through the engine with the judging taken out: in ' + drives + ' runs ' + differ +
+            ' differ in a time, a +-, the distance, holeMs or how the run ended. So no time and no +- depends on the judging. ' + holes + ' runs have a hole of 0.3 s or more (all of them flagged: the flag goes by holeMs); of ' + looks +
+            ' of them the words say "may be a steady speed". CHANGED ON PURPOSE: those ' + looks + ' were "no gap now" in the repair, with no flag');
+
+        // 7. which series a run is taken from goes by holeMs, as the flag does
+        const held = one;
+        const fine = { results: held.results, launchGap: 20, medianGap: 50, holeMs: 0, lostMs: 0, frozenMs: 0, jumps: 0, ended: 'lift', quietEnd: 0, launch: {} };
+        const pick = Feed.chooseSeries(Object.assign({}, held, { ended: 'lift' }), fine);
+        ok(held.holeMs >= GAP && held.lostMs === 0 && pick.chosen === 'polled' && /had a hole of/.test(pick.why), 'with the app\'s own getter reads switched on there are two series: a notified series with such a stretch still loses to a getter series without one ("' + pick.why + '"), as before. Which series a run is taken from was not changed');
+        ok(MAYBE.test(Feed.describeRun(held)) && !/NO GAP|no gap/.test(Feed.describeRun(held)), 'CHANGED ON PURPOSE (was: "HOLE of ... (NO GAP: by the samples after it the speed stood still and then moved on)"). The log line of the run says it as a possibility and never as a fact: "' +
+            (Feed.describeRun(held).match(/HOLE of[^)]*\)/) || [''])[0] + '"');
+        // ... and where one hole looks like a steady speed and a shorter one does not, the log names the shorter one too
+        const mixed = Feed.describeRun(Object.assign({}, held, { lostMs: 420 }));
+        ok(/HOLE of \d+ ms \(MAY BE A STEADY SPEED: [^)]*\. The longest hole that does not look like that: 420 ms\)/.test(mixed), 'a run with a stretch that looks like a steady speed and a shorter hole that does not: "' + (mixed.match(/HOLE of[^)]*\)/) || [''])[0] + '"');
+
+        // 8. THE LOST SECOND OF THE LAST READ (checks/fix1-drag-last, attack2.js part B and app/caseF.js): why the flag is back
+        {
+            // roll away gently to 18 km/h, a slow second, then the speed goes up 5 km/h and comes back within one second, then
+            // full throttle (7 m/s2). The notifications of that one second are LOST. Across the lost stretch the speed ends
+            // where it began, and the car then pulls hard: by the samples after it that reads exactly like a speed that stood still.
+            const legs = [[3, 18], [1, 18.3], [0.5, 23.3], [0.5, 18.6], [6, 18.6 + 7 * 3.6 * 6], [3, 100]];
+            const base = series(plan(legs), { spacing: 21, until: 13000 }), cut = lose(base, 4000, 1000);
+            const whole = judged(base), lostSec = judged(cut), eng = run(cut);
+            const off = whole && lostSec && whole.results['60ft'] && lostSec.results['60ft'] ? lostSec.results['60ft'].s - whole.results['60ft'].s : NaN;
+            ok(whole && whole.flags.length === 0 && whole.best.indexOf('60ft') >= 0 && eng.holeMs >= 1000 && eng.lostMs === 0 && off > lostSec.results['60ft'].pm && off > 0.08 && off < 0.13 &&
+                gapOnly(lostSec) && MAYBE.test(lostSec.words),
+                'THE LOST SECOND (the run the last read of 1.0.2 found). With every notification: 60 ft ' + (whole ? whole.results['60ft'].s.toFixed(3) : '?') + ' s, no flag, a best. With that second lost: 60 ft ' + (lostSec ? lostSec.results['60ft'].s.toFixed(3) + ' s ± ' + lostSec.results['60ft'].pm.toFixed(2) : '?') +
+                ', off by ' + off.toFixed(3) + ' s, which is more than the ± shown. The engine times it as a hole of ' + eng.holeMs + ' ms, and the samples after it look like a steady speed (lostMs ' + eng.lostMs + '): no rule on the notified samples alone can tell this from a speed that stood still. ' +
+                'So the run carries ' + (lostSec ? lostSec.flags.join(', ') : 'no run') + ' and sets no best (' + (lostSec ? lostSec.best.length : '?') + '), and the words only say "MAY BE". WAS, in the repair: no flag, NEW BEST, "steady speed 1.1 s (no gap)"');
+        }
+    });
+
+    /* ================= 1.0.2: the record of starts and stops, on its own ================= */
+    await ok.part('1.0.2: the record of starts and stops (box.js) on its own: what it keeps, when it writes, what it makes of a hostile file', async () => {
+        const Box = require(path.join(JS, 'box'));
+        const os = require('os');
+        const top = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'pps-drag-box-')));
+        process.on('exit', () => { try { fs.rmSync(top, { recursive: true, force: true }); } catch (e) { /* gone */ } });
+        let dirs = 0;
+        const ME = process.getuid ? process.getuid() : 0;      // (the user the app's process stands for: the folders this test makes belong to it)
+        const dir = () => { const d = path.join(top, 'd' + (++dirs)); fs.mkdirSync(d); return d; };
+        // a process of the test's own: its listeners are kept here, its clock is moved by hand
+        const proc = (uid) => {
+            const p = { uid, pid: 4711, L: { exit: [], uncaughtException: [], SIGTERM: [], SIGHUP: [], SIGINT: [] }, exited: null, others: 1, cpu: 0, rss: 50 * 1048576, killed: [], removed: 0 };
+            p.getuid = () => p.uid; p.memoryUsage = () => ({ rss: p.rss }); p.cpuUsage = () => ({ user: p.cpu, system: 0 });
+            p.on = (ev, fn) => { p.L[ev].push(fn); }; p.prependListener = (ev, fn) => { p.L[ev].unshift(fn); };
+            p.removeListener = (ev, fn) => { const i = p.L[ev].indexOf(fn); if (i >= 0) { p.L[ev].splice(i, 1); p.removed++; } };
+            p.listenerCount = (ev) => p.L[ev].length + (ev === 'uncaughtException' ? p.others : 0); p.exit = (code) => { p.exited = code; };
+            // (a signal the process sends itself: noted, with how many listeners for it were left on the process then)
+            p.kill = (pid, sig) => { p.killed.push([pid, sig, p.L[sig].length]); };
+            p.signal = (sig) => p.L[sig].slice().forEach((fn) => fn());
+            return p;
+        };
+        let now = 5000, wall = Date.UTC(2026, 10, 25, 0, 36, 0);
+        const make = (tmp, data, p, more) => new Box.Box(Object.assign({ id: 'pps_drag', dir: data, tmp, now: () => now, wall: () => wall, proc: p }, more));
+        const tick = (box, ms, state) => { const end = now + ms; while (now < end) { now += 50; box.beat(now, state || 'armed'); } };
+        const text = (box) => box.lines().map((l) => l.head + (l.more.length ? ' ' + l.more.join(', ') : ''));
+        const tmp = dir(), data = dir(), p1 = proc(ME);
+        let box = make(tmp, data, p1);
+        const ramFile = path.join(tmp, 'pps-box-pps_drag-' + ME, 'box.json'), diskFile = path.join(data, 'box.json');
+        const read = (f) => JSON.parse(fs.readFileSync(f, 'utf8'));
+        ok(box.prev === null && box.life.n === 1 && read(ramFile).lives[0].n === 1 && read(diskFile).lives[0].n === 1 && read(ramFile).lives[0].disk === 1 && read(diskFile).lives[0].ram === 1 && p1.L.exit.length === 1 && p1.L.uncaughtException.length === 1,
+            'a first start: life 1 is written to both places before the constructor returns, each copy says the other is there, and one listener each is put on the process for its exit and for an uncaught error');
+        ok(p1.L.SIGTERM.length === 0 && p1.L.SIGHUP.length === 0 && p1.L.SIGINT.length === 0 && box.signals.length === 0 && read(ramFile).lives[0].note.on.sig === 0,
+            'CHANGED ON PURPOSE (was: "one each for the three signals"). AS SHIPPED NO LISTENER IS PUT ON THE PROCESS FOR A SIGNAL: none for SIGTERM, SIGHUP or SIGINT, as on the published 1.0.1, Proven Gauges and Proven Warm-Up. A signal then ends the process at once, also while the app hangs, and leaves no word');
+        box.tell = () => ({ frames: 100, notes: 480, asked: 0, answered: 0, path: 'GPU', tab: 'Run', state: 'armed', setup: 'done', on: { ask: 0, gps: 1, wheels: 2, pos: 0, study: 0 } });
+        p1.cpu = 0; p1.rss = 61 * 1048576;
+        tick(box, 1950);
+        const d0 = fs.statSync(diskFile).mtimeMs, r0 = read(ramFile).lives[0].s;
+        p1.cpu = 440000;                                    // 0.44 s of processor time in the 2 s since the start: 22 %
+        tick(box, 100);
+        let n = read(ramFile).lives[0];
+        ok(r0 === 0 && n.s === 2 && n.note.rss === 61 && n.note.rssMax === 61 && n.note.cpu === 22 && n.note.fps === 50 && n.note.nps === 240 && n.note.path === 'GPU' && n.note.on.gps === 1 && n.note.on.wheels === 2 && fs.statSync(diskFile).mtimeMs === d0,
+            'after 2 s the note is taken and written to RAM: 2 s alive, memory 61 MB, processor 22 % of one core, 50 frames and 240 values a second, GPS on, wheels switched off but still subscribed. The data folder\'s copy is not written again yet');
+        // a hold-up: the 50 ms tick comes 430 ms late once
+        now += 480; box.beat(now, 'armed');
+        tick(box, 2000);
+        n = read(ramFile).lives[0];
+        ok(n.note.lag === 430 && n.note.lag10 === 430, 'the app\'s own 50 ms tick comes 430 ms late once: "longest hold-up 430 ms" in this life and in the last 10 s');
+        tick(box, 12000);
+        n = read(ramFile).lives[0];
+        ok(n.note.lag === 430 && n.note.lag10 === 0, '12 s later: still 430 ms as the longest of this life, 0 in the last 10 s');
+        ok(/^#1 now, started 2[45]\.11\. \d\d:\d\d, running 1[67] s, memory 61 MB \(most 61\), processor 0 % \(most 22\), longest hold-up 430 ms \(last 10 s: 0\), armed, GPS on, off but still subscribed: wheels, set-up done, Run tab, 0 frames\/s GPU, 0 values\/s$/.test(text(box)[0]),
+            'its line: "' + text(box)[0] + '" (CHANGED ON PURPOSE in the repair: "started 10:36: 17 s" could be read as a time of day, now "started 10:36, running 17 s"; extras switched off but still subscribed are said in one part)');
+        // the data folder: once a minute at most, and not while a run is timed
+        const saves = () => fs.statSync(diskFile).mtimeMs;
+        let m0 = saves();
+        tick(box, 30000);
+        const half = saves() === m0;
+        tick(box, 16000, 'timing'); tick(box, 20000, 'timing');
+        const timing = saves() === m0, sDisk = read(diskFile).lives[0].s;
+        tick(box, 2100, 'idle');
+        ok(half && timing && sDisk === 0 && saves() !== m0 && read(diskFile).lives[0].s >= 80, 'the data folder\'s copy: not written in the first minute after the start, not written while a run is timed (the minute was over by then), written at the first note after the run');
+        // an end without a word, then a start in the same boot of the head unit: the copy in RAM is there
+        const p2 = proc(ME);
+        now += 100000; wall += 190000;
+        box = make(tmp, data, p2);
+        ok(box.prev && box.prev.n === 1 && box.prev.end === '' && box.boot === 'same' && box.alarm(now) && !box.alarm(now + 60001) && /^#1 at 2[45]\.11\. \d\d:\d\d lived 1 min 2\d s, NO WORD \(killed or crashed\)\.$/.test(text(box)[1]) && /^ +Last note of #1: memory 61 MB/.test(text(box)[2]),
+            'the process just ends. The next start in the same boot: "' + text(box)[1] + '", and the Run tab\'s line is due for a minute');
+        // the exit code alone (process.exit by something that said nothing first)
+        p2.L.exit.forEach((fn) => fn(3));
+        box = make(tmp, data, proc(ME));
+        ok(/^#2 at .* lived \d+ s, ended with exit code 3 and no word before it\.$/.test(text(box)[1]) && box.alarm(now), 'the process ends with exit code 3 and nothing before it: "' + text(box)[1] + '", and the Run tab\'s line is due (CHANGED ON PURPOSE in the repair: an exit code other than 0 that nobody asked for is a stop by itself too. WAS: no line on the Run tab)');
+        // the app's own error: noted before the kit's handler, which is left to run; alone on a process, it ends the process itself
+        const p4 = proc(ME);
+        box = make(tmp, data, p4);
+        const e = new Error('Cannot read property \'x\' of undefined\n    at Timeout.tick (app.js:99:1)');
+        p4.L.uncaughtException.forEach((fn) => fn(e));
+        ok(p4.exited === null && read(ramFile).lives[0].end === 'error' && read(ramFile).lives[0].err === 'Error: Cannot read property \'x\' of undefined' && read(diskFile).lives[0].end === 'error',
+            'an uncaught error with the kit\'s handler on the process too: the first line of the error is in both copies, and the app\'s listener does not end the process (the kit\'s handler does, after logging)');
+        p4.L.exit.forEach((fn) => fn(1));
+        const p5 = proc(ME);
+        p5.others = 0;
+        box = make(tmp, data, p5);
+        const errWas = console.error; let said = 0; console.error = () => { said++; };
+        try { p5.L.uncaughtException.forEach((fn) => fn(new Error('alone'))); } finally { console.error = errWas; }
+        ok(/^#4 at .* THE APP'S OWN ERROR at app\.js:99 \(exit code 1\): Error: Cannot read property 'x' of undefined\.$/.test(text(box)[1]) && p5.exited === 1 && said === 1,
+            'the next start says: "' + text(box)[1] + '". And where the app\'s listener is the only one (a PC), it prints the error and ends the process with code 1 itself: the error is never swallowed ' +
+            '(CHANGED ON PURPOSE in the repair: the line now says where the error came from, the file and line of the first place in its stack, and the exit code stands before the text, where a long text cannot cut it off)');
+        // five lives are kept; the car asks the app to stop
+        box = make(tmp, data, proc(ME));
+        box.end('asked');
+        box = make(tmp, data, proc(ME));
+        ok(read(ramFile).lives.length === 5 && read(ramFile).lives.map((l) => l.n).join() === '7,6,5,4,3' && /^#6 at .* lived 0 s, asked to stop by the car\.$/.test(text(box)[1]) && !box.alarm(now), 'seven starts: lives 7 to 3 are kept, the two oldest have gone. "' + text(box)[1] + '"');
+        // the head unit restarted: no copy in RAM, and the data folder's copy says it was kept in RAM
+        const tmp2 = dir();
+        box = make(tmp2, data, proc(ME));
+        ok(box.boot === 'new' && !box.alarm(now) && /^#7 at .* no word, and the head unit has restarted since \(power off also ends the app without a word\)\.$/.test(text(box)[1]), 'the RAM folder empty, the data folder with a record that says it had a copy in RAM: the head unit has restarted since. "' + text(box)[1] + '", no line on the Run tab');
+        // ... told by the uptime alone, where RAM was never usable
+        const data2 = dir(), data3 = dir();
+        fs.writeFileSync(path.join(data2, 'box.json'), JSON.stringify({ v: 1, lives: [{ n: 3, at: '24.11. 08:00', up: Math.round(os.uptime()) + 86400, s: 600, end: '', ram: 0, note: {} }] }));
+        fs.writeFileSync(path.join(data3, 'box.json'), JSON.stringify({ v: 1, lives: [{ n: 3, at: '24.11. 08:00', up: 0, s: 1, end: '', ram: 0, note: {} }] }));
+        const later = make(dir(), data2, proc(ME)), unknown = make(dir(), data3, proc(ME));
+        ok(later.boot === 'new' && !later.alarm(now) && unknown.boot === 'unknown' && unknown.alarm(now) && /NO WORD \(killed, crashed or power lost\)\.$/.test(text(unknown)[1]),
+            'a record that was never in RAM: the head unit\'s uptime, which is smaller now than it was at that life\'s last note, says it restarted; where the uptime does not say, the line reads "NO WORD (killed, crashed or power lost)" and the Run tab\'s line shows');
+        // the data folder emptied: the copy in RAM says it had one
+        fs.unlinkSync(diskFile);
+        box = make(tmp2, data, proc(ME));
+        ok(box.gone === true && /^The saved data was emptied after #8 /.test(text(box)[1]) && read(diskFile).lives[0].gone === 1, 'the data folder\'s copy gone while the copy in RAM says there was one: "The saved data was emptied after #8 ..."');
+        // /tmp is everybody's: a folder that belongs to another user, a link, a pipe
+        const tmp3 = dir();
+        fs.mkdirSync(path.join(tmp3, 'pps-box-pps_drag-9001'));
+        const alien = make(tmp3, dir(), proc(9001));
+        ok(fs.readdirSync(path.join(tmp3, 'pps-box-pps_drag-9001')).length === 0 && /^Kept in RAM \(NOT WRITTEN: .*pps-box-pps_drag-9001 belongs to another user\) and in the data folder \(written 0 s ago\)\.$/.test(alien.kept()),
+            'the folder in RAM is there already and belongs to another user (here: this test\'s user, while the app runs as user 9001): nothing is written into it. "' + alien.kept().replace(top, '...') + '"');
+        const tmp4 = dir(), target = dir();
+        fs.symlinkSync(target, path.join(tmp4, 'pps-box-pps_drag-' + ME));
+        const linked = make(tmp4, dir(), proc(ME));
+        ok(fs.readdirSync(target).length === 0 && /is not a real folder/.test(linked.kept()), 'the folder in RAM is a symbolic link: nothing is written through it');
+        /* ----- the repair after the two checks of 1.0.2 (each of these failed on the build as it was checked, bec94c6) ----- */
+        const ramOf = (t) => path.join(t, 'pps-box-pps_drag-' + ME, 'box.json');
+        // frames and values a second in the last note of a life that ends with a word
+        {
+            const tA = dir(), dA = dir(), pa = proc(ME);
+            const b = make(tA, dA, pa);
+            let frames = 0, notes = 0;
+            b.tell = () => ({ frames, notes, asked: 0, answered: 0, path: 'software', tab: 'Run', state: 'armed', setup: 'done', on: {} });
+            const go = (ms) => { const end = now + ms; while (now < end) { now += 50; frames += 0.5; notes += 2.85; b.beat(now, 'armed'); } };      // 10 frames and 57 values a second
+            go(6000);
+            const steady = read(ramOf(tA)).lives[0].note;
+            // a setting is switched 300 ms after a note was taken: the app takes a note at once (box.note)
+            now = b.lastNote + 300; frames += 3; notes += 17;
+            b.note(now);
+            const atSwitch = read(ramOf(tA)).lives[0].note;
+            go(4000);
+            // the app's own error 5 ms after a note, then the exit that follows it within the same millisecond
+            now = b.lastNote + 5; notes += 1;
+            pa.L.uncaughtException.forEach((fn) => fn(new Error('made up for the test')));
+            pa.L.exit.forEach((fn) => fn(1));
+            const last = read(ramOf(tA)).lives[0];
+            ok(steady.fps === 10 && steady.nps === 57 && atSwitch.fps === 10 && atSwitch.nps === 57 && last.end === 'error' && last.code === 1 && last.note.fps === 10 && last.note.nps === 57,
+                'REPAIR. 10 frames and 57 values a second, steadily. A note taken 300 ms after the last one (a setting was switched) and the two taken at the end (the app\'s own error 5 ms after a note, then its exit code) keep the rates: the last note says ' +
+                last.note.fps + ' frames/s, ' + last.note.nps + ' values/s. WAS: worked out over the few ms since the last note, so every life that ended with a word read about "0 frames/s, 0 values/s", as if the car\'s values had stopped before the error');
+        }
+        // after a power loss all that is left is the data folder's copy, written at the start and once a minute
+        {
+            const tB = dir(), dB = dir();
+            let b = new Box.Box({ id: 'pps_drag', dir: dB, tmp: tB, now: () => now, wall: () => wall, proc: proc(ME), on: { ask: 0, gps: 1, wheels: 0, pos: 0, study: 0 } });
+            b.tell = () => ({ frames: 0, notes: 0, asked: 0, answered: 0, path: 'GPU', tab: 'Run', state: 'timing', setup: 'done', on: { ask: 0, gps: 1, wheels: 0, pos: 0, study: 0 } });
+            tick(b, 45000, 'armed');
+            const inRam = read(ramOf(tB)).lives[0].s, onDisk = read(path.join(dB, 'box.json')).lives[0];
+            b = make(dir(), dB, proc(ME));                 // (the head unit lost power: its RAM disk is empty)
+            const t = text(b);
+            ok(inRam >= 44 && onDisk.s === 0 && onDisk.note.on.gps === 1 && b.prev.old === 1 && b.boot === 'new' && !b.alarm(now) &&
+                /^#1 at .* lived at least 0 s, no word, and the head unit has restarted since \(power off also ends the app without a word\)\.$/.test(t[1]) &&
+                /^ +Saved note of #1 \(up to a minute before its end\): memory \d+ MB \(most \d+\), .*starting, GPS on, set-up: not begun/.test(t[2]),
+                'REPAIR. A life 45 s old ends by a power loss (the RAM disk is empty at the next start; the data folder\'s copy is the one written at its start): "' + t[1] + '" and "' + t[2].trim().slice(0, 78) + '...". ' +
+                'The first copy written already says which extras were on (GPS on). WAS: "lived 0 s" as a fact, with "Last note" and "extras off"');
+            // ... and the same life as an older one, two starts on: still "at least"
+            const b3 = make(dir(), dB, proc(ME));
+            ok(/^#1 at .* lived at least 0 s, NO WORD/.test(text(b3)[3]) && /Saved note \(up to a minute before its end\): memory/.test(text(b3)[3]), 'and it still says so when it is an older life in the list: "' + text(b3)[3].slice(0, 150) + '..."');
+        }
+        // the car asks the app to stop: the word goes to RAM first, before the app saves its own file
+        {
+            const tC = dir(), dC = dir(), pc = proc(ME);
+            const b = make(tC, dC, pc);
+            tick(b, 2100);
+            b.end('asked', null, true);
+            const ram1 = read(ramOf(tC)).lives[0].end, disk1 = read(path.join(dC, 'box.json')).lives[0].end;
+            const killed = make(tC, dC, proc(ME));          // (the process was killed while it saved its file: this is the next start)
+            ok(ram1 === 'asked' && disk1 === '' && /^#1 at .* lived 2 s, asked to stop by the car\.$/.test(text(killed)[1]) && !killed.alarm(now),
+                'REPAIR. The car asks the app to stop: the word is in the copy in RAM before anything else is done, and not yet in the data folder. Killed right there, the next start says "' + text(killed)[1] + '" and shows no line on the Run tab. ' +
+                'WAS: the word was written last, after the saved file: killed while saving, the next start said NO WORD (killed or crashed)');
+        }
+        // several extras switched off while the app runs, and a set-up text with every extra on
+        {
+            const tD = dir(), b = make(tD, dir(), proc(ME));
+            const setup = 'Vehicle2 CDS2 set up; Powertrain SatellitePositioning GPSData Positioning VehicleModel asked; wheel travel failed, trying again';
+            b.tell = () => ({ frames: 0, notes: 0, asked: 419, answered: 418, path: 'software', tab: 'Signals', state: 'armed', setup, on: { ask: 1, gps: 2, wheels: 2, pos: 2, study: 2 } });
+            tick(b, 2100);
+            ok(read(ramOf(tD)).lives[0].note.setup === setup && setup.length > 120 && text(b)[0].indexOf('armed, off but still subscribed: GPS + wheels + positions + study signals, asks the car itself (419 reads asked, 418 answered), set-up: ' + setup + ', Signals tab') > 0,
+                'REPAIR. Four extras switched off but still subscribed are said in one part ("off but still subscribed: GPS + wheels + positions + study signals"), and a set-up text of ' + setup.length + ' characters is kept whole. WAS: one long part for each extra, and the set-up text cut at 120 characters, so the last interface lost its state');
+        }
+        // a record somebody else has put where the app keeps its own
+        {
+            const tE = dir(), dE = dir(), planted = JSON.stringify({ v: 1, lives: [{ n: 70, at: 'PLANTED', s: 5, end: 'error', err: 'planted in a folder of another user', ram: 1, disk: 1, note: {} }] });
+            fs.mkdirSync(path.join(tE, 'pps-box-pps_drag-9001'));
+            fs.writeFileSync(path.join(tE, 'pps-box-pps_drag-9001', 'box.json'), planted);
+            const b = make(tE, dE, proc(9001));             // (the app runs as user 9001; the folder under its name belongs to this test's user)
+            ok(b.prev === null && b.life.n === 1 && !b.alarm(now) && text(b).length === 1 && fs.readFileSync(path.join(tE, 'pps-box-pps_drag-9001', 'box.json'), 'utf8') === planted && /belongs to another user/.test(b.kept()),
+                'REPAIR. A folder under the app\'s own name in RAM that belongs to another user, with a record planted in it: nothing in it is read as the app\'s own (this start is #1, no line on the Run tab), and nothing is written to it. WAS: not written to, but read and believed ("#70 ... THE APP\'S OWN ERROR: planted", with the line on the Run tab)');
+            // a record under another user id's name, far ahead in its numbers, while the app has a record of its own
+            const tE2 = dir(), dE2 = dir();
+            let own = make(tE2, dE2, proc(ME)); own.end('asked');
+            fs.mkdirSync(path.join(tE2, 'pps-box-pps_drag-' + (ME + 7)));
+            fs.writeFileSync(path.join(tE2, 'pps-box-pps_drag-' + (ME + 7), 'box.json'), JSON.stringify({ v: 1, lives: [{ n: 899998, at: 'PLANTED', s: 1, end: 'error', err: 'planted', note: {} }] }));
+            own = make(tE2, dE2, proc(ME));
+            ok(own.life.n === 2 && own.fromUid === 0 && own.prev.n === 1 && !own.alarm(now), 'REPAIR. With a record of its own to go by, the app does not open a record under another user id\'s name at all: this start is #2. WAS: a planted record with the number 899998 was adopted, every later start counted on from there, and it was copied into the data folder');
+        }
+        // the modes of the folder and the file in RAM do not depend on the process's umask
+        {
+            const tF = dir(), was = process.umask(0o077);
+            let b = null;
+            try { b = make(tF, dir(), proc(ME)); tick(b, 2100); } finally { process.umask(was); }
+            const dm = fs.statSync(path.dirname(ramOf(tF))).mode & 0o777, fm = fs.statSync(ramOf(tF)).mode & 0o777;
+            ok(dm === 0o755 && fm === 0o644, 'REPAIR. Under a umask of 077 the folder in RAM is mode ' + dm.toString(8) + ' and the record in it ' + fm.toString(8) + ' (set outright, as the kit does for its frames). WAS: the file came out 600, which another user id cannot read: the record of the life before would have been lost after a reinstall');
+        }
+        // a signal that ends the process: as shipped nobody listens; with the Workshop setting "Note stop signals" on, the record does
+        {
+            const counts = (p) => [p.L.SIGTERM.length, p.L.SIGHUP.length, p.L.SIGINT.length].join();
+            // AS SHIPPED: no listener, so nothing of the app's runs when a signal comes, and nothing is written
+            const t0 = dir(), d0 = dir(), p0 = proc(ME);
+            let b = make(t0, d0, p0);
+            tick(b, 4100);
+            p0.signal('SIGTERM');                        // (nobody is there to be called: on a real process the signal ends it at once)
+            ok(counts(p0) === '0,0,0' && p0.killed.length === 0 && p0.removed === 0 && read(ramOf(t0)).lives[0].end === '' && read(ramOf(t0)).lives[0].sig === '' && read(ramOf(t0)).lives[0].note.on.sig === 0,
+                'AS SHIPPED. SIGTERM comes to a process the app has put no signal listener on: nothing of the app\'s is called, nothing is sent, and the record has no word for that end');
+            b = make(t0, d0, proc(ME));
+            ok(/^#1 at .* lived 4 s, NO WORD \(killed or crashed\)\.$/.test(text(b)[1]) && b.alarm(now) && / extras off, /.test(text(b)[2]), 'CHANGED ON PURPOSE (was: "ENDED BY THE SIGNAL SIGTERM"). The next start, as shipped: "' + text(b)[1] + '", the same as after kill -9, and the Run tab\'s line is due');
+
+            // THE SETTING SWITCHED ON while the app runs: the listeners are there at once, and the record says so at once
+            const tS = dir(), dS = dir(), ps = proc(ME);
+            b = make(tS, dS, ps);
+            b.tell = () => ({ frames: 0, notes: 0, asked: 0, answered: 0, path: 'GPU', tab: 'Run', state: 'armed', setup: 'done', on: { ask: 0, gps: 0, wheels: 0, pos: 0, study: 0 } });
+            tick(b, 2100);
+            const offLine = text(b)[0], offNote = read(ramOf(tS)).lives[0].note.on.sig;
+            b.listen(true);
+            const onNote = read(ramOf(tS)).lives[0].note.on.sig, onLine = text(b)[0];
+            b.listen(true);                              // (switched on twice: no second listener)
+            ok(/ armed, extras off, set-up done, /.test(offLine) && offNote === 0 && counts(ps) === '1,1,1' && b.signals.join() === 'SIGTERM,SIGHUP,SIGINT' && onNote === 15 && / armed, notes stop signals, set-up done, /.test(onLine),
+                'THE SETTING "Note stop signals" SWITCHED ON: one listener each for SIGTERM, SIGHUP and SIGINT is on the process at once (and no second one when it is switched on again), the copy in RAM says so in the same moment, and the line of this life says "notes stop signals" where it said "extras off"');
+            tick(b, 2000);
+            ps.signal('SIGTERM');
+            const r = read(ramOf(tS)).lives[0], d = read(path.join(dS, 'box.json')).lives[0];
+            ok(r.end === 'signal' && r.sig === 'SIGTERM' && d.end === 'signal' && d.sig === 'SIGTERM' && ps.L.SIGTERM.length === 0 && ps.removed === 1 && ps.killed.length === 1 && ps.killed[0].join() === '4711,SIGTERM,0' && ps.exited === null && r.note.on.sig === 15,
+                'WITH THE SETTING ON. SIGTERM comes: the word is in both copies at once, the app\'s listener is taken off, and the same signal is sent to the app\'s own process with no listener left for it (so it ends the process as it would have without the app listening). The app does not call exit itself');
+            const dS2 = dir();
+            fs.copyFileSync(path.join(dS, 'box.json'), path.join(dS2, 'box.json'));      // (the data folder as that life left it, for the start after a restart below)
+            b = make(tS, dS, proc(ME));
+            ok(/^#1 at .* lived 4 s, ENDED BY THE SIGNAL SIGTERM \(sent to the app from outside\)\.$/.test(text(b)[1]) && b.alarm(now) && b.lines()[1].warn === true && /, notes stop signals, /.test(text(b)[2]),
+                'the next start: "' + text(b)[1] + '", its last note says "notes stop signals", and the Run tab\'s line is due (a signal alone, with no word from the car, is a stop the car did not ask for)');
+            const restarted = make(dir(), dS2, proc(ME));
+            ok(/lived 4 s, ended by the signal SIGTERM, and the head unit has restarted since \(switching the car off may end the app this way\)\.$/.test(text(restarted)[1]) && !restarted.alarm(now) && restarted.lines()[1].warn === false,
+                'the same with the head unit restarted in between (its RAM disk empty): "' + text(restarted)[1].replace(/^.*lived/, '... lived') + '", and no line on the Run tab');
+
+            // THE SETTING ON AT THE START: the listeners are there before the first copy is written, and both copies say so
+            const tA = dir(), dA = dir(), pa = proc(ME);
+            b = make(tA, dA, pa, { signals: true });
+            ok(counts(pa) === '1,1,1' && read(ramOf(tA)).lives[0].note.on.sig === 15 && read(path.join(dA, 'box.json')).lives[0].note.on.sig === 15 && /, notes stop signals, /.test(text(b)[0]),
+                'the setting on at a start: the three listeners are on the process before the first copy of the record is written, and both copies (RAM and the data folder) say "notes stop signals" from the first moment');
+            // SWITCHED OFF AGAIN: the listeners are gone at once, and so is the word in the record
+            b.listen(false);
+            const offAgain = read(ramOf(tA)).lives[0].note.on.sig;
+            pa.signal('SIGHUP');
+            ok(counts(pa) === '0,0,0' && pa.removed === 3 && b.signals.length === 0 && offAgain === 0 && pa.killed.length === 0 && read(ramOf(tA)).lives[0].end === '' && !/notes stop signals/.test(text(b)[0]),
+                'THE SETTING SWITCHED OFF: the three listeners are taken off the process at once, the copy in RAM says so in the same moment, and a signal after that finds nobody of the app\'s to call: everything is as shipped again');
+
+            // somebody else listens for the signal already when the setting is switched on: the app leaves that signal alone, and says so
+            const pk = proc(ME);
+            pk.L.SIGTERM.push(() => {});
+            b = make(dir(), dir(), pk);
+            b.listen(true);
+            ok(pk.L.SIGTERM.length === 1 && b.signals.join() === 'SIGHUP,SIGINT' && /, notes stop signals \(SIGHUP SIGINT only: SIGTERM has a listener already\), /.test(text(b)[0]),
+                'a process on which somebody listens for SIGTERM already (the kit or the SDK, should they ever): the app puts no listener of its own on that signal, so nothing about it changes, and the line of this life says "notes stop signals (SIGHUP SIGINT only: SIGTERM has a listener already)"');
+            const pn = proc(ME);
+            ['SIGTERM', 'SIGHUP', 'SIGINT'].forEach((x) => pn.L[x].push(() => {}));
+            b = make(dir(), dir(), pn, { signals: true });
+            ok(counts(pn) === '1,1,1' && b.signals.length === 0 && /, notes no stop signal \(each has a listener already\), /.test(text(b)[0]), 'and where all three have a listener already, the app adds none and says "notes no stop signal (each has a listener already)"');
+            // somebody else begins to listen after the app has started: the app notes the signal and sends nothing itself
+            const tL = dir(), dL = dir(), pl = proc(ME);
+            b = make(tL, dL, pl, { signals: true });
+            let theirs = 0;
+            pl.L.SIGHUP.push(() => { theirs++; });
+            pl.signal('SIGHUP');
+            ok(theirs === 1 && pl.killed.length === 0 && pl.L.SIGHUP.length === 1 && read(ramOf(tL)).lives[0].end === 'signal' && read(ramOf(tL)).lives[0].sig === 'SIGHUP',
+                'a second listener for SIGHUP put on the process after the app\'s: when the signal comes the app notes it, takes its own listener off and sends nothing (the other listener was called once, and what it does with the signal is its own)');
+            // ... and that other listener is the SDK's, which then asks the app to stop: a clean stop, not a stop by itself
+            b.end('asked', null, true); b.end('asked');
+            const after = read(ramOf(tL)).lives[0], afterDisk = read(path.join(dL, 'box.json')).lives[0];
+            b = make(tL, dL, proc(ME));
+            ok(after.end === 'asked' && after.sig === 'SIGHUP' && afterDisk.end === 'asked' && afterDisk.sig === 'SIGHUP' && / notes stop signals, /.test(text(b)[2]) && /asked to stop by the car \(the signal SIGHUP came too\)\.$/.test(text(b)[1]) && !b.alarm(now) && b.lines()[1].warn === false,
+                'NEW. The signal first (somebody else listens for it too, so the process lives on), and then the car asks the app to stop: the car\'s word takes the signal\'s place, "' + text(b)[1].replace(/^.*lived/, '... lived') + '", and NO line on the Run tab. WAS: "ENDED BY THE SIGNAL ..." with the line "The app stopped by itself last time"');
+            // a signal after the car has asked the app to stop: the first word stands
+            const tM = dir(), dM = dir(), pm = proc(ME);
+            b = make(tM, dM, pm, { signals: true });
+            b.end('asked');
+            pm.signal('SIGINT');
+            b = make(tM, dM, proc(ME));
+            ok(/asked to stop by the car \(the signal SIGINT came too\)\.$/.test(text(b)[1]) && !b.alarm(now) && pm.killed.length === 1, 'the car asks the app to stop and a signal follows: "' + text(b)[1].replace(/^.*lived/, '... lived') +
+                '" (the first word stands, the signal is sent on to the process as before, and no line on the Run tab). CHANGED ON PURPOSE: the words were "(and then sent the signal SIGINT)"; the signal may now also have come first');
+            // an error after a signal does not take the signal's place (only the car's own word does)
+            const tQ = dir(), dQ = dir(), pq = proc(ME);
+            b = make(tQ, dQ, pq, { signals: true });
+            pq.L.SIGTERM.push(() => {});
+            pq.signal('SIGTERM');
+            pq.L.uncaughtException.forEach((fn) => fn(new Error('after the signal')));
+            b = make(tQ, dQ, proc(ME));
+            ok(/ENDED BY THE SIGNAL SIGTERM/.test(text(b)[1]) && b.alarm(now), 'a signal, and then an error of the app\'s own: the signal stands as how the life ended ("' + text(b)[1].replace(/^.*lived/, '... lived') + '"), and the Run tab\'s line is due');
+        }
+        // clean(): whatever a file holds, what comes out is inside its bounds
+        const rnd = rng(20261125), junk = [null, undefined, 0, -1, 1e99, NaN, Infinity, 'x', '', '\u0000\u001b[0m\u202e' + 'é'.repeat(900), true, [], {}, [1, [2, [3]]], { n: 1 }, { v: 1 }, () => 1];
+        const any = (depth) => { const k = Math.floor(rnd() * (junk.length + 3)); if (k < junk.length || depth > 3) return junk[k % junk.length]; if (k === junk.length) return [any(depth + 1), any(depth + 1)]; const o = {}; ['v', 'lives', 'n', 'at', 's', 'end', 'err', 'where', 'sig', 'old', 'note', 'on', 'rss', 'state', 'setup', 'gps', 'code', '__proto__', 'constructor'].forEach((key) => { if (rnd() < 0.6) o[key] = any(depth + 1); }); return o; };
+        let threw = 0, bad = 0, kept = 0;
+        const inside = (rec) => rec.lives.length <= 5 && rec.lives.every((l) => l.n >= 1 && l.n <= 999999 && l.s >= 0 && l.s <= 4e7 && /^[\x20-\x7e]{0,20}$/.test(l.at) && /^[\x20-\x7e]{0,160}$/.test(l.err) && /^[\x20-\x7e]{0,40}$/.test(l.where) && ['', 'SIGTERM', 'SIGHUP', 'SIGINT'].indexOf(l.sig) >= 0 && [0, 1].indexOf(l.old) >= 0 && ['', 'asked', 'error', 'exit', 'signal'].indexOf(l.end) >= 0 &&
+            (l.code === null || (l.code >= -1 && l.code <= 255)) && l.note.rss >= 0 && l.note.rss <= 65536 && l.note.cpu >= 0 && l.note.cpu <= 999 && /^[\x20-\x7e]{0,12}$/.test(l.note.state) && /^[\x20-\x7e]{0,200}$/.test(l.note.setup) &&
+            Object.keys(l.note.on).sort().join() === 'ask,gps,pos,sig,study,wheels' && Object.keys(l.note.on).every((k) => (k === 'sig' ? l.note.on[k] >= 0 && l.note.on[k] <= 15 && l.note.on[k] === Math.floor(l.note.on[k]) : [0, 1, 2].indexOf(l.note.on[k]) >= 0)));
+        for (let i = 0; i < 20000; i++) {
+            const raw = i % 4 === 0 ? any(0) : { v: 1, lives: [any(1), any(1), any(1), { n: Math.floor(rnd() * 2e6) - 5, at: any(3), s: any(3), end: rnd() < 0.3 ? 'signal' : any(3), err: any(3), where: any(3), sig: rnd() < 0.3 ? 'SIGTERM' : any(3), code: any(3), note: any(2) }, any(1), any(1), any(1)] };
+            let rec = null;
+            try { rec = Box.clean(raw); } catch (err) { threw++; }
+            if (rec) { kept++; if (!inside(rec)) bad++; }
+        }
+        ok(threw === 0 && bad === 0 && kept > 5000, '20,000 made-up records of every wrong kind through the clean-up: it never throws, and each of the ' + kept + ' it lets through has at most 5 lives, every number inside its bounds and every text short and printable ASCII ' +
+            '(CHANGED ON PURPOSE: a note now also says whether the stop signals were noted, "sig", a whole number from 0 to 15)');
+        // readSafe(): a file that is not a plain file, a file that is too big
+        const f = path.join(dir(), 'box.json');
+        fs.writeFileSync(f, JSON.stringify({ v: 1, lives: [{ n: 9, note: {} }], pad: 'x'.repeat(70000) }));
+        const big = Box.readSafe(f);
+        fs.writeFileSync(f, JSON.stringify({ v: 1, lives: [{ n: 9, note: {} }] }));
+        const good = Box.readSafe(f);
+        const link = path.join(dir(), 'box.json');
+        fs.symlinkSync(f, link);
+        ok(big.there && big.rec === null && good.rec && good.rec.lives[0].n === 9 && Box.readSafe(link).rec === null && Box.readSafe(path.join(top, 'nothing-here')).there === false && Box.readSafe(top).rec === null,
+            'reading: a record of 70 KB is not read (64 KB at most), a good one is, the same one through a symbolic link is not (no link is followed), a folder and a missing file are nothing');
+    });
+
     /* ================= the app's manifest and the modules' manners ================= */
     await ok.part('read only, and pure', async () => {
         const manifest = JSON.parse(fs.readFileSync(path.join(path.resolve(process.argv[2]), 'source', 'manifest.json'), 'utf8')).proxies;
         const spec = JSON.parse(fs.readFileSync(path.join(JS, 'kit', 'app-spec.json'), 'utf8'));
         const mine = ['de.bmw.infotainment.vehicle.Vehicle2', 'de.bmw.infotainment.vehicle.CDS2', 'de.bmw.powertrain.Powertrain', 'de.bmw.infotainment.SatellitePositioning',
             'de.bmw.infotainment.GPSData', 'de.bmw.infotainment.navigation.positioning.Positioning', 'de.bmw.chassis.VehicleModel'];
-        ok(mine.every((i) => manifest[i]), 'the built app asks for its seven interfaces');
+        const set = (k) => spec.settings.find((s) => s.key === k);
+        ok(mine.every((i) => manifest[i]), 'the built app\'s manifest names its seven interfaces (as shipped the app subscribes to two of them: the others are there so that their switches work)');
         ok(mine.every((i) => !manifest[i].methods && Object.keys(manifest[i].attributes || {}).every((f) => /^[rs]+$/.test(manifest[i].attributes[f]))),
             'of them it asks only to read (r) and to be notified (s): no field with write access, no method');
         const events = mine.reduce((n, i) => n + (manifest[i].broadcasts || []).length, 0);
         ok(events === 1 && manifest['de.bmw.infotainment.SatellitePositioning'].broadcasts[0] === 'updatePosition', 'and one event: the GPS receiver\'s sentences');
         ok(!Object.keys(manifest).some((i) => /tasu/i.test(i)), 'the diagnostic link (TASU) is not in the manifest at all');
         ok(manifest['de.bmw.infotainment.vehicle.Vehicle2'].attributes.statusCarSpeed2 === 'rs', 'the speed is both notified and read');
-        const set = (k) => spec.settings.find((s) => s.key === k);
+        // 1.0.2: only the two core fields are asked for with "r" (the kit reads the getter of such a field itself whenever the car's service comes up)
+        const withR = [].concat.apply([], mine.map((i) => Object.keys(manifest[i].attributes || {}).filter((f) => manifest[i].attributes[f].indexOf('r') >= 0).map((f) => i.split('.').pop() + '.' + f))).sort().join(', ');
+        ok(withR === 'CDS2.statusLongitudinalAccelerationMassCenter, Vehicle2.statusCarSpeed2', 'NEW IN 1.0.2. Only the speed and the acceleration are asked for with "r": ' + withR + ' (as the kit\'s own Drag Timer and Proven Gauges ask for them). WAS: seven fields, five of them read by no other app of this source');
+        const src0 = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'apps', 'draggy', 'app.json'), 'utf8')).signals;
+        ok(src0['de.bmw.infotainment.vehicle.Vehicle2'].statusCarSpeed2 === 'rs' && src0['de.bmw.infotainment.vehicle.CDS2'].statusLongitudinalAccelerationMassCenter === 'rs', '(the kit\'s Drag Timer, apps/draggy/app.json, asks for exactly those two with "rs")');
+        ok(['gps', 'askCar', 'xWheels', 'xPos', 'xStudy'].every((k) => set(k) && set(k).type === 'bool' && set(k).default === false) && set('gps').when === undefined && ['askCar', 'xWheels', 'xPos', 'xStudy'].every((k) => set(k).when.workshop === true),
+            'NEW IN 1.0.2. Every extra is a switch that is off as shipped: the GPS speed scale (shown to everybody), and with Workshop settings on the app\'s own getter reads, the wheel speeds, the positions and the study signals');
+        ok(['gps', 'xWheels', 'xPos', 'xStudy'].every((k) => / \(off takes full effect after a restart\)$/.test(set(k).label)) && set('askCar').label === 'Ask the car for values (study)',
+            'each of the four says in its own text that switching it off takes full effect after a restart: "' + set('xWheels').label + '"');
+        // the newest switch: what the app does to its own process. Off as shipped, and its own text says what it costs
+        const xs = set('xSignals') || {}, mainSrc = fs.readFileSync(path.join(JS, 'app.js'), 'utf8'), boxSrc = fs.readFileSync(path.join(JS, 'box.js'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+        ok(xs.type === 'bool' && xs.default === false && xs.when && xs.when.workshop === true && xs.label === 'Note stop signals, study (while on, an app that hangs is not ended by one)',
+            'NEW. "Note stop signals" is a Workshop switch that is off as shipped, and its own text says the price (a setting has no other text): "' + xs.label + '"');
+        ok(/signals: settings\.get\('xSignals'\) === true/.test(mainSrc) && /if \(k === 'xSignals'\)/.test(mainSrc) && (boxSrc.match(/this\.proc\.on\(sig, fn\)/g) || []).length === 1 && !/process\.on\('SIG/.test(mainSrc + boxSrc) && /if \(o\.signals === true\)/.test(boxSrc),
+            'and in the app\'s own files a listener for a signal is put on the process in one place only (box.js, _listen), reached only with that setting on: at the start if it is true in the settings (app.js, which is main.js as built), and when it is switched');
+        const pkg = JSON.parse(fs.readFileSync(path.join(path.resolve(process.argv[2]), 'source', 'package.json'), 'utf8'));
+        ok(spec.version === '1.0.2' && pkg.version === '1.0.2' && /^BETA, still being tested on cars\. /.test(pkg.description) && !/not yet tested/.test(pkg.description), 'version 1.0.2, and the description the Store shows says "BETA, still being tested on cars" (WAS: "not yet tested on a car")');
         ok(set('demo').default === 'off' && set('start').default === 'slip' && set('scale').default === 'gps' && set('slopeLimit').default === '1' && set('speedUnit').default === 'kmh' && set('workshop').default === false,
             'settings as shipped: demo off, start "slip", scale from GPS, downhill limit 1 %, km/h, workshop off');
         const sm = set('scaleManual');

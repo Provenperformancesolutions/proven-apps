@@ -30,7 +30,9 @@
  *   50 ms as soon as the run is on: short spacing, launch missed); an engine whose series went silent
  *   before the end of the run loses; an engine whose series made a step no car does loses; an engine whose
  *   series had a hole of 0.3 s or more, or repeated one value for a second or more, loses (the median
- *   spacing does not show a hole). Samples that arrive in lumps are merged by the engine before any of
+ *   spacing does not show a hole; a hole is every stretch the engine timed as one, summary.holeMs, also
+ *   where the samples after it look like a speed that had only stood still: the DATA GAP flag goes by
+ *   holeMs too, session.js; summary.lostMs is for the words only). Samples that arrive in lumps are merged by the engine before any of
  *   this (run.js), so a series delivered in lumps is measured by the spacing of its lumps. A sample that
  *   was stamped late is taken out by the engine too: it leaves a hole, and no step.
  *   WHEN THE TWO ENGINES DO NOT AGREE: if the run was chosen by the spacing rule (neither engine had lost
@@ -492,7 +494,10 @@ function describeRun(s) {
         (L.tookLate > 0 ? ', a getter read at the launch took far longer than usual (its stamp may be ' + L.tookLate + ' ms off)' : '') +
         ', smallest speed this series reported before: ' + (isNum(L.lowSeen) ? L.lowSeen.toFixed(3) + ' km/h' : 'none yet') +
         ' | ' + s.samples + ' samples, median ' + ms(s.medianGap) + ', longest ' + ms(s.longestGap) + ', quiet at the end ' + ms(s.quietEnd) +
-        (s.holeMs > 0 ? ', HOLE of ' + ms(s.holeMs) : '') + (s.frozenMs >= FROZEN_MS ? ', ONE VALUE REPEATED for ' + ms(s.frozenMs) : '') +
+        // (a hole is a hole for the flag, whatever follows it. Where the samples after it look like a speed that stood still and then
+        // moved on, the line says so as a possibility and no more: lost notifications can look the same. run.js, lostMs)
+        (s.holeMs > 0 ? ', HOLE of ' + ms(s.holeMs) + (isNum(s.lostMs) && s.lostMs < s.holeMs ? ' (MAY BE A STEADY SPEED: the samples after it look like a speed that stood still and then moved on; lost notifications can look the same' +
+            (s.lostMs > 0 ? '. The longest hole that does not look like that: ' + ms(s.lostMs) : '') + ')' : '') : '') + (s.frozenMs >= FROZEN_MS ? ', ONE VALUE REPEATED for ' + ms(s.frozenMs) : '') +
         (s.merged ? ', ' + s.merged + ' stamped late and replaced by the next (arrived together with it, or too soon before it)' : '') + (s.disorder ? ', A SAMPLE READ FAR LOWER THAN THE ONE RIGHT BEFORE IT, OR ITS STAMP DID NOT RUN FORWARD (out of order, or a wrong reading)' : '') +
         (isNum(s.roundTrip) ? ', getter round trip ' + ms(s.roundTrip) : '') +
         ' | top ' + s.vmax.toFixed(1) + ' km/h, peak ' + s.peakG.toFixed(2) + ' g, dropped ' + s.dropped +

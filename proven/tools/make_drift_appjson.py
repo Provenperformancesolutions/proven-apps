@@ -12,10 +12,24 @@ not get the app. Every other interface is "_optional": the kit installs the app 
 drops single fields a unit lacks, and the app works without it, with what the "_optional" text names
 missing. Those texts are the ones apps/pps_drift/car.js logs.
 
-"r" is asked for only where the interface catalogue of one head unit (an M8 on iDrive 7) lists a getter for
-the field. The interface, field and member names are from that catalogue; no scaling of the yaw rate, the
-steering, the pedal or the wheels is known, and none is written here: the app learns them
-(apps/pps_drift/learn.js). Speed and acceleration scaling as in the idrive7-apps kit. None of it has been
+1.0.1 (after the first car, proven/CHANGES-drift.md part 9):
+  - "r" (the kit reads the getter once itself whenever the car's service comes up) is asked for FOUR fields
+    only: the speed, the two accelerations and CDS2's yaw rate. Those four are asked for with "rs" by the
+    kit's own apps too (Live Data and Live Adjustments all four; G-Force, M Vitals, Redline and others the
+    speed and the accelerations), and the app needs their first value: a standing car notifies nothing.
+    Every other field is "s" alone: the kit never reads its getter. (1.0.0 asked "rs" for six more.)
+  - The steering wheel's angle is asked for under both field names the kit's own apps subscribe to
+    (ActualSteeringAngleDriver and actualSteeringAngleDriverNoCRC: Live Data, Live Adjustments).
+  - This manifest still lists EVERY interface, so that each can be switched on in Settings. Which of them the
+    app subscribes to is decided in apps/pps_drift/car.js: the core ones always, each group of extras only
+    while its setting is on. Six new settings, all under Workshop settings and all OFF as shipped.
+
+The interface, field and member names are from the interface catalogue of one head unit (an M8 on iDrive 7);
+no scaling of the yaw rate, the steering, the pedal or the wheels is known, and none is written here: the
+app learns the yaw rate's and the steering's (apps/pps_drift/learn.js), uses the wheel values only as ratios
+and only once they have proven themselves, and shows the pedal raw only, with no percentage (1.0.1: on the
+first car the pedal's figure jumped about and the wheel values read 65407 standing still;
+apps/pps_drift/rawstudy.js). Speed and acceleration scaling as in the idrive7-apps kit. None of it has been
 measured by Proven.
 The screen settings (layout, renderer, demo) are the kit's own, taken from its M Vitals app as the other
 Proven apps take them; demo data is off unless somebody switches it on.
@@ -32,22 +46,27 @@ WHEELBASES = list(range(230, 331, 5))
 assert len(WHEELBASES) <= 35
 # the two resets: a setting each, No / Confirm / Reset now (apps/pps_drift/main.js says how they act)
 RESET = [['no', 'No'], ['arm', 'Confirm: choose Reset now'], ['go', 'Reset now']]
+# what the label of an extra says about switching it off again
+OFF_NOTE = ', off in full at next start'
+# the only fields the kit may read the getter of (flag "r"): see the top
+READ_ONCE = {'statusCarSpeed2', 'statusLateralAccelerationMassCenter', 'statusLongitudinalAccelerationMassCenter', 'statusYawVelocityVehicle'}
+EXTRAS = ['askCar', 'gpsOn', 'wheelsOn', 'sourcesOn', 'pedalOn', 'studyOn', 'sigOn']
 
 spec = {
     'id': 'pps_drift',
     'title': 'Proven Drift',
-    'description': ('BETA, not yet tested on a car. Scores drifts by angle, speed and length and keeps the data of each drift, '
+    'description': ('BETA, still being tested on cars. Scores drifts by angle, speed and length and keeps the data of each drift, '
                     'from the car\'s own motion sensors. For closed circuits and skid pans only'),
-    'version': '1.0.0',
+    'version': '1.0.1',
     'vendor': 'Proven Performance Solutions',
     'loggingId': 'PPF1',
     'iconGlyph': 'gforce',
     'mguHmi': ['ID7', 'ID8'],
     'requires': src.get('requires', {}),
     'signals': {
-        # the two the app cannot do without
+        # ---- CORE: what the angle, the score, the flags and the steering check need. Always subscribed ----
         'de.bmw.infotainment.vehicle.Vehicle2': {
-            # the car's speed (notified AND read)
+            # the car's speed (notified, and read once by the kit when the service comes up)
             'statusCarSpeed2': 'rs',
         },
         'de.bmw.infotainment.vehicle.CDS2': {
@@ -56,34 +75,42 @@ spec = {
             'statusLongitudinalAccelerationMassCenter': 'rs',
             'statusYawVelocityVehicle': 'rs',
         },
+        'de.bmw.chassis.SteeringAngle': {
+            '_optional': 'no steering check and no opposite lock, unless "Other steering and yaw" is switched on and XView gives the steering',
+            # core: the steering wheel's angle, under both names the kit's own apps subscribe to
+            'ActualSteeringAngleDriver': 's', 'actualSteeringAngleDriverNoCRC': 's',
+            # extra ("Other steering and yaw"): the front wheels' own angle. No app of the kit reads it
+            'SteeringAngleFrontAxleEffective': 's',
+        },
+        # ---- EXTRAS: each group has its setting, off as shipped (apps/pps_drift/car.js, GROUPS) ----
         'de.bmw.chassis.SpeedAcceleration': {
             '_optional': 'no second source of the yaw rate',
             'YawSpeedVehicle': 's',
         },
-        'de.bmw.chassis.SteeringAngle': {
-            '_optional': 'the steering check and the opposite lock then need the steering from XView',
-            'SteeringAngleFrontAxleEffective': 's', 'ActualSteeringAngleDriver': 's',
-        },
         'de.bmw.infotainment.drivingexcitement.XView': {
             '_optional': 'no second source of the steering',
-            'statusFrontAxleSteeringAngle': 'rs', 'statusSteeringAngleDriver': 'rs',
+            'statusFrontAxleSteeringAngle': 's', 'statusSteeringAngleDriver': 's',
         },
         'de.bmw.powertrain.AcceleratorPedal': {
-            '_optional': 'no accelerator pedal bar and no average pedal',
+            # extra ("Pedal and handbrake"): shown raw on the Signals tab and used for nothing. No pedal percentage is shown
+            # anywhere: on the first car it jumped about, so the form of this value is not known (the kit's Redline
+            # leaves the pedal out for the same reason)
+            '_optional': 'the accelerator pedal\'s raw value is not shown (study only)',
             'AngleAcceleratorPedal': 's',
         },
         'de.bmw.powertrain.Powertrain': {
+            # extra ("Wheel speeds"): used only once the four values have proven themselves (apps/pps_drift/rawstudy.js)
             '_optional': 'no rear wheelspin, and learning cannot check that the rear wheels grip',
             'ActualValueRPMWheel': 's',
         },
         'de.bmw.infotainment.vehicle.CDS': {
             '_optional': 'the handbrake is not known',
-            'statusHandBrake': 'rs',
+            'statusHandBrake': 's',
         },
         'de.bmw.infotainment.drivingexcitement.FES': {
             '_optional': 'the DSC button state is not shown',
             # read for information only: the app does nothing with DSC
-            'statusDSCSwitchHMI': 'rs',
+            'statusDSCSwitchHMI': 's',
         },
         'de.bmw.chassis.DrivingVector': {
             '_optional': 'the car\'s own motion estimate is not shown (study only)',
@@ -91,7 +118,7 @@ spec = {
         },
         'de.bmw.infotainment.misc.MDrive': {
             '_optional': 'BMW\'s own drift analyser is not shown (study only)',
-            'statusDriftLast': 'rs', 'statusDriftBest': 'rs',
+            'statusDriftLast': 's', 'statusDriftBest': 's',
         },
         'de.bmw.infotainment.SatellitePositioning': {
             '_optional': 'no GPS speed to check the car\'s speed against',
@@ -128,6 +155,22 @@ spec = {
         # for a car whose forward acceleration turns out to be worked out from its speed (apps/pps_drift/angle.js)
         {'key': 'useLong', 'label': 'Forward acceleration', 'type': 'choice', 'default': 'use', 'when': W,
          'options': [['use', 'Use'], ['off', 'Leave out']]},
+        # 1.0.1: what the app asks of the car beyond its core signals. All OFF as shipped (and after the platform has
+        # emptied the app's data, which puts every setting back to its default). ON subscribes at once; OFF stops using
+        # the values at once, and the subscription itself ends with the next start of the app (apps/pps_drift/car.js)
+        # (studyOn also carries the DSC button's state, shown raw and used for nothing. It is not named in the label: a row
+        # that reads "DSC ... Off" could be taken for something this app never does and never asks for)
+        {'key': 'askCar', 'label': 'Ask the car for values (study)', 'type': 'bool', 'default': False, 'when': W},
+        {'key': 'gpsOn', 'label': 'GPS receiver (study' + OFF_NOTE + ')', 'type': 'bool', 'default': False, 'when': W},
+        {'key': 'wheelsOn', 'label': 'Wheel speeds (study' + OFF_NOTE + ')', 'type': 'bool', 'default': False, 'when': W},
+        {'key': 'sourcesOn', 'label': 'Other steering and yaw (study' + OFF_NOTE + ')', 'type': 'bool', 'default': False, 'when': W},
+        {'key': 'pedalOn', 'label': 'Pedal and handbrake (study' + OFF_NOTE + ')', 'type': 'bool', 'default': False, 'when': W},
+        {'key': 'studyOn', 'label': 'Car estimate and analyser (study' + OFF_NOTE + ')', 'type': 'bool', 'default': False, 'when': W},
+        # 1.0.1, the repair: the record of starts and stops can note SIGTERM, SIGHUP and SIGINT (apps/pps_drift/box.js).
+        # A listener changes how the process answers a signal (a held-up app no longer ends at once when it is sent
+        # one), and no app known to run on a car has one. So it is a setting, OFF as shipped, like every other extra.
+        # It asks nothing of the car, and switching it off takes its listeners off at once.
+        {'key': 'sigOn', 'label': 'Note stop signals (study)', 'type': 'bool', 'default': False, 'when': W},
         {'key': 'resetLearned', 'label': 'Reset what was learned', 'type': 'choice', 'default': 'no', 'when': W, 'options': RESET},
         {'key': 'resetBest', 'label': 'Reset bests', 'type': 'choice', 'default': 'no', 'when': W, 'options': RESET},
         {'key': 'theme', 'label': 'Colour theme', 'type': 'choice', 'default': 'proven',
@@ -139,8 +182,9 @@ spec = {
     ],
     'config': {
         'comment': ('raw -> value * factor + offset; "invalid" = the car\'s "no value". Speed and acceleration scaling as in the '
-                    'idrive7-apps kit. The yaw rate, the steering, the pedal and the wheels have no scaling here: the app learns '
-                    'them (apps/pps_drift/learn.js). None of it has been measured by Proven.'),
+                    'idrive7-apps kit. The yaw rate, the steering and the wheels have no scaling here: the app learns the first two '
+                    '(apps/pps_drift/learn.js) and uses the wheels as ratios only. The pedal is shown raw only. None of it has been '
+                    'measured by Proven.'),
         'scaling': {
             'speed': {'factor': 0.015625, 'offset': 0, 'invalid': 65535, 'unit': 'km/h', 'member': 'speedVehicleCentreOfGravity'},
             'lat': {'factor': 0.002, 'offset': -65, 'invalid': 65535, 'unit': 'm/s2', 'member': 'lateralAccelerationCentreOfGravity'},
@@ -154,6 +198,15 @@ for iface, fields in spec['signals'].items():
     for name, mode in fields.items():
         assert name.startswith('_') or (set(mode) <= set('rs') and mode), iface + '.' + name + ': read (r) and subscribe (s) only'
 assert set(k for k in spec['signals']['de.bmw.infotainment.misc.MDrive'] if not k.startswith('_')) == {'statusDriftLast', 'statusDriftBest'}
+# the kit reads a getter itself only for the four fields its own apps read that way too
+for iface, fields in spec['signals'].items():
+    for name, mode in fields.items():
+        if not name.startswith('_'):
+            assert ('r' in mode) == (name in READ_ONCE), iface + '.' + name + ': "r" for the speed, the two accelerations and CDS2\'s yaw rate only'
+# every extra is a Workshop setting and OFF as shipped
+for key in EXTRAS:
+    st = [x for x in spec['settings'] if x['key'] == key]
+    assert len(st) == 1 and st[0]['type'] == 'bool' and st[0]['default'] is False and st[0].get('when') == W, key + ': a Workshop setting, off as shipped'
 optional = [i for i, f in spec['signals'].items() if f.get('_optional')]
 assert set(spec['signals']) - set(optional) == {'de.bmw.infotainment.vehicle.Vehicle2', 'de.bmw.infotainment.vehicle.CDS2'}
 assert not [b for b in spec['screens'][0]['buttons'] if b[0] == 'BTN_ACTION'], 'nothing on the pages needs a button'
